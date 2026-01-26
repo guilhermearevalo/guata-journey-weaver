@@ -1,0 +1,136 @@
+import { Link } from 'react-router-dom';
+import { MapPin, Phone, Mail, Instagram, Facebook, Youtube } from 'lucide-react';
+import logo from '@/assets/logo-guata.png';
+
+export function PublicFooter() {
+  return (
+    <footer className="border-t bg-secondary text-secondary-foreground">
+      <div className="container mx-auto px-4 py-12 lg:px-8">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          {/* Brand Column */}
+          <div className="space-y-4">
+            <img src={logo} alt="Guatá Travel Experience" className="h-16 w-auto brightness-0 invert" />
+            <p className="text-sm text-secondary-foreground/80">
+              Experiências de viagem únicas e personalizadas. 
+              Descubra o Brasil e o mundo com quem entende de curadoria turística.
+            </p>
+            <div className="flex gap-4">
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-secondary-foreground/70 transition-colors hover:text-primary"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-secondary-foreground/70 transition-colors hover:text-primary"
+              >
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a
+                href="https://youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-secondary-foreground/70 transition-colors hover:text-primary"
+              >
+                <Youtube className="h-5 w-5" />
+              </a>
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h4 className="mb-4 font-display text-lg font-semibold">Navegação</h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link to="/experiencias" className="text-secondary-foreground/80 hover:text-primary">
+                  Experiências
+                </Link>
+              </li>
+              <li>
+                <Link to="/excursoes" className="text-secondary-foreground/80 hover:text-primary">
+                  Excursões
+                </Link>
+              </li>
+              <li>
+                <Link to="/pacotes" className="text-secondary-foreground/80 hover:text-primary">
+                  Pacotes
+                </Link>
+              </li>
+              <li>
+                <Link to="/viagem-personalizada" className="text-secondary-foreground/80 hover:text-primary">
+                  Viagem Personalizada
+                </Link>
+              </li>
+              <li>
+                <Link to="/sobre" className="text-secondary-foreground/80 hover:text-primary">
+                  Sobre Nós
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Support */}
+          <div>
+            <h4 className="mb-4 font-display text-lg font-semibold">Suporte</h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link to="/faq" className="text-secondary-foreground/80 hover:text-primary">
+                  Perguntas Frequentes
+                </Link>
+              </li>
+              <li>
+                <Link to="/termos" className="text-secondary-foreground/80 hover:text-primary">
+                  Termos de Uso
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacidade" className="text-secondary-foreground/80 hover:text-primary">
+                  Política de Privacidade
+                </Link>
+              </li>
+              <li>
+                <Link to="/contato" className="text-secondary-foreground/80 hover:text-primary">
+                  Fale Conosco
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="mb-4 font-display text-lg font-semibold">Contato</h4>
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-start gap-2">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span className="text-secondary-foreground/80">
+                  São Paulo, SP - Brasil
+                </span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Phone className="h-4 w-4 shrink-0 text-primary" />
+                <a href="tel:+5511999999999" className="text-secondary-foreground/80 hover:text-primary">
+                  (11) 99999-9999
+                </a>
+              </li>
+              <li className="flex items-center gap-2">
+                <Mail className="h-4 w-4 shrink-0 text-primary" />
+                <a href="mailto:contato@guata.travel" className="text-secondary-foreground/80 hover:text-primary">
+                  contato@guata.travel
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-12 border-t border-secondary-foreground/10 pt-8 text-center text-sm text-secondary-foreground/60">
+          <p>© {new Date().getFullYear()} Guatá Travel Experience. Todos os direitos reservados.</p>
+        </div>
+      </div>
+    </footer>
+  );
+}
