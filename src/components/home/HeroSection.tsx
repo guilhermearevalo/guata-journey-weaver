@@ -30,16 +30,16 @@ export function HeroSection() {
       {/* Content */}
       <div className="container relative mx-auto flex min-h-[90vh] flex-col items-center justify-center px-4 py-20 text-center lg:px-8">
         <div className="animate-fade-in space-y-6">
-          <p className="text-sm font-medium uppercase tracking-widest text-primary">
+          <p className="text-sm font-medium uppercase tracking-widest text-white">
             Bem-vindo à Guatá Travel Experience
           </p>
           
-          <h1 className="font-display text-4xl font-bold leading-tight text-secondary-foreground md:text-5xl lg:text-6xl xl:text-7xl">
+          <h1 className="font-display text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl xl:text-7xl">
             Descubra o Mundo com
             <span className="block text-gradient">Experiências Únicas</span>
           </h1>
           
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl">
+          <p className="mx-auto max-w-2xl text-lg text-white/80 md:text-xl">
             Curadoria turística personalizada para viajantes que buscam 
             momentos inesquecíveis. Do Brasil ao mundo, sua próxima 
             aventura começa aqui.
@@ -103,7 +103,7 @@ export function HeroSection() {
           className="mt-8 flex flex-wrap items-center justify-center gap-3 animate-slide-up"
           style={{ animationDelay: '0.4s' }}
         >
-          <span className="text-sm text-muted-foreground">Destinos populares:</span>
+          <span className="text-sm text-white/70">Destinos populares:</span>
           {['Fernando de Noronha', 'Jalapão', 'Chapada Diamantina', 'Lençóis Maranhenses'].map((dest) => (
             <Button
               key={dest}
