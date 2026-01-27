@@ -19,6 +19,18 @@ import Privacidade from "./pages/Privacidade";
 import Contato from "./pages/Contato";
 import NotFound from "./pages/NotFound";
 
+// Admin imports
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminCMS from "./pages/admin/AdminCMS";
+import AdminCMSEditor from "./pages/admin/AdminCMSEditor";
+import AdminDemandas from "./pages/admin/AdminDemandas";
+import AdminExperiencias from "./pages/admin/AdminExperiencias";
+import AdminClientes from "./pages/admin/AdminClientes";
+import AdminParceiros from "./pages/admin/AdminParceiros";
+import AdminEquipe from "./pages/admin/AdminEquipe";
+import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -41,6 +53,19 @@ const App = () => (
               <Route path="/termos" element={<Termos />} />
               <Route path="/privacidade" element={<Privacidade />} />
               <Route path="/contato" element={<Contato />} />
+            </Route>
+            
+            {/* Admin routes */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="demandas" element={<AdminDemandas />} />
+              <Route path="experiencias" element={<AdminExperiencias />} />
+              <Route path="clientes" element={<AdminClientes />} />
+              <Route path="parceiros" element={<AdminParceiros />} />
+              <Route path="equipe" element={<AdminEquipe />} />
+              <Route path="configuracoes" element={<AdminConfiguracoes />} />
+              <Route path="cms" element={<AdminCMS />} />
+              <Route path="cms/:slug" element={<AdminCMSEditor />} />
             </Route>
             
             {/* Auth routes without public layout */}

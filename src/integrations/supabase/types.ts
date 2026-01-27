@@ -84,6 +84,42 @@ export type Database = {
           },
         ]
       }
+      cms_pages: {
+        Row: {
+          author_id: string | null
+          content: Json
+          created_at: string
+          id: string
+          meta_description: string | null
+          slug: string
+          status: Database["public"]["Enums"]["page_status"] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          content?: Json
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["page_status"] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          content?: Json
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["page_status"] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       experiences: {
         Row: {
           cover_image: string | null
@@ -491,6 +527,7 @@ export type Database = {
     Enums: {
       app_role: "client" | "consultant" | "manager" | "admin" | "partner"
       experience_type: "package" | "excursion" | "custom" | "thematic"
+      page_status: "draft" | "published" | "hidden"
       request_status:
         | "pending"
         | "in_analysis"
@@ -628,6 +665,7 @@ export const Constants = {
     Enums: {
       app_role: ["client", "consultant", "manager", "admin", "partner"],
       experience_type: ["package", "excursion", "custom", "thematic"],
+      page_status: ["draft", "published", "hidden"],
       request_status: [
         "pending",
         "in_analysis",
