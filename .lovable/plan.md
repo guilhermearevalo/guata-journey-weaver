@@ -1,181 +1,309 @@
 
-# Plano de Correções - Guatá Travel Experience
 
-## Resumo das Correções Necessárias
-
-Com base na análise do código, identifiquei os seguintes problemas que serão corrigidos:
+# Plano de Desenvolvimento - Próximas Fases
+## Guatá Travel Experience - Hub de Curadoria Turística
 
 ---
 
-## 1. Substituição da Logo
+## Estado Atual do Projeto
 
-**Problema:** A logo atual tem fundo, precisa ser substituída pela versão sem fundo.
+### O que já está pronto:
+- Site público com páginas institucionais (Sobre, FAQ, Termos, Privacidade, Contato)
+- Catálogo de experiências conectado ao banco de dados
+- Formulário de viagem personalizada funcionando
+- Sistema de autenticação (Login/Cadastro)
+- Banco de dados completo com RLS
 
-**Solução:**
-- Copiar a nova logo para `src/assets/logo-guata.png`
-- A logo será usada automaticamente em todos os componentes que já a importam (Header e Footer)
+### O que falta implementar:
+- CMS interno para editar conteúdo das páginas
+- Dashboard administrativo completo
+- Portal de parceiros
+- Área do cliente
 
 ---
 
-## 2. Correção dos Links 404
+## Fase 1: CMS Interno (Edição de Conteúdo)
 
-**Problema:** Várias páginas do menu e rodapé não existem.
+Criar um sistema de gerenciamento de conteúdo para que você possa editar todas as páginas sem mexer em código.
 
-**Páginas faltando:**
+### Nova tabela: `cms_pages`
 
-| Rota | Descrição |
-|------|-----------|
-| `/excursoes` | Catálogo de excursões |
-| `/pacotes` | Catálogo de pacotes |
-| `/sobre` | Página institucional |
-| `/faq` | Perguntas frequentes |
-| `/termos` | Termos de uso |
-| `/privacidade` | Política de privacidade |
-| `/contato` | Formulário de contato |
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| id | UUID | Identificador único |
+| slug | TEXT | URL da página (ex: "faq", "sobre") |
+| title | TEXT | Título da página |
+| content | JSONB | Conteúdo estruturado da página |
+| meta_description | TEXT | Descrição para SEO |
+| status | ENUM | draft, published, hidden |
+| author_id | UUID | Quem criou/editou |
+| created_at | TIMESTAMP | Data de criação |
+| updated_at | TIMESTAMP | Última modificação |
 
-**Solução:**
-Criar páginas básicas com conteúdo placeholder para todas as rotas, mantendo a consistência visual:
+### Estrutura do conteúdo (JSONB)
 
-- **Excursões e Pacotes:** Reutilizar o componente de catálogo de experiências com filtros apropriados
-- **Sobre, FAQ, Termos, Privacidade, Contato:** Criar páginas informativas com estrutura básica
-
-**Arquivos a criar:**
-```text
-src/pages/Excursoes.tsx
-src/pages/Pacotes.tsx  
-src/pages/Sobre.tsx
-src/pages/FAQ.tsx
-src/pages/Termos.tsx
-src/pages/Privacidade.tsx
-src/pages/Contato.tsx
+Para FAQ:
+```json
+{
+  "hero": {
+    "title": "Perguntas Frequentes",
+    "subtitle": "Tire suas dúvidas..."
+  },
+  "items": [
+    { "question": "Como funciona?", "answer": "..." }
+  ]
+}
 ```
 
-**Atualização do App.tsx:**
-Adicionar todas as novas rotas dentro do PublicLayout
-
----
-
-## 3. Melhoria no Contraste de Cores
-
-**Problema:** Na seção Hero da página inicial, o texto não tem contraste suficiente para leitura.
-
-**Análise técnica:**
-- O fundo usa `bg-secondary/80` (marrom escuro com opacidade)
-- O texto usa `text-secondary-foreground` (cor clara) e `text-muted-foreground` (cinza)
-- O `text-muted-foreground` sobre o overlay escuro fica com baixa legibilidade
-
-**Solução:**
-Ajustar as cores do Hero Section para garantir contraste adequado:
-
-```text
-Antes: text-muted-foreground (cinza médio - difícil de ler)
-Depois: text-white/90 ou text-secondary-foreground/90 (branco com leve transparência)
+Para páginas de texto (Sobre, Termos, Privacidade):
+```json
+{
+  "hero": {
+    "title": "Sobre a Guatá",
+    "subtitle": "..."
+  },
+  "sections": [
+    { "title": "Nossa História", "content": "..." }
+  ]
+}
 ```
 
-**Mudanças específicas no HeroSection.tsx:**
-- Linha 33: `text-primary` para `text-white` (texto de boas-vindas)
-- Linha 37: `text-secondary-foreground` para `text-white` (título principal)
-- Linha 42: `text-muted-foreground` para `text-white/80` (descrição)
-- Linha 106: `text-muted-foreground` para `text-white/70` (destinos populares)
+### Componentes de edição no Dashboard Admin
+
+- Editor de texto rico para parágrafos
+- Adicionar/remover/reordenar seções
+- Gerenciar itens de FAQ (perguntas e respostas)
+- Preview antes de publicar
+- Histórico de alterações
 
 ---
 
-## 4. Conexão com Banco de Dados
+## Fase 2: Dashboard Administrativo
 
-**Status: Já conectado**
+O coração da operação Guatá, acessível apenas para Consultores, Gestores e Admins.
 
-O Lovable Cloud já está ativo com as seguintes tabelas configuradas:
-- `profiles` - Perfis de usuário
-- `user_roles` - Níveis de acesso (client, consultant, manager, admin, partner)
-- `experiences` - Catálogo de experiências/viagens
-- `travel_requests` - Solicitações de viagem personalizada
-- `proposals` - Propostas das agências
-- `bookings` - Reservas
-- `messages` - Comunicação interna
-- `partner_agencies` - Agências parceiras
+### Estrutura de Rotas
 
-As políticas de segurança (RLS) já estão implementadas para cada tabela.
+```text
+/admin                     → Visão geral (métricas)
+/admin/demandas            → Pipeline de demandas (Kanban)
+/admin/demandas/:id        → Detalhes de uma demanda
+/admin/experiencias        → Gestão de pacotes/excursões
+/admin/experiencias/nova   → Criar experiência
+/admin/experiencias/:id    → Editar experiência
+/admin/clientes            → Lista de clientes
+/admin/clientes/:id        → Perfil do cliente
+/admin/parceiros           → Gestão de agências parceiras
+/admin/equipe              → Gestão de consultores (só admin)
+/admin/cms                 → Edição de páginas do site
+/admin/configuracoes       → Configurações gerais
+```
+
+### Componentes Principais
+
+1. **Sidebar com menu lateral**
+   - Logo Guatá
+   - Navegação por seções
+   - Indicador de notificações
+
+2. **Dashboard Home**
+   - Cards de métricas (demandas pendentes, conversões, faturamento)
+   - Gráficos de performance
+   - Tarefas urgentes
+
+3. **Pipeline de Demandas (Kanban)**
+   - Colunas: Pendente → Em Análise → Proposta Enviada → Aprovado → Em Operação → Concluído
+   - Drag and drop para mover cards
+   - Filtros por consultor, período, status
+   - Busca por cliente
+
+4. **Detalhes da Demanda**
+   - Informações do cliente
+   - Timeline de interações
+   - Anexar arquivos
+   - Criar proposta
+   - Atribuir a consultor ou parceiro
+   - Notas internas
+
+5. **Gestão de Experiências**
+   - Listagem com filtros (tipo, status, operador)
+   - CRUD completo
+   - Upload de imagens (galeria)
+   - Editor de itinerário
+   - Definir operador, comissão, status
+
+6. **CMS de Páginas**
+   - Lista de páginas editáveis
+   - Editor visual para cada tipo de página
+   - Preview e publicação
 
 ---
 
-## 5. Próximos Passos do Projeto
+## Fase 3: Portal de Parceiros
 
-De acordo com o plano inicial, os próximos desenvolvimentos são:
+Dashboard limitado para agências parceiras.
 
-### Fase Atual - Correções (Este Plano)
-- Substituir logo
-- Criar páginas faltando
-- Melhorar contraste de cores
+### Estrutura de Rotas
 
-### Próxima Fase - Dashboard Administrativo
-- Painel central com métricas
-- Gestão de demandas (Kanban)
-- Gestão de clientes
-- Gestão de experiências
+```text
+/parceiro                  → Dashboard do parceiro
+/parceiro/demandas         → Demandas atribuídas
+/parceiro/demandas/:id     → Detalhes e envio de proposta
+/parceiro/propostas        → Propostas enviadas
+/parceiro/perfil           → Dados da agência
+```
 
-### Fase Seguinte - Portal de Parceiros
-- Dashboard limitado para agências
-- Recebimento de briefings
-- Envio de propostas
+### Funcionalidades
 
-### Fase Final - Área do Cliente
-- Minha conta
-- Histórico de viagens
-- Acompanhamento de solicitações
-- Mensagens
+1. **Dashboard**
+   - Quantidade de demandas pendentes
+   - Propostas aprovadas
+   - Métricas de performance
+
+2. **Lista de Demandas Atribuídas**
+   - Apenas demandas designadas pela Guatá
+   - Sem acesso a dados de outros parceiros
+
+3. **Detalhes e Proposta**
+   - Briefing completo da viagem
+   - Formulário para enviar proposta
+   - Upload de documentos
+   - Atualização de status
 
 ---
 
-## Resumo das Mudanças
+## Fase 4: Área do Cliente
 
-| Arquivo | Ação |
-|---------|------|
-| `src/assets/logo-guata.png` | Substituir pela nova logo sem fundo |
-| `src/pages/Excursoes.tsx` | Criar (catálogo filtrado) |
-| `src/pages/Pacotes.tsx` | Criar (catálogo filtrado) |
-| `src/pages/Sobre.tsx` | Criar (página institucional) |
-| `src/pages/FAQ.tsx` | Criar (perguntas frequentes) |
-| `src/pages/Termos.tsx` | Criar (termos de uso) |
-| `src/pages/Privacidade.tsx` | Criar (política de privacidade) |
-| `src/pages/Contato.tsx` | Criar (formulário de contato) |
-| `src/components/home/HeroSection.tsx` | Melhorar contraste de cores |
-| `src/App.tsx` | Adicionar novas rotas |
+Ambiente para clientes acompanharem suas viagens.
+
+### Estrutura de Rotas
+
+```text
+/minha-conta               → Dashboard do cliente
+/minha-conta/solicitacoes  → Minhas solicitações
+/minha-conta/solicitacoes/:id → Detalhes e propostas
+/minha-conta/viagens       → Histórico de viagens
+/minha-conta/mensagens     → Chat com a equipe
+/minha-conta/perfil        → Dados pessoais
+```
+
+### Funcionalidades
+
+1. **Dashboard do Cliente**
+   - Status das solicitações ativas
+   - Próximas viagens
+   - Documentos para download
+
+2. **Acompanhamento de Solicitações**
+   - Timeline visual do processo
+   - Propostas recebidas
+   - Aceitar/Recusar proposta
+
+3. **Mensagens**
+   - Chat simples com a equipe
+   - Histórico de conversas
+
+---
+
+## Níveis de Acesso (RLS já implementado)
+
+| Perfil | Acesso |
+|--------|--------|
+| Cliente | Próprios dados, solicitações e mensagens |
+| Consultor | Atendimentos atribuídos, todas experiências |
+| Gestor | Tudo exceto configurações de equipe |
+| Admin | Acesso total, incluindo gestão de roles |
+| Parceiro | Apenas demandas atribuídas à sua agência |
+
+---
+
+## Ordem de Implementação Sugerida
+
+### Próximo Passo Imediato (Fase 1 - CMS)
+1. Criar tabela `cms_pages` no banco de dados
+2. Migrar conteúdo atual (FAQ, Sobre, Termos, Privacidade) para o banco
+3. Adaptar componentes de página para buscar dados do banco
+4. Criar tela de edição no dashboard admin
+
+### Depois (Fases 2-4)
+1. Dashboard admin com métricas e Kanban
+2. Gestão de experiências
+3. Portal de parceiros
+4. Área do cliente
 
 ---
 
 ## Seção Técnica
 
-### Estrutura das Novas Páginas
+### Nova Migration para CMS
 
-Cada página seguirá o padrão:
-```tsx
-const NomePagina = () => {
-  return (
-    <div className="container mx-auto px-4 py-16">
-      <h1 className="font-display text-4xl font-bold">Título</h1>
-      <p className="text-muted-foreground">Conteúdo...</p>
-    </div>
-  );
-};
+```sql
+-- Enum para status de página
+CREATE TYPE public.page_status AS ENUM ('draft', 'published', 'hidden');
+
+-- Tabela de páginas CMS
+CREATE TABLE public.cms_pages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    content JSONB NOT NULL DEFAULT '{}',
+    meta_description TEXT,
+    status page_status DEFAULT 'draft',
+    author_id UUID REFERENCES auth.users(id),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- RLS: Público lê páginas publicadas, Staff gerencia
+ALTER TABLE public.cms_pages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view published pages"
+ON public.cms_pages FOR SELECT
+TO anon, authenticated
+USING (status = 'published');
+
+CREATE POLICY "Staff can manage pages"
+ON public.cms_pages FOR ALL
+TO authenticated
+USING (public.is_staff(auth.uid()));
 ```
 
-### Cores Corrigidas (HSL)
+### Estrutura de Componentes Admin
 
-```css
-/* Texto sobre fundo escuro */
---hero-title: 0 0% 100%        /* Branco puro */
---hero-description: 0 0% 100% / 80%  /* Branco 80% */
---hero-label: 0 0% 100% / 70%  /* Branco 70% */
+```text
+src/
+  components/
+    admin/
+      AdminSidebar.tsx
+      AdminHeader.tsx
+      DashboardMetrics.tsx
+      KanbanBoard.tsx
+      ExperienceForm.tsx
+      CMSEditor.tsx
+  pages/
+    admin/
+      AdminDashboard.tsx
+      AdminDemandas.tsx
+      AdminExperiencias.tsx
+      AdminCMS.tsx
+      ...
 ```
 
-### Rotas Adicionais no App.tsx
+### Proteção de Rotas
 
-```tsx
-<Route path="/excursoes" element={<Excursoes />} />
-<Route path="/pacotes" element={<Pacotes />} />
-<Route path="/sobre" element={<Sobre />} />
-<Route path="/faq" element={<FAQ />} />
-<Route path="/termos" element={<Termos />} />
-<Route path="/privacidade" element={<Privacidade />} />
-<Route path="/contato" element={<Contato />} />
-```
+Criar componente `ProtectedRoute` que verifica:
+- Se usuário está logado
+- Se tem o role necessário
+- Redireciona para login ou página de erro se não tiver acesso
+
+---
+
+## Resumo dos Entregáveis por Fase
+
+| Fase | Entregáveis |
+|------|-------------|
+| 1 - CMS | Tabela cms_pages, editor de páginas, FAQ/Sobre/Termos editáveis |
+| 2 - Admin | Dashboard completo, Kanban, gestão de experiências, CMS integrado |
+| 3 - Parceiros | Portal com demandas, envio de propostas, documentos |
+| 4 - Cliente | Minha conta, acompanhamento, mensagens, histórico |
+
