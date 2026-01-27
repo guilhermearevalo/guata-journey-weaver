@@ -1,7 +1,12 @@
 import { MapPin, Heart, Users, Award } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { useCmsPage } from '@/hooks/useCmsPage';
+import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
+import CmsPageNotFound from '@/components/cms/CmsPageNotFound';
 
 const Sobre = () => {
+  const { data: page, isLoading, error } = useCmsPage('sobre');
+
   const valores = [
     {
       icon: Heart,
@@ -25,61 +30,45 @@ const Sobre = () => {
     },
   ];
 
+  if (isLoading) {
+    return <CmsPageSkeleton />;
+  }
+
+  if (error || !page) {
+    return <CmsPageNotFound slug="sobre" />;
+  }
+
+  const { hero, sections } = page.content;
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative py-24 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-display text-4xl font-bold md:text-5xl lg:text-6xl">
-            Sobre a <span className="text-primary">Guatá</span>
+            {hero?.title || 'Sobre a Guatá'}
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Somos uma agência de curadoria turística que transforma viagens em 
-            experiências extraordinárias. Nosso nome vem do Tupi-Guarani e significa 
-            "caminhar", representando nossa missão de guiar você pelos melhores 
-            caminhos do mundo.
+            {hero?.subtitle || 'Conheça nossa história e missão'}
           </p>
         </div>
       </section>
 
-      {/* Nossa História */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid gap-12 lg:grid-cols-2 items-center">
-            <div>
-              <h2 className="font-display text-3xl font-bold md:text-4xl">Nossa História</h2>
-              <div className="mt-6 space-y-4 text-muted-foreground">
-                <p>
-                  A Guatá Travel Experience nasceu da paixão por descobrir lugares 
-                  incríveis e compartilhar essas experiências com outros viajantes.
-                </p>
-                <p>
-                  Acreditamos que viajar vai muito além de visitar pontos turísticos. 
-                  É sobre conectar-se com culturas, criar memórias e transformar-se 
-                  através de cada jornada.
-                </p>
-                <p>
-                  Nossa equipe de especialistas trabalha incansavelmente para 
-                  encontrar experiências autênticas, hospedagens especiais e 
-                  roteiros que fogem do comum.
-                </p>
-              </div>
-            </div>
-            <div className="relative">
-              <div 
-                className="aspect-[4/3] rounded-2xl bg-cover bg-center shadow-xl"
-                style={{ 
-                  backgroundImage: 'url(https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600)' 
-                }}
-              />
-              <div className="absolute -bottom-6 -left-6 rounded-xl bg-primary p-6 text-white shadow-lg">
-                <p className="text-3xl font-bold">5+</p>
-                <p className="text-sm">Anos de experiência</p>
-              </div>
+      {/* Dynamic Sections from CMS */}
+      {sections && sections.length > 0 && (
+        <section className="py-16">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-3xl prose prose-lg dark:prose-invert">
+              {sections.map((section, index) => (
+                <div key={index} className="mb-8">
+                  <h2 className="font-display text-2xl font-bold">{section.title}</h2>
+                  <p className="whitespace-pre-line text-muted-foreground">{section.content}</p>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Nossos Valores */}
       <section className="py-16 bg-muted/50">
@@ -118,7 +107,7 @@ const Sobre = () => {
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <a 
               href="/viagem-personalizada" 
-              className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-3 text-white font-medium hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-3 text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
             >
               Solicitar Orçamento
             </a>

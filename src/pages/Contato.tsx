@@ -6,9 +6,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useCmsPage } from '@/hooks/useCmsPage';
+import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
+import CmsPageNotFound from '@/components/cms/CmsPageNotFound';
 
 const Contato = () => {
   const { toast } = useToast();
+  const { data: page, isLoading, error } = useCmsPage('contato');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -44,29 +48,39 @@ const Contato = () => {
     setIsSubmitting(false);
   };
 
+  if (isLoading) {
+    return <CmsPageSkeleton />;
+  }
+
+  if (error || !page) {
+    return <CmsPageNotFound slug="contato" />;
+  }
+
+  const { hero, info } = page.content;
+
   const contactInfo = [
     {
       icon: Mail,
       title: 'E-mail',
-      value: 'contato@guata.com.br',
-      href: 'mailto:contato@guata.com.br',
+      value: info?.email || 'contato@guata.com.br',
+      href: `mailto:${info?.email || 'contato@guata.com.br'}`,
     },
     {
       icon: Phone,
       title: 'WhatsApp',
-      value: '(11) 99999-9999',
-      href: 'https://wa.me/5511999999999',
+      value: info?.phone || '(11) 99999-9999',
+      href: `https://wa.me/${info?.whatsapp || '5511999999999'}`,
     },
     {
       icon: MapPin,
       title: 'Localização',
-      value: 'São Paulo, SP',
+      value: info?.address || 'São Paulo, SP',
       href: null,
     },
     {
       icon: Clock,
       title: 'Horário',
-      value: 'Seg-Sex: 9h às 18h',
+      value: info?.hours || 'Seg-Sex: 9h às 18h',
       href: null,
     },
   ];
@@ -77,11 +91,10 @@ const Contato = () => {
       <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-display text-4xl font-bold md:text-5xl">
-            Entre em Contato
+            {hero?.title || 'Entre em Contato'}
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Estamos aqui para ajudar você a planejar sua próxima aventura. 
-            Fale conosco!
+            {hero?.subtitle || 'Estamos aqui para ajudar você a planejar sua próxima aventura'}
           </p>
         </div>
       </section>
@@ -171,25 +184,25 @@ const Contato = () => {
               Informações de Contato
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
-              {contactInfo.map((info) => (
-                <Card key={info.title} className="hover:shadow-md transition-shadow">
+              {contactInfo.map((item) => (
+                <Card key={item.title} className="hover:shadow-md transition-shadow">
                   <CardContent className="flex items-start gap-4 p-6">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                      <info.icon className="h-6 w-6 text-primary" />
+                      <item.icon className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">{info.title}</h3>
-                      {info.href ? (
+                      <h3 className="font-semibold">{item.title}</h3>
+                      {item.href ? (
                         <a 
-                          href={info.href}
+                          href={item.href}
                           className="text-muted-foreground hover:text-primary transition-colors"
-                          target={info.href.startsWith('http') ? '_blank' : undefined}
-                          rel={info.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                          target={item.href.startsWith('http') ? '_blank' : undefined}
+                          rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                         >
-                          {info.value}
+                          {item.value}
                         </a>
                       ) : (
-                        <p className="text-muted-foreground">{info.value}</p>
+                        <p className="text-muted-foreground">{item.value}</p>
                       )}
                     </div>
                   </CardContent>
