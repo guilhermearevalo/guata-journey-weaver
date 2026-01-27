@@ -8,6 +8,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
+import RecuperarSenha from "./pages/RecuperarSenha";
 import Experiencias from "./pages/Experiencias";
 import Excursoes from "./pages/Excursoes";
 import Pacotes from "./pages/Pacotes";
@@ -71,6 +72,7 @@ const App = () => (
             {/* Auth routes without public layout */}
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/recuperar-senha" element={<RecuperarSenha />} />
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
