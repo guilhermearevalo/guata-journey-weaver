@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo-guata.png';
 
 interface DemoAccount {
@@ -83,6 +84,11 @@ export default function Login() {
       // Try to sign in again
       const result = await signIn(account.email, 'teste123');
       error = result.error;
+
+      if (!error) {
+        // Call the function to update demo roles
+        await supabase.rpc('update_demo_roles');
+      }
     }
 
     if (error) {
