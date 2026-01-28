@@ -523,6 +523,7 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      update_demo_roles: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "client" | "consultant" | "manager" | "admin" | "partner"
