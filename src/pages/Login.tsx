@@ -9,11 +9,19 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
 import logo from '@/assets/logo-guata.png';
 
-const demoAccounts = [
-  { label: 'Admin', email: 'admin@guata.test', icon: UserCog, color: 'bg-red-500/10 text-red-600 hover:bg-red-500/20' },
-  { label: 'Consultor', email: 'consultor@guata.test', icon: Users, color: 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20' },
-  { label: 'Parceiro', email: 'parceiro@guata.test', icon: Briefcase, color: 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20' },
-  { label: 'Cliente', email: 'cliente@guata.test', icon: User, color: 'bg-green-500/10 text-green-600 hover:bg-green-500/20' },
+interface DemoAccount {
+  label: string;
+  email: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  redirectTo: string;
+}
+
+const demoAccounts: DemoAccount[] = [
+  { label: 'Admin', email: 'admin@guata.test', icon: UserCog, color: 'bg-red-500/10 text-red-600 hover:bg-red-500/20', redirectTo: '/admin' },
+  { label: 'Consultor', email: 'consultor@guata.test', icon: Users, color: 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20', redirectTo: '/admin' },
+  { label: 'Parceiro', email: 'parceiro@guata.test', icon: Briefcase, color: 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20', redirectTo: '/' },
+  { label: 'Cliente', email: 'cliente@guata.test', icon: User, color: 'bg-green-500/10 text-green-600 hover:bg-green-500/20', redirectTo: '/' },
 ];
 
 export default function Login() {
@@ -21,7 +29,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [demoLoading, setDemoLoading] = useState<string | null>(null);
+  const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -48,9 +57,49 @@ export default function Login() {
     setLoading(false);
   };
 
-  const handleDemoLogin = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('teste123');
+  const handleDemoLogin = async (account: DemoAccount) => {
+    setDemoLoading(account.email);
+
+    // Try to sign in first
+    let { error } = await signIn(account.email, 'teste123');
+
+    if (error) {
+      // Account doesn't exist, create it
+      const { error: signUpError } = await signUp(account.email, 'teste123', account.label);
+
+      if (signUpError) {
+        toast({
+          title: 'Erro ao criar conta de teste',
+          description: signUpError.message,
+          variant: 'destructive',
+        });
+        setDemoLoading(null);
+        return;
+      }
+
+      // Wait briefly for the trigger to create profile and role
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Try to sign in again
+      const result = await signIn(account.email, 'teste123');
+      error = result.error;
+    }
+
+    if (error) {
+      toast({
+        title: 'Erro ao entrar',
+        description: 'Não foi possível fazer login. Tente novamente.',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: `Logado como ${account.label}`,
+        description: 'Redirecionando...',
+      });
+      navigate(account.redirectTo);
+    }
+
+    setDemoLoading(null);
   };
 
   return (
@@ -142,15 +191,21 @@ export default function Login() {
           <CardContent className="grid grid-cols-2 gap-2">
             {demoAccounts.map((account) => {
               const Icon = account.icon;
+              const isLoading = demoLoading === account.email;
               return (
                 <Button
                   key={account.email}
                   type="button"
                   variant="ghost"
                   className={`h-auto flex-col gap-1 py-3 ${account.color}`}
-                  onClick={() => handleDemoLogin(account.email)}
+                  onClick={() => handleDemoLogin(account)}
+                  disabled={demoLoading !== null}
                 >
-                  <Icon className="h-5 w-5" />
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Icon className="h-5 w-5" />
+                  )}
                   <span className="text-xs font-medium">{account.label}</span>
                 </Button>
               );
@@ -158,7 +213,7 @@ export default function Login() {
           </CardContent>
           <CardFooter className="pt-0">
             <p className="text-xs text-muted-foreground">
-              ⚠️ Crie as contas primeiro em <Link to="/cadastro" className="text-primary hover:underline">/cadastro</Link> com os emails acima
+              ⚠️ Clique em um botão para criar/entrar automaticamente
             </p>
           </CardFooter>
         </Card>
