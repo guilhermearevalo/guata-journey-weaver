@@ -2,10 +2,31 @@ import { MapPin, Heart, Users, Award } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
-import CmsPageNotFound from '@/components/cms/CmsPageNotFound';
+
+// Conteúdo padrão caso o CMS esteja vazio
+const defaultContent = {
+  hero: {
+    title: 'Sobre a Guatá',
+    subtitle: 'Conheça nossa história e missão de criar experiências de viagem inesquecíveis',
+  },
+  sections: [
+    {
+      title: 'Nossa História',
+      content: 'A Guatá nasceu do amor por viagens e da vontade de proporcionar experiências únicas e autênticas. Nosso nome vem do tupi-guarani e significa "andar", "caminhar" - e é exatamente isso que fazemos: caminhamos ao lado dos nossos viajantes em cada etapa de sua jornada.\n\nDesde nossa fundação, já ajudamos centenas de pessoas a descobrir destinos incríveis, criando memórias que duram para sempre.',
+    },
+    {
+      title: 'Nossa Missão',
+      content: 'Transformar sonhos de viagem em experiências reais e inesquecíveis. Acreditamos que viajar é mais do que conhecer lugares - é expandir horizontes, conectar culturas e criar histórias que serão contadas por gerações.',
+    },
+  ],
+};
 
 const Sobre = () => {
-  const { data: page, isLoading, error } = useCmsPage('sobre');
+  const { data: page, isLoading } = useCmsPage('sobre');
+
+  // Usa dados do CMS ou fallback para conteúdo padrão
+  const content = page?.content || defaultContent;
+  const { hero, sections } = content;
 
   const valores = [
     {
@@ -33,12 +54,6 @@ const Sobre = () => {
   if (isLoading) {
     return <CmsPageSkeleton />;
   }
-
-  if (error || !page) {
-    return <CmsPageNotFound slug="sobre" />;
-  }
-
-  const { hero, sections } = page.content;
 
   return (
     <div className="min-h-screen bg-background">

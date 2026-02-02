@@ -39,7 +39,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await signIn(email, password);
+    const { error, data } = await signIn(email, password);
 
     if (error) {
       toast({
@@ -47,11 +47,35 @@ export default function Login() {
         description: 'Email ou senha incorretos. Tente novamente.',
         variant: 'destructive',
       });
-    } else {
+      setLoading(false);
+      return;
+    }
+
+    // Buscar role do usuário para redirecionamento
+    const userId = data?.user?.id;
+    if (userId) {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const role = roleData?.role || 'client';
+      const isStaff = ['admin', 'consultant', 'manager'].includes(role);
+
       toast({
         title: 'Bem-vindo de volta!',
         description: 'Login realizado com sucesso.',
       });
+
+      if (isStaff) {
+        navigate('/admin');
+      } else if (role === 'partner') {
+        navigate('/');
+      } else {
+        navigate('/');
+      }
+    } else {
       navigate('/');
     }
 

@@ -1,19 +1,29 @@
 import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
-import CmsPageNotFound from '@/components/cms/CmsPageNotFound';
+
+// Conteúdo padrão caso o CMS esteja vazio
+const defaultContent = {
+  hero: {
+    title: 'Termos de Uso',
+    subtitle: 'Última atualização: Janeiro de 2026',
+  },
+  sections: [
+    { title: '1. Aceitação dos Termos', content: 'Ao acessar e utilizar os serviços da Guatá Travel Experience, você concorda com estes Termos de Uso.' },
+    { title: '2. Descrição dos Serviços', content: 'A Guatá oferece serviços de intermediação e consultoria em viagens, incluindo pacotes turísticos, excursões, hospedagem e experiências personalizadas.' },
+    { title: '3. Reservas e Pagamentos', content: 'Todas as reservas estão sujeitas à disponibilidade e confirmação dos fornecedores.' },
+  ],
+};
 
 const Termos = () => {
-  const { data: page, isLoading, error } = useCmsPage('termos');
+  const { data: page, isLoading } = useCmsPage('termos');
+
+  // Usa dados do CMS ou fallback para conteúdo padrão
+  const content = page?.content || defaultContent;
+  const { hero, sections } = content;
 
   if (isLoading) {
     return <CmsPageSkeleton />;
   }
-
-  if (error || !page) {
-    return <CmsPageNotFound slug="termos" />;
-  }
-
-  const { hero, sections } = page.content;
 
   return (
     <div className="min-h-screen bg-background">

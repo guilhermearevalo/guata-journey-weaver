@@ -8,11 +8,25 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
-import CmsPageNotFound from '@/components/cms/CmsPageNotFound';
+
+// Conteúdo padrão caso o CMS esteja vazio
+const defaultContent = {
+  hero: {
+    title: 'Entre em Contato',
+    subtitle: 'Estamos aqui para ajudar você a planejar sua próxima aventura',
+  },
+  info: {
+    email: 'contato@guata.com.br',
+    phone: '(11) 99999-9999',
+    whatsapp: '5511999999999',
+    address: 'São Paulo, SP - Brasil',
+    hours: 'Segunda a Sexta: 9h às 18h',
+  },
+};
 
 const Contato = () => {
   const { toast } = useToast();
-  const { data: page, isLoading, error } = useCmsPage('contato');
+  const { data: page, isLoading } = useCmsPage('contato');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -48,15 +62,13 @@ const Contato = () => {
     setIsSubmitting(false);
   };
 
+  // Usa dados do CMS ou fallback para conteúdo padrão
+  const content = page?.content || defaultContent;
+  const { hero, info } = content;
+
   if (isLoading) {
     return <CmsPageSkeleton />;
   }
-
-  if (error || !page) {
-    return <CmsPageNotFound slug="contato" />;
-  }
-
-  const { hero, info } = page.content;
 
   const contactInfo = [
     {
