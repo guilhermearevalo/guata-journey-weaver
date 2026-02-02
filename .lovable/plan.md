@@ -1,268 +1,347 @@
 
-
-# Plano: Continuação da Fase 2 + Página "Seja Parceiro"
+# Status Atual e Plano de Implementação Completo - Guatá Travel Experience
 
 ---
 
-## O Que é a Guatá Travel Experience
+## Status do Projeto
 
-A **Guatá Travel Experience** é uma **plataforma de curadoria turística** que funciona como um hub inteligente conectando três pilares:
+### O Que Ja Funciona (Fase 1 + Parte da Fase 2)
 
+| Componente | Status | Observacoes |
+|------------|--------|-------------|
+| Site Publico (Home, Header, Footer) | Completo | Funcional |
+| Autenticacao (Login, Cadastro, Recuperar Senha) | Completo | Demo login funcionando |
+| Sistema de Roles (admin, consultant, partner, client) | Completo | RLS configurado |
+| Paginas CMS (Sobre, FAQ, Contato, Termos, Privacidade) | Completo | Conteudo via banco |
+| Pagina Seja Parceiro (/seja-parceiro) | Completo | Formulario salva no banco |
+| Listagem de Experiencias (/experiencias) | Parcial | Lista funciona, falta detalhe |
+| Listagem de Excursoes (/excursoes) | Parcial | Lista funciona, falta detalhe |
+| Listagem de Pacotes (/pacotes) | Parcial | Lista funciona, falta detalhe |
+| Viagem Personalizada (/viagem-personalizada) | Completo | Formulario envia para travel_requests |
+| Admin Dashboard | Completo | Metricas reais do banco |
+| Admin Kanban de Demandas | Completo | Drag-and-drop funcionando |
+| Admin CRUD Experiencias | Completo | Criar, editar, excluir |
+| Admin CMS Editor | Completo | Editar paginas institucionais |
+| Dados de Exemplo no Banco | Completo | 5 experiencias, 3 demandas, 1 agencia |
+
+### O Que Esta Faltando
+
+| Componente | Prioridade | Fase |
+|------------|------------|------|
+| Pagina de Detalhe da Experiencia | Alta | 2 |
+| Botao "Ver Detalhes" nas listagens (link funcional) | Alta | 2 |
+| Admin Gestao de Clientes | Media | 2 |
+| Admin Gestao de Equipe | Media | 2 |
+| Admin Gestao de Parceiros (aprovacao) | Media | 2 |
+| Portal do Parceiro | Alta | 3 |
+| Area do Cliente | Media | 4 |
+| Upload de Imagens (Storage) | Media | 2 |
+| Notificacoes/Mensagens | Baixa | 4 |
+
+---
+
+## O Que Cada Pagina Faz (Guia de Funcionalidades)
+
+### Site Publico
+
+| Pagina | Rota | Funcionalidade |
+|--------|------|----------------|
+| Home | `/` | Hero + Experiencias em destaque + CTA viagem personalizada + Depoimentos |
+| Experiencias | `/experiencias` | Listagem de todas as experiencias publicadas com filtros e busca |
+| Excursoes | `/excursoes` | Listagem filtrada por tipo "excursion" |
+| Pacotes | `/pacotes` | Listagem filtrada por tipo "package" |
+| Detalhe Experiencia | `/experiencias/:id` | **FALTA** - Ver detalhes, itinerario, inclusoes, reservar |
+| Viagem Personalizada | `/viagem-personalizada` | Formulario para solicitar viagem sob medida |
+| Seja Parceiro | `/seja-parceiro` | Explicacao do modelo + formulario de cadastro de agencias |
+| Sobre | `/sobre` | Historia e valores (conteudo via CMS) |
+| FAQ | `/faq` | Perguntas frequentes (conteudo via CMS) |
+| Contato | `/contato` | Formulario de contato + informacoes |
+| Termos | `/termos` | Termos de uso (conteudo via CMS) |
+| Privacidade | `/privacidade` | Politica de privacidade (conteudo via CMS) |
+| Login | `/login` | Autenticacao + demo logins |
+| Cadastro | `/cadastro` | Registro de novos usuarios |
+
+### Painel Administrativo (Staff)
+
+| Pagina | Rota | Funcionalidade |
+|--------|------|----------------|
+| Dashboard | `/admin` | Metricas gerais, acoes rapidas, ultimas demandas |
+| Demandas | `/admin/demandas` | Kanban com pipeline de solicitacoes (drag-and-drop) |
+| Experiencias | `/admin/experiencias` | CRUD completo de pacotes/excursoes |
+| Clientes | `/admin/clientes` | **PLACEHOLDER** - Listar usuarios com role "client" |
+| Parceiros | `/admin/parceiros` | **PLACEHOLDER** - Aprovar agencias, gerenciar parceiros |
+| Equipe | `/admin/equipe` | **PLACEHOLDER** - Gerenciar consultores e gestores |
+| CMS | `/admin/cms` | Listar paginas editaveis |
+| CMS Editor | `/admin/cms/:slug` | Editar conteudo de uma pagina |
+| Configuracoes | `/admin/configuracoes` | **PLACEHOLDER** - Configuracoes gerais |
+
+---
+
+## Plano de Implementacao (Ordem de Execucao)
+
+### ETAPA 1: Pagina de Detalhe da Experiencia (Prioridade Alta)
+
+Criar a pagina que mostra todos os detalhes de uma experiencia especifica.
+
+**Arquivo:** `src/pages/ExperienciaDetalhe.tsx`
+
+**Rota:** `/experiencias/:id`
+
+**Funcionalidades:**
+- Imagem de capa grande
+- Titulo, destino, preco, duracao
+- Descricao completa
+- Itinerario dia-a-dia
+- Lista de inclusoes e exclusoes
+- Datas de saida disponiveis
+- Botao "Reservar" ou "Solicitar Informacoes"
+- Galeria de imagens
+- Experiencias relacionadas
+
+**Estrutura Visual:**
 ```text
-+-------------------+     +-------------------+     +-------------------+
-|     VIAJANTES     |     |   EQUIPE GUATÁ    |     |    AGÊNCIAS       |
-|    (Clientes)     |<--->|   (Consultores)   |<--->|   PARCEIRAS       |
-+-------------------+     +-------------------+     +-------------------+
-        |                         |                         |
-        v                         v                         v
-   Buscam viagens          Fazem curadoria          Operam viagens
-   personalizadas          e atendimento            específicas
++------------------------------------------+
+|        [IMAGEM DE CAPA GRANDE]           |
+|  Badge: Pacote | Excursao                |
++------------------------------------------+
+|                                          |
+|  TITULO DA EXPERIENCIA                   |
+|  Destino | 5 dias | Ate 12 pessoas       |
+|                                          |
+|  A partir de R$ 8.500,00                 |
+|  [BOTAO: SOLICITAR RESERVA]              |
+|                                          |
++------------------------------------------+
+|                                          |
+|  [TAB: Descricao | Itinerario | Inclui]  |
+|                                          |
+|  Descricao completa da experiencia...    |
+|                                          |
++------------------------------------------+
+|                                          |
+|  ITINERARIO                              |
+|  Dia 1: Chegada - Descricao...           |
+|  Dia 2: Passeios - Descricao...          |
+|  ...                                     |
+|                                          |
++------------------------------------------+
+|                                          |
+|  O QUE INCLUI        O QUE NAO INCLUI    |
+|  - Hospedagem        - Passagem aerea    |
+|  - Cafe da manha     - Refeicoes extras  |
+|  - Guia local        - Seguro viagem     |
+|                                          |
++------------------------------------------+
+|                                          |
+|  EXPERIENCIAS RELACIONADAS               |
+|  [Card] [Card] [Card]                    |
+|                                          |
++------------------------------------------+
 ```
 
-### Como Funciona o Modelo de Negócio
+### ETAPA 2: Corrigir Links nas Listagens
 
-1. **Cliente** acessa o site e encontra experiências prontas OU solicita uma viagem personalizada
-2. **Equipe Guatá** (consultores) recebe a demanda e analisa as necessidades
-3. A equipe pode:
-   - Criar uma proposta interna (operada pela Guatá)
-   - **Encaminhar para uma Agência Parceira** especializada naquele destino/tipo de viagem
-4. **Agência Parceira** recebe a demanda, elabora proposta e opera a viagem
-5. Guatá recebe comissão pela intermediação
+Atualizar os botoes "Ver Detalhes" em:
+- `src/pages/Excursoes.tsx`
+- `src/pages/Pacotes.tsx`
 
-### O Papel das Agências Parceiras
+Para que apontem corretamente para `/experiencias/:id`
 
-| Aspecto | Descrição |
+### ETAPA 3: Admin - Gestao de Clientes
+
+**Arquivo:** `src/pages/admin/AdminClientes.tsx`
+
+**Funcionalidades:**
+- Listar todos os usuarios com role "client"
+- Buscar por nome/email
+- Ver perfil do cliente
+- Historico de solicitacoes do cliente
+- Exportar lista (futuro)
+
+### ETAPA 4: Admin - Gestao de Parceiros
+
+**Arquivo:** `src/pages/admin/AdminParceiros.tsx`
+
+**Funcionalidades:**
+- Listar agencias parceiras (ativas e pendentes)
+- Aprovar/rejeitar solicitacoes de parceria
+- Editar dados da agencia
+- Ver demandas atribuidas a agencia
+- Ativar/desativar parceiro
+
+### ETAPA 5: Admin - Gestao de Equipe
+
+**Arquivo:** `src/pages/admin/AdminEquipe.tsx`
+
+**Funcionalidades:**
+- Listar consultores e gestores
+- Atribuir roles (promover/rebaixar)
+- Ver demandas atribuidas ao consultor
+- Metricas de desempenho (futuro)
+
+---
+
+## Secao Tecnica
+
+### Arquivos a Criar
+
+| Arquivo | Descricao |
 |---------|-----------|
-| **Quem são** | Operadoras turísticas especializadas em destinos/nichos específicos |
-| **Como participam** | Cadastram-se na plataforma e recebem demandas compatíveis com sua expertise |
-| **Benefícios** | Acesso a clientes qualificados, sem custo de marketing próprio |
-| **Comissão** | Guatá retém um percentual (configurável) sobre cada venda fechada |
+| `src/pages/ExperienciaDetalhe.tsx` | Pagina de detalhe da experiencia |
+| `src/components/experience/ExperienceGallery.tsx` | Galeria de imagens |
+| `src/components/experience/ExperienceItinerary.tsx` | Componente de itinerario |
+| `src/components/experience/ExperienceInclusions.tsx` | Lista de inclusoes/exclusoes |
+| `src/components/experience/BookingForm.tsx` | Modal/form de reserva |
 
----
+### Arquivos a Modificar
 
-## O Que Está Faltando
+| Arquivo | Modificacao |
+|---------|-------------|
+| `src/App.tsx` | Adicionar rota `/experiencias/:id` |
+| `src/pages/Excursoes.tsx` | Link do botao para detalhe |
+| `src/pages/Pacotes.tsx` | Link do botao para detalhe |
+| `src/pages/admin/AdminClientes.tsx` | Implementar listagem |
+| `src/pages/admin/AdminParceiros.tsx` | Implementar gestao |
+| `src/pages/admin/AdminEquipe.tsx` | Implementar gestao |
 
-Você identificou corretamente: **não existe uma página pública explicando como agências podem se tornar parceiras**. Isso é essencial para:
-
-1. Atrair novas agências para o ecossistema
-2. Explicar os benefícios e o processo de parceria
-3. Coletar cadastros de agências interessadas
-
----
-
-## Plano de Implementação
-
-### PARTE 1: Página "Seja Parceiro" (Nova)
-
-Criar uma página institucional acessível pelo público que:
-- Explica o modelo de parceria da Guatá
-- Lista os benefícios para agências
-- Mostra o fluxo de trabalho
-- Possui formulário de cadastro para agências interessadas
-
-**Rota:** `/seja-parceiro`
-
-**Estrutura da Página:**
-
-```text
-+---------------------------------------+
-|            SEJA PARCEIRO              |
-|  "Faça parte da rede Guatá e receba   |
-|   clientes qualificados"              |
-+---------------------------------------+
-|                                       |
-|  [BENEFÍCIOS]                         |
-|  - Clientes pré-qualificados          |
-|  - Sem investimento em marketing      |
-|  - Painel exclusivo de gestão         |
-|  - Suporte da equipe Guatá            |
-|                                       |
-+---------------------------------------+
-|                                       |
-|  [COMO FUNCIONA]                      |
-|  1. Você se cadastra                  |
-|  2. Validamos sua agência             |
-|  3. Recebe demandas do seu nicho      |
-|  4. Envia propostas                   |
-|  5. Opera e recebe                    |
-|                                       |
-+---------------------------------------+
-|                                       |
-|  [FORMULÁRIO DE CADASTRO]             |
-|  Nome da agência, CNPJ, Especialidade |
-|  Responsável, Email, Telefone         |
-|                                       |
-|  [ENVIAR SOLICITAÇÃO]                 |
-|                                       |
-+---------------------------------------+
-```
-
-### PARTE 2: Dados de Exemplo no Banco
-
-Popular o banco com dados de teste para que o sistema funcione:
-
-| Tabela | Quantidade | Descrição |
-|--------|------------|-----------|
-| `experiences` | 5 | Pacotes de viagem variados |
-| `travel_requests` | 3 | Solicitações em diferentes status |
-| `partner_agencies` | 1 | Agência parceira de exemplo |
-
-### PARTE 3: Kanban de Demandas (Admin)
-
-Implementar o pipeline visual para gestão de solicitações:
-
-**Colunas do Kanban:**
-```text
-| Pendente | Em Análise | Proposta Enviada | Aprovada | Em Operação | Concluída |
-|    (3)   |    (2)     |       (1)        |   (0)    |     (0)     |    (0)    |
-```
-
-- Cards arrastáveis entre colunas
-- Visualização rápida de cliente, destino e data
-- Clique para ver detalhes completos
-- Atribuir a consultor ou agência parceira
-
-### PARTE 4: CRUD de Experiências (Admin)
-
-Gestão completa do catálogo de viagens:
-
-- **Listar:** Tabela com filtros (tipo, publicado, destaque)
-- **Criar:** Formulário com campos: título, descrição, preço, imagens, itinerário
-- **Editar:** Mesmos campos, dados pré-carregados
-- **Excluir:** Confirmação antes de remover
-
----
-
-## Arquivos a Criar/Modificar
-
-| Arquivo | Ação | Descrição |
-|---------|------|-----------|
-| `src/pages/SejaParceiro.tsx` | Criar | Página pública para agências |
-| `src/App.tsx` | Modificar | Adicionar rota /seja-parceiro |
-| `src/components/layout/PublicFooter.tsx` | Modificar | Link para Seja Parceiro |
-| `src/pages/admin/AdminDemandas.tsx` | Reescrever | Kanban completo |
-| `src/pages/admin/AdminExperiencias.tsx` | Reescrever | CRUD completo |
-| `src/components/admin/KanbanBoard.tsx` | Criar | Componente do Kanban |
-| `src/components/admin/KanbanColumn.tsx` | Criar | Coluna individual |
-| `src/components/admin/KanbanCard.tsx` | Criar | Card de demanda |
-| `src/components/admin/ExperienceForm.tsx` | Criar | Formulário de experiência |
-| **SQL** | Inserir | Dados de exemplo |
-
----
-
-## Seção Técnica
-
-### Estrutura do Formulário de Parceiro
+### Estrutura da Pagina de Detalhe
 
 ```typescript
-interface PartnerApplicationForm {
-  agencyName: string;
-  cnpj: string;
-  responsibleName: string;
-  email: string;
-  phone: string;
-  website?: string;
-  specialties: string[]; // ['aventura', 'praia', 'internacional']
-  regions: string[];      // ['nordeste', 'sul', 'europa']
-  description: string;    // Breve descrição da agência
-}
-```
-
-**Fluxo de Dados:**
-1. Formulário enviado para tabela `partner_applications` (nova) ou `partner_agencies` com status pendente
-2. Admin aprova no painel → atualiza status para ativo
-3. Admin cria conta de usuário para a agência com role `partner`
-4. Agência recebe credenciais e acessa seu painel
-
-### Componente Kanban (AdminDemandas)
-
-```typescript
-// Colunas baseadas no enum request_status
-const columns: KanbanColumn[] = [
-  { id: 'pending', title: 'Pendente', color: 'amber' },
-  { id: 'in_analysis', title: 'Em Análise', color: 'blue' },
-  { id: 'proposal_sent', title: 'Proposta Enviada', color: 'purple' },
-  { id: 'approved', title: 'Aprovada', color: 'green' },
-  { id: 'in_operation', title: 'Em Operação', color: 'orange' },
-  { id: 'completed', title: 'Concluída', color: 'gray' },
-];
-
-// Cada card mostra:
-interface DemandCard {
+// src/pages/ExperienciaDetalhe.tsx
+interface ExperienceDetailProps {
   id: string;
-  clientName: string;
-  destination: string;
-  travelDate: string;
-  budget: string;
-  assignedTo?: string; // Consultor ou agência
 }
-```
 
-### CRUD de Experiências
-
-```typescript
-// Estrutura do formulário
-interface ExperienceFormData {
+// Dados carregados do banco
+const experience = {
+  id: string;
   title: string;
   destination: string;
-  shortDescription: string;
   description: string;
-  experienceType: 'package' | 'excursion';
+  short_description: string;
   price: number;
-  durationDays: number;
-  maxParticipants: number;
+  duration_days: number;
+  max_participants: number;
+  cover_image: string;
+  images: string[];
   inclusions: string[];
   exclusions: string[];
-  coverImage: string;
-  images: string[];
-  itinerary: ItineraryDay[];
-  isPublished: boolean;
-  isFeatured: boolean;
-}
+  itinerary: Array<{
+    day: number;
+    title: string;
+    description: string;
+  }>;
+  departure_dates: Array<{
+    date: string;
+    available_spots: number;
+  }>;
+  experience_type: 'package' | 'excursion';
+  is_featured: boolean;
+};
 ```
 
-### Dados de Exemplo (SQL)
+### Query para Carregar Experiencia
 
-```sql
--- 1 Agência Parceira
-INSERT INTO partner_agencies (name, cnpj, contact_email, ...)
-VALUES ('Nordeste Aventuras', '12.345.678/0001-90', 'contato@nordesteaventuras.com', ...);
+```typescript
+const { data: experience, isLoading } = useQuery({
+  queryKey: ['experience', id],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from('experiences')
+      .select('*')
+      .eq('id', id)
+      .eq('is_published', true)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+});
+```
 
--- 5 Experiências
-INSERT INTO experiences (title, destination, price, experience_type, ...)
-VALUES 
-  ('Fernando de Noronha', 'PE', 8500, 'package', ...),
-  ('Jalapão Radical', 'TO', 4200, 'excursion', ...),
-  ('Chapada Diamantina', 'BA', 3800, 'package', ...),
-  ('Lençóis Maranhenses', 'MA', 4500, 'package', ...),
-  ('Bonito Completo', 'MS', 5200, 'package', ...);
+### Modal de Reserva
 
--- 3 Demandas
-INSERT INTO travel_requests (client_name, destination, status, ...)
-VALUES 
-  ('Maria Silva', 'Fernando de Noronha', 'pending', ...),
-  ('João Santos', 'Europa', 'in_analysis', ...),
-  ('Ana Costa', 'Nordeste', 'proposal_sent', ...);
+O botao "Solicitar Reserva" abrira um modal que:
+1. Coleta nome, email, telefone
+2. Permite selecionar data de saida (se houver)
+3. Informa numero de viajantes
+4. Cria um registro em `travel_requests` vinculado a `experience_id`
+
+```typescript
+const handleBooking = async (formData) => {
+  await supabase.from('travel_requests').insert({
+    client_name: formData.name,
+    client_email: formData.email,
+    client_phone: formData.phone,
+    client_id: user?.id || null,
+    destination: experience.destination,
+    travel_dates: { start: formData.date },
+    travelers_count: formData.travelers,
+    preferences: { experience_id: experience.id },
+    status: 'pending',
+  });
+};
 ```
 
 ---
 
-## Ordem de Execução
+## Fluxo Completo da Plataforma
 
-1. **Dados de exemplo** → Popular banco para testes visuais
-2. **Página Seja Parceiro** → Atrair agências + link no footer
-3. **Kanban de Demandas** → Gestão operacional das solicitações
-4. **CRUD de Experiências** → Gestão do catálogo
+```text
+CLIENTE                     GUATA                       PARCEIRO
+   |                          |                            |
+   |-- Acessa site ---------->|                            |
+   |                          |                            |
+   |-- Ve experiencia ------->|                            |
+   |                          |                            |
+   |-- Solicita reserva ----->|                            |
+   |                          |                            |
+   |                          |-- Demanda no Kanban        |
+   |                          |   (status: pendente)       |
+   |                          |                            |
+   |                          |-- Consultor analisa        |
+   |                          |   (status: em_analise)     |
+   |                          |                            |
+   |                          |-- Atribui a parceiro ----->|
+   |                          |                            |
+   |                          |                            |-- Recebe demanda
+   |                          |                            |
+   |                          |                            |-- Elabora proposta
+   |                          |                            |
+   |                          |<-- Proposta enviada -------|
+   |                          |   (status: proposta_enviada)
+   |                          |                            |
+   |<-- Recebe proposta ------|                            |
+   |                          |                            |
+   |-- Aprova --------------->|                            |
+   |                          |   (status: aprovada)       |
+   |                          |                            |
+   |                          |-- Viagem em operacao ----->|
+   |                          |   (status: em_operacao)    |
+   |                          |                            |
+   |<-- Viagem realizada -----|<---------------------------|
+   |                          |   (status: concluida)      |
+   |                          |                            |
+```
 
 ---
 
-## Resultado Esperado
+## Resultado Apos Implementacao
 
-Após a implementação:
+1. Cliente pode clicar em qualquer experiencia e ver todos os detalhes
+2. Cliente pode solicitar reserva diretamente da pagina de detalhe
+3. Admin pode gerenciar clientes, ver historico de cada um
+4. Admin pode aprovar agencias parceiras que se cadastraram
+5. Admin pode gerenciar a equipe interna (consultores/gestores)
+6. Fluxo completo de demanda funcional do inicio ao fim
 
-- Site público terá página explicando parcerias (`/seja-parceiro`)
-- Footer terá link para nova página
-- Banco terá dados para testar o sistema
-- Admin terá Kanban funcional para gestão de demandas
-- Admin poderá criar/editar/excluir experiências do catálogo
+---
+
+## Ordem de Execucao Recomendada
+
+1. Pagina de Detalhe da Experiencia (mais critico para UX)
+2. Corrigir links dos botoes nas listagens
+3. Admin Gestao de Parceiros (para aprovar agencias)
+4. Admin Gestao de Clientes
+5. Admin Gestao de Equipe
 
