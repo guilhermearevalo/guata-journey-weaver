@@ -1,216 +1,268 @@
 
-# Status do Projeto e Logins de Teste - Guatá Travel Experience
+
+# Plano: Continuação da Fase 2 + Página "Seja Parceiro"
 
 ---
 
-## O Que Entendo Sobre a Agência
+## O Que é a Guatá Travel Experience
 
-A **Guatá Travel Experience** é um hub de curadoria turística que conecta:
-
-1. **Viajantes** (clientes) que buscam experiências autênticas e personalizadas
-2. **Equipe interna** (consultores, gestores, administradores) que gerencia atendimentos e curadoria
-3. **Agências parceiras** que operam determinadas viagens sob coordenação da Guatá
-
-O diferencial é o **atendimento humano qualificado** - não é apenas uma loja online de pacotes, mas um serviço de consultoria que entende as necessidades do cliente e monta roteiros personalizados.
-
-### Fluxo Principal:
-```text
-Cliente solicita viagem → Equipe analisa → Cria proposta (ou encaminha a parceiro) → Cliente aprova → Operação → Conclusão
-```
-
----
-
-## O Que Já Foi Implementado
-
-### Site Público
-| Componente | Status | Descrição |
-|------------|--------|-----------|
-| Página inicial | Concluído | Hero, experiências em destaque, CTA |
-| Catálogo de experiências | Concluído | Conectado ao banco, filtros por tipo |
-| Páginas institucionais | Concluído | Sobre, FAQ, Termos, Privacidade, Contato |
-| Formulário de viagem personalizada | Concluído | Envia dados para o banco |
-| Login e Cadastro | Concluído | Supabase Auth funcionando |
-
-### CMS Interno (Fase 1)
-| Componente | Status | Descrição |
-|------------|--------|-----------|
-| Tabela cms_pages | Concluído | Com RLS e dados iniciais |
-| Hook useCmsPage | Concluído | Busca conteúdo dinâmico |
-| Editor de páginas | Concluído | Edita FAQs, seções de texto, contato |
-| Páginas dinâmicas | Concluído | Sobre, FAQ, Termos etc. buscam do banco |
-
-### Banco de Dados
-| Tabela | Status | Descrição |
-|--------|--------|-----------|
-| profiles | Criada | Perfis de usuário |
-| user_roles | Criada | Controle de permissões (vazia no momento) |
-| experiences | Criada | Catálogo de viagens (vazia) |
-| travel_requests | Criada | Solicitações de viagem (vazia) |
-| proposals | Criada | Propostas comerciais |
-| bookings | Criada | Reservas |
-| messages | Criada | Comunicação interna |
-| partner_agencies | Criada | Agências parceiras |
-| partner_users | Criada | Vínculo parceiro-usuário |
-| cms_pages | Criada | Conteúdo das páginas (5 registros) |
-
-### Sistema de Permissões
-| Componente | Status |
-|------------|--------|
-| Funções RLS (has_role, is_staff) | Implementado |
-| Hook useUserRole | Implementado |
-| Componente ProtectedRoute | Implementado |
-| AdminLayout com proteção | Implementado |
-
----
-
-## O Que Falta Implementar
-
-### Fase 2: Dashboard Administrativo (Próximo)
-- Kanban para gestão de demandas
-- CRUD completo de experiências
-- Gestão de clientes
-- Gestão de parceiros
-- Gestão de equipe (admins)
-- Métricas e gráficos
-
-### Fase 3: Portal de Parceiros
-- Dashboard limitado para agências
-- Visualização de demandas atribuídas
-- Envio de propostas
-- Upload de documentos
-
-### Fase 4: Área do Cliente
-- Minha conta
-- Acompanhamento de solicitações
-- Histórico de viagens
-- Mensagens com a equipe
-
----
-
-## Plano: Criar Login de Teste
-
-Para você testar o sistema agora, preciso fazer o seguinte:
-
-### Passo 1: Criar Usuário de Teste no Banco
-
-Você precisa primeiro criar uma conta pelo site (página `/cadastro`), e depois eu vou:
-1. Buscar o ID do seu usuário na tabela `profiles`
-2. Inserir um registro na tabela `user_roles` com role `admin`
-
-**OU** posso criar um sistema de "login de demonstração" com botões rápidos.
-
-### Passo 2: Implementar Botões de Login de Demonstração
-
-Adicionar na página de Login botões para entrar rapidamente como diferentes perfis:
+A **Guatá Travel Experience** é uma **plataforma de curadoria turística** que funciona como um hub inteligente conectando três pilares:
 
 ```text
-┌─────────────────────────────────────┐
-│         Login de Demonstração       │
-├─────────────────────────────────────┤
-│  [Entrar como Admin]                │
-│  [Entrar como Consultor]            │
-│  [Entrar como Parceiro]             │
-│  [Entrar como Cliente]              │
-└─────────────────────────────────────┘
++-------------------+     +-------------------+     +-------------------+
+|     VIAJANTES     |     |   EQUIPE GUATÁ    |     |    AGÊNCIAS       |
+|    (Clientes)     |<--->|   (Consultores)   |<--->|   PARCEIRAS       |
++-------------------+     +-------------------+     +-------------------+
+        |                         |                         |
+        v                         v                         v
+   Buscam viagens          Fazem curadoria          Operam viagens
+   personalizadas          e atendimento            específicas
 ```
 
-Cada botão faz login com credenciais pré-definidas (usuários de teste que serão criados no banco).
+### Como Funciona o Modelo de Negócio
+
+1. **Cliente** acessa o site e encontra experiências prontas OU solicita uma viagem personalizada
+2. **Equipe Guatá** (consultores) recebe a demanda e analisa as necessidades
+3. A equipe pode:
+   - Criar uma proposta interna (operada pela Guatá)
+   - **Encaminhar para uma Agência Parceira** especializada naquele destino/tipo de viagem
+4. **Agência Parceira** recebe a demanda, elabora proposta e opera a viagem
+5. Guatá recebe comissão pela intermediação
+
+### O Papel das Agências Parceiras
+
+| Aspecto | Descrição |
+|---------|-----------|
+| **Quem são** | Operadoras turísticas especializadas em destinos/nichos específicos |
+| **Como participam** | Cadastram-se na plataforma e recebem demandas compatíveis com sua expertise |
+| **Benefícios** | Acesso a clientes qualificados, sem custo de marketing próprio |
+| **Comissão** | Guatá retém um percentual (configurável) sobre cada venda fechada |
 
 ---
 
-## Alterações Necessárias
+## O Que Está Faltando
 
-### 1. Criar Usuários de Teste no Banco
+Você identificou corretamente: **não existe uma página pública explicando como agências podem se tornar parceiras**. Isso é essencial para:
 
-Executar migration SQL para criar usuários de demonstração:
-
-```sql
--- Usuário Admin de teste
--- Email: admin@guata.test / Senha: teste123
-
--- Usuário Consultor de teste  
--- Email: consultor@guata.test / Senha: teste123
-
--- Usuário Parceiro de teste
--- Email: parceiro@guata.test / Senha: teste123
-
--- Usuário Cliente de teste
--- Email: cliente@guata.test / Senha: teste123
-```
-
-### 2. Atualizar Página de Login
-
-Arquivo: `src/pages/Login.tsx`
-
-Adicionar seção de "Login Rápido para Demonstração" com 4 botões que preenchem automaticamente email e senha e submetem o formulário.
-
-### 3. Dados de Exemplo (Opcional mas Recomendado)
-
-Para você ver o sistema funcionando de verdade, adicionar:
-- 3-5 experiências de exemplo
-- 2-3 solicitações de viagem de teste
-- 1 agência parceira
+1. Atrair novas agências para o ecossistema
+2. Explicar os benefícios e o processo de parceria
+3. Coletar cadastros de agências interessadas
 
 ---
 
-## Resumo dos Arquivos a Modificar
+## Plano de Implementação
 
-| Arquivo | Ação |
-|---------|------|
-| Migration SQL | Criar usuários de teste com roles |
-| `src/pages/Login.tsx` | Adicionar botões de login rápido |
-| Migration SQL (opcional) | Dados de exemplo |
+### PARTE 1: Página "Seja Parceiro" (Nova)
+
+Criar uma página institucional acessível pelo público que:
+- Explica o modelo de parceria da Guatá
+- Lista os benefícios para agências
+- Mostra o fluxo de trabalho
+- Possui formulário de cadastro para agências interessadas
+
+**Rota:** `/seja-parceiro`
+
+**Estrutura da Página:**
+
+```text
++---------------------------------------+
+|            SEJA PARCEIRO              |
+|  "Faça parte da rede Guatá e receba   |
+|   clientes qualificados"              |
++---------------------------------------+
+|                                       |
+|  [BENEFÍCIOS]                         |
+|  - Clientes pré-qualificados          |
+|  - Sem investimento em marketing      |
+|  - Painel exclusivo de gestão         |
+|  - Suporte da equipe Guatá            |
+|                                       |
++---------------------------------------+
+|                                       |
+|  [COMO FUNCIONA]                      |
+|  1. Você se cadastra                  |
+|  2. Validamos sua agência             |
+|  3. Recebe demandas do seu nicho      |
+|  4. Envia propostas                   |
+|  5. Opera e recebe                    |
+|                                       |
++---------------------------------------+
+|                                       |
+|  [FORMULÁRIO DE CADASTRO]             |
+|  Nome da agência, CNPJ, Especialidade |
+|  Responsável, Email, Telefone         |
+|                                       |
+|  [ENVIAR SOLICITAÇÃO]                 |
+|                                       |
++---------------------------------------+
+```
+
+### PARTE 2: Dados de Exemplo no Banco
+
+Popular o banco com dados de teste para que o sistema funcione:
+
+| Tabela | Quantidade | Descrição |
+|--------|------------|-----------|
+| `experiences` | 5 | Pacotes de viagem variados |
+| `travel_requests` | 3 | Solicitações em diferentes status |
+| `partner_agencies` | 1 | Agência parceira de exemplo |
+
+### PARTE 3: Kanban de Demandas (Admin)
+
+Implementar o pipeline visual para gestão de solicitações:
+
+**Colunas do Kanban:**
+```text
+| Pendente | Em Análise | Proposta Enviada | Aprovada | Em Operação | Concluída |
+|    (3)   |    (2)     |       (1)        |   (0)    |     (0)     |    (0)    |
+```
+
+- Cards arrastáveis entre colunas
+- Visualização rápida de cliente, destino e data
+- Clique para ver detalhes completos
+- Atribuir a consultor ou agência parceira
+
+### PARTE 4: CRUD de Experiências (Admin)
+
+Gestão completa do catálogo de viagens:
+
+- **Listar:** Tabela com filtros (tipo, publicado, destaque)
+- **Criar:** Formulário com campos: título, descrição, preço, imagens, itinerário
+- **Editar:** Mesmos campos, dados pré-carregados
+- **Excluir:** Confirmação antes de remover
+
+---
+
+## Arquivos a Criar/Modificar
+
+| Arquivo | Ação | Descrição |
+|---------|------|-----------|
+| `src/pages/SejaParceiro.tsx` | Criar | Página pública para agências |
+| `src/App.tsx` | Modificar | Adicionar rota /seja-parceiro |
+| `src/components/layout/PublicFooter.tsx` | Modificar | Link para Seja Parceiro |
+| `src/pages/admin/AdminDemandas.tsx` | Reescrever | Kanban completo |
+| `src/pages/admin/AdminExperiencias.tsx` | Reescrever | CRUD completo |
+| `src/components/admin/KanbanBoard.tsx` | Criar | Componente do Kanban |
+| `src/components/admin/KanbanColumn.tsx` | Criar | Coluna individual |
+| `src/components/admin/KanbanCard.tsx` | Criar | Card de demanda |
+| `src/components/admin/ExperienceForm.tsx` | Criar | Formulário de experiência |
+| **SQL** | Inserir | Dados de exemplo |
 
 ---
 
 ## Seção Técnica
 
-### Criação de Usuários via SQL
+### Estrutura do Formulário de Parceiro
 
-Não é possível criar usuários diretamente via SQL no Supabase Auth. A alternativa é:
-
-**Opção A - Manual (Mais Simples):**
-1. Você cria 4 contas pelo site com emails de teste
-2. Eu adiciono os roles correspondentes no banco
-
-**Opção B - Automática (Login de Teste):**
-1. Implementar botões que fazem login com credenciais fixas
-2. Você cria as 4 contas uma vez pelo cadastro
-3. Os botões apenas preenchem e submetem
-
-### Estrutura do Botão de Login Rápido
-
-```tsx
-const demoAccounts = [
-  { label: 'Admin', email: 'admin@guata.test', role: 'admin' },
-  { label: 'Consultor', email: 'consultor@guata.test', role: 'consultant' },
-  { label: 'Parceiro', email: 'parceiro@guata.test', role: 'partner' },
-  { label: 'Cliente', email: 'cliente@guata.test', role: 'client' },
-];
-
-// Cada botão preenche o formulário e submete
-const handleDemoLogin = (account) => {
-  setEmail(account.email);
-  setPassword('teste123');
-  // Submit form
-};
+```typescript
+interface PartnerApplicationForm {
+  agencyName: string;
+  cnpj: string;
+  responsibleName: string;
+  email: string;
+  phone: string;
+  website?: string;
+  specialties: string[]; // ['aventura', 'praia', 'internacional']
+  regions: string[];      // ['nordeste', 'sul', 'europa']
+  description: string;    // Breve descrição da agência
+}
 ```
 
-### Configuração de Auto-confirm
+**Fluxo de Dados:**
+1. Formulário enviado para tabela `partner_applications` (nova) ou `partner_agencies` com status pendente
+2. Admin aprova no painel → atualiza status para ativo
+3. Admin cria conta de usuário para a agência com role `partner`
+4. Agência recebe credenciais e acessa seu painel
 
-Para os logins de teste funcionarem sem confirmação de email, o Supabase precisa ter auto-confirm habilitado (já está configurado neste projeto).
+### Componente Kanban (AdminDemandas)
+
+```typescript
+// Colunas baseadas no enum request_status
+const columns: KanbanColumn[] = [
+  { id: 'pending', title: 'Pendente', color: 'amber' },
+  { id: 'in_analysis', title: 'Em Análise', color: 'blue' },
+  { id: 'proposal_sent', title: 'Proposta Enviada', color: 'purple' },
+  { id: 'approved', title: 'Aprovada', color: 'green' },
+  { id: 'in_operation', title: 'Em Operação', color: 'orange' },
+  { id: 'completed', title: 'Concluída', color: 'gray' },
+];
+
+// Cada card mostra:
+interface DemandCard {
+  id: string;
+  clientName: string;
+  destination: string;
+  travelDate: string;
+  budget: string;
+  assignedTo?: string; // Consultor ou agência
+}
+```
+
+### CRUD de Experiências
+
+```typescript
+// Estrutura do formulário
+interface ExperienceFormData {
+  title: string;
+  destination: string;
+  shortDescription: string;
+  description: string;
+  experienceType: 'package' | 'excursion';
+  price: number;
+  durationDays: number;
+  maxParticipants: number;
+  inclusions: string[];
+  exclusions: string[];
+  coverImage: string;
+  images: string[];
+  itinerary: ItineraryDay[];
+  isPublished: boolean;
+  isFeatured: boolean;
+}
+```
+
+### Dados de Exemplo (SQL)
+
+```sql
+-- 1 Agência Parceira
+INSERT INTO partner_agencies (name, cnpj, contact_email, ...)
+VALUES ('Nordeste Aventuras', '12.345.678/0001-90', 'contato@nordesteaventuras.com', ...);
+
+-- 5 Experiências
+INSERT INTO experiences (title, destination, price, experience_type, ...)
+VALUES 
+  ('Fernando de Noronha', 'PE', 8500, 'package', ...),
+  ('Jalapão Radical', 'TO', 4200, 'excursion', ...),
+  ('Chapada Diamantina', 'BA', 3800, 'package', ...),
+  ('Lençóis Maranhenses', 'MA', 4500, 'package', ...),
+  ('Bonito Completo', 'MS', 5200, 'package', ...);
+
+-- 3 Demandas
+INSERT INTO travel_requests (client_name, destination, status, ...)
+VALUES 
+  ('Maria Silva', 'Fernando de Noronha', 'pending', ...),
+  ('João Santos', 'Europa', 'in_analysis', ...),
+  ('Ana Costa', 'Nordeste', 'proposal_sent', ...);
+```
 
 ---
 
-## Próxima Ação Recomendada
+## Ordem de Execução
 
-1. **Primeiro:** Você cria uma conta no site com seu email real
-2. **Depois:** Eu adiciono o role `admin` para esse usuário
-3. **Resultado:** Você acessa `/admin` com sua conta
+1. **Dados de exemplo** → Popular banco para testes visuais
+2. **Página Seja Parceiro** → Atrair agências + link no footer
+3. **Kanban de Demandas** → Gestão operacional das solicitações
+4. **CRUD de Experiências** → Gestão do catálogo
 
-**OU**
+---
 
-1. Eu implemento os botões de demo + você cria 4 contas de teste
-2. Você pode testar todos os perfis rapidamente
+## Resultado Esperado
 
-Qual opção você prefere?
+Após a implementação:
+
+- Site público terá página explicando parcerias (`/seja-parceiro`)
+- Footer terá link para nova página
+- Banco terá dados para testar o sistema
+- Admin terá Kanban funcional para gestão de demandas
+- Admin poderá criar/editar/excluir experiências do catálogo
+
