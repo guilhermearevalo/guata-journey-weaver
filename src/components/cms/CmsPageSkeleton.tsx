@@ -1,8 +1,9 @@
+import { forwardRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const CmsPageSkeleton = () => {
+const CmsPageSkeleton = forwardRef<HTMLDivElement>((props, ref) => {
   return (
-    <div className="min-h-screen bg-background">
+    <div ref={ref} className="min-h-screen bg-background">
       {/* Hero Skeleton */}
       <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16">
         <div className="container mx-auto px-4 text-center">
@@ -25,6 +26,8 @@ const CmsPageSkeleton = () => {
       </section>
     </div>
   );
-};
+});
+
+CmsPageSkeleton.displayName = 'CmsPageSkeleton';
 
 export default CmsPageSkeleton;
