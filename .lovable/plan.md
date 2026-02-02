@@ -1,175 +1,264 @@
 
-# Plano de Correção - Problemas Encontrados na Plataforma Guatá
 
-## Diagnóstico Completo
+# Plano de Correção Completa - Problemas de Login e Funcionalidades
 
-Após análise detalhada do código e banco de dados, identifiquei os seguintes problemas:
+## Diagnóstico Final
 
----
-
-## PROBLEMA 1: Páginas Institucionais Não Encontradas
-
-**Páginas afetadas:** Sobre, FAQ, Termos, Privacidade, Contato
-
-**Causa:** A tabela `cms_pages` está vazia. O SQL de inserção de conteúdo existe na migration, mas os dados não foram populados neste ambiente.
-
-**Solução:** Executar INSERT para popular a tabela `cms_pages` com as 5 páginas institucionais (status = 'published').
+Após investigação profunda do banco de dados e código, identifiquei a causa raiz de todos os problemas:
 
 ---
 
-## PROBLEMA 2: Login Redireciona para Tela Inicial
+## PROBLEMA PRINCIPAL: Trigger de Criação de Usuário Não Existe
 
-**Causa Identificada:** No arquivo `Login.tsx`, após login bem-sucedido:
-- Linha 55: `navigate('/')` - sempre redireciona para home
-- Linha 105: `navigate(account.redirectTo)` - usa redirect do demo account
+**Causa:** A migração inclui a criação do trigger `on_auth_user_created`, mas o trigger **NÃO FOI CRIADO** no banco de dados. Isso acontece porque em projetos remix/clonados, triggers em tabelas do schema `auth` frequentemente não são migrados corretamente.
 
-O problema é que o login normal (formulário) sempre vai para `/` independente do role do usuário.
+**Evidência:**
+- Função `handle_new_user()` **existe** no banco
+- Trigger `on_auth_user_created` **NÃO existe** no banco
+- Tabelas `user_roles` e `profiles` estão **vazias**
+- Usuários demo existem: `admin@guata.test`, `consultor@guata.test`, `parceiro@guata.test`
 
-**Comportamento Esperado:**
-| Role | Destino após login |
-|------|-------------------|
-| admin, consultant, manager | `/admin` |
-| partner | `/partner` (portal do parceiro) |
-| client | `/minha-conta` ou `/` |
-
-**Solução:** Modificar `Login.tsx` para:
-1. Após login, consultar o role do usuário
-2. Redirecionar baseado no role
+**Consequência em cascata:**
+1. Quando demo login cria usuário, o trigger não dispara
+2. `profiles` e `user_roles` ficam vazios
+3. `update_demo_roles()` tenta UPDATE em registros que não existem
+4. Login não consegue identificar o role
+5. Redirecionamento sempre vai para `/` (fallback para client)
 
 ---
 
-## PROBLEMA 3: Tabelas de Dados Vazias
+## SOLUÇÃO COMPLETA
 
-**Tabelas afetadas:**
-- `user_roles` - vazia (users criados sem roles)
-- `profiles` - vazia (users criados sem perfis)
+### ETAPA 1: Recriar o Trigger no Banco de Dados
 
-**Causa:** Quando você fez remix do projeto, os usuários demo foram criados no projeto original. No novo projeto, a função `update_demo_roles` tenta atualizar roles de usuários que não existem.
-
-**Solução:** Verificar se os triggers estão funcionando e inserir dados de seed.
-
----
-
-## PROBLEMA 4: Warning de Ref no Console
-
-**Erro:** "Function components cannot be given refs" no `PublicHeader`
-
-**Causa:** O `DropdownMenu` do Radix UI está recebendo uma ref inválida.
-
-**Solução:** Verificar componentes que usam `asChild` e garantir que o filho suporta forwarded refs.
-
----
-
-## Plano de Implementação
-
-### ETAPA 1: Popular Banco de Dados
-
-Executar SQL para inserir:
-1. Conteúdo CMS (5 páginas institucionais)
-2. Dados de exemplo já existentes (experiências, agências, etc.)
+Executar SQL para criar o trigger que está faltando:
 
 ```sql
--- Inserir páginas CMS se não existirem
-INSERT INTO public.cms_pages (slug, title, content, status) 
-VALUES 
-  ('sobre', 'Sobre a Guatá', {...}, 'published'),
-  ('faq', 'Perguntas Frequentes', {...}, 'published'),
-  ('termos', 'Termos de Uso', {...}, 'published'),
-  ('privacidade', 'Política de Privacidade', {...}, 'published'),
-  ('contato', 'Contato', {...}, 'published')
-ON CONFLICT (slug) DO NOTHING;
+-- Dropar se existir (para evitar erro)
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+-- Criar o trigger
+CREATE TRIGGER on_auth_user_created
+AFTER INSERT ON auth.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 ```
 
-### ETAPA 2: Corrigir Fluxo de Login
+### ETAPA 2: Popular Dados dos Usuários Existentes
 
-Modificar `src/pages/Login.tsx`:
+Como os usuários demo já existem mas não têm profiles/roles, precisamos inserir manualmente:
+
+```sql
+-- Inserir profiles para usuários existentes
+INSERT INTO public.profiles (user_id, full_name, email)
+SELECT 
+    id,
+    COALESCE(raw_user_meta_data->>'full_name', split_part(email, '@', 1)),
+    email
+FROM auth.users
+WHERE id NOT IN (SELECT user_id FROM public.profiles)
+ON CONFLICT DO NOTHING;
+
+-- Inserir roles default (client) para usuários existentes
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, 'client'
+FROM auth.users
+WHERE id NOT IN (SELECT user_id FROM public.user_roles)
+ON CONFLICT DO NOTHING;
+
+-- Atualizar roles dos usuários demo
+UPDATE public.user_roles 
+SET role = 'admin' 
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'admin@guata.test');
+
+UPDATE public.user_roles 
+SET role = 'consultant' 
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'consultor@guata.test');
+
+UPDATE public.user_roles 
+SET role = 'partner' 
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'parceiro@guata.test');
+```
+
+### ETAPA 3: Corrigir Warning de Ref no Console
+
+O warning "Function components cannot be given refs" está ocorrendo porque o `CmsPageSkeleton` é retornado diretamente em componentes que podem receber refs do React Router.
+
+**Arquivo:** `src/components/cms/CmsPageSkeleton.tsx`
+
+**Correção:** Envolver o componente com `forwardRef`:
 
 ```typescript
-// Após login bem-sucedido, buscar role e redirecionar
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
+import { forwardRef } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-  const { error } = await signIn(email, password);
+const CmsPageSkeleton = forwardRef<HTMLDivElement>((props, ref) => {
+  return (
+    <div ref={ref} className="min-h-screen bg-background">
+      {/* ... resto do componente ... */}
+    </div>
+  );
+});
 
-  if (error) {
-    toast({ title: 'Erro ao entrar', variant: 'destructive' });
-  } else {
-    // Buscar role do usuário
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', supabase.auth.getUser()?.data.user?.id)
-      .maybeSingle();
-    
-    const role = roleData?.role || 'client';
-    const isStaff = ['admin', 'consultant', 'manager'].includes(role);
-    
-    // Redirecionar baseado no role
-    if (isStaff) {
-      navigate('/admin');
-    } else if (role === 'partner') {
-      navigate('/partner'); // ou criar área do parceiro
-    } else {
-      navigate('/');
-    }
-    
-    toast({ title: 'Bem-vindo!' });
-  }
-  setLoading(false);
-};
+CmsPageSkeleton.displayName = 'CmsPageSkeleton';
+
+export default CmsPageSkeleton;
 ```
 
-### ETAPA 3: Melhorar Tratamento de Erros CMS
+### ETAPA 4: Melhorar Fluxo de Demo Login
 
-Modificar as páginas CMS para exibir conteúdo padrão quando o banco estiver vazio, em vez de "Não encontrado".
+O fluxo atual de demo login depende do trigger funcionar E do `update_demo_roles()` fazer UPDATE. Como agora o trigger vai funcionar, o fluxo será:
 
-**Arquivos a modificar:**
-- `src/pages/Sobre.tsx`
-- `src/pages/FAQ.tsx`
-- `src/pages/Termos.tsx`
-- `src/pages/Privacidade.tsx`
-- `src/pages/Contato.tsx`
+1. Demo login clica -> signUp cria usuário
+2. Trigger `on_auth_user_created` dispara automaticamente
+3. Profile e role 'client' são criados
+4. `update_demo_roles()` atualiza para o role correto
 
-Lógica: Se não houver dados no CMS, exibir conteúdo estático hardcoded.
+Mas para evitar problemas futuros, vamos melhorar o `update_demo_roles()` para fazer UPSERT:
 
-### ETAPA 4: Corrigir Warning de Console
+```sql
+CREATE OR REPLACE FUNCTION public.update_demo_roles()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    -- Garantir que profiles existem
+    INSERT INTO public.profiles (user_id, full_name, email)
+    SELECT id, COALESCE(raw_user_meta_data->>'full_name', split_part(email, '@', 1)), email
+    FROM auth.users
+    WHERE email LIKE '%@guata.test'
+    ON CONFLICT (user_id) DO NOTHING;
 
-Modificar `src/components/layout/PublicHeader.tsx`:
-- Remover ref inválido do DropdownMenu
-- Verificar uso de `asChild` com componentes corretos
+    -- Garantir que roles existem com UPSERT
+    INSERT INTO public.user_roles (user_id, role)
+    SELECT id, 'client' FROM auth.users WHERE email LIKE '%@guata.test'
+    ON CONFLICT (user_id, role) DO NOTHING;
+
+    -- Atualizar roles específicos
+    UPDATE public.user_roles SET role = 'admin' 
+    WHERE user_id = (SELECT id FROM auth.users WHERE email = 'admin@guata.test');
+
+    UPDATE public.user_roles SET role = 'consultant' 
+    WHERE user_id = (SELECT id FROM auth.users WHERE email = 'consultor@guata.test');
+
+    UPDATE public.user_roles SET role = 'partner' 
+    WHERE user_id = (SELECT id FROM auth.users WHERE email = 'parceiro@guata.test');
+END;
+$$;
+```
 
 ---
 
-## Arquivos a Modificar
+## Resumo das Alterações
 
-| Arquivo | Ação |
-|---------|------|
-| `src/pages/Login.tsx` | Implementar redirecionamento por role |
-| `src/pages/Sobre.tsx` | Adicionar fallback para conteúdo estático |
-| `src/pages/FAQ.tsx` | Adicionar fallback para conteúdo estático |
-| `src/pages/Termos.tsx` | Adicionar fallback para conteúdo estático |
-| `src/pages/Privacidade.tsx` | Adicionar fallback para conteúdo estático |
-| `src/pages/Contato.tsx` | Adicionar fallback para conteúdo estático |
-| `src/components/layout/PublicHeader.tsx` | Corrigir warning de ref |
-| **SQL** | Popular `cms_pages` com conteúdo |
+### Banco de Dados (SQL)
+
+| Ação | Descrição |
+|------|-----------|
+| CREATE TRIGGER | Criar `on_auth_user_created` no `auth.users` |
+| INSERT profiles | Popular profiles para usuários existentes |
+| INSERT user_roles | Popular roles para usuários existentes |
+| UPDATE roles | Definir roles corretos para demo accounts |
+| REPLACE FUNCTION | Melhorar `update_demo_roles()` com UPSERT |
+
+### Código
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/cms/CmsPageSkeleton.tsx` | Adicionar `forwardRef` para eliminar warning |
 
 ---
 
 ## Ordem de Execução
 
-1. **SQL:** Inserir conteúdo CMS no banco (resolve páginas "não encontradas")
-2. **Login.tsx:** Implementar redirecionamento inteligente por role
-3. **Páginas CMS:** Adicionar fallback de conteúdo estático
-4. **PublicHeader:** Corrigir warning de ref
+1. **Executar SQL** - Criar trigger + popular dados existentes
+2. **Atualizar CmsPageSkeleton** - Corrigir warning de ref
+3. **Testar logins** - Verificar redirecionamento correto
 
 ---
 
 ## Resultado Esperado
 
 Após as correções:
-- Páginas Sobre, FAQ, Termos, Privacidade e Contato funcionarão corretamente
-- Login como Admin/Consultor redirecionará para `/admin`
-- Login como Parceiro redirecionará para área específica
-- Login como Cliente ficará na home ou área do cliente
-- Console limpo de warnings
+
+| Cenário | Comportamento |
+|---------|---------------|
+| Login Admin | Redireciona para `/admin` |
+| Login Consultor | Redireciona para `/admin` |
+| Login Parceiro | Redireciona para `/` (área parceiro futura) |
+| Login Cliente | Redireciona para `/` |
+| Novo cadastro | Cria profile + role automaticamente |
+| Páginas CMS | Funcionam sem warnings |
+| Console | Limpo de warnings de ref |
+
+---
+
+## Seção Técnica - SQL Completo
+
+```sql
+-- 1. Criar trigger que está faltando
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+AFTER INSERT ON auth.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 2. Popular profiles para usuários existentes
+INSERT INTO public.profiles (user_id, full_name, email)
+SELECT 
+    id,
+    COALESCE(raw_user_meta_data->>'full_name', split_part(email, '@', 1)),
+    email
+FROM auth.users
+WHERE id NOT IN (SELECT user_id FROM public.profiles)
+ON CONFLICT DO NOTHING;
+
+-- 3. Inserir roles para usuários existentes
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, 'client'
+FROM auth.users
+WHERE id NOT IN (SELECT user_id FROM public.user_roles)
+ON CONFLICT DO NOTHING;
+
+-- 4. Atualizar roles demo
+UPDATE public.user_roles SET role = 'admin' 
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'admin@guata.test');
+
+UPDATE public.user_roles SET role = 'consultant' 
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'consultor@guata.test');
+
+UPDATE public.user_roles SET role = 'partner' 
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'parceiro@guata.test');
+
+-- 5. Melhorar função update_demo_roles com UPSERT
+CREATE OR REPLACE FUNCTION public.update_demo_roles()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    -- Garantir profiles
+    INSERT INTO public.profiles (user_id, full_name, email)
+    SELECT id, COALESCE(raw_user_meta_data->>'full_name', split_part(email, '@', 1)), email
+    FROM auth.users WHERE email LIKE '%@guata.test'
+    ON CONFLICT (user_id) DO NOTHING;
+
+    -- Garantir roles com valores default
+    INSERT INTO public.user_roles (user_id, role)
+    SELECT id, 'client' FROM auth.users WHERE email LIKE '%@guata.test'
+    ON CONFLICT (user_id, role) DO NOTHING;
+
+    -- Atualizar para roles corretos
+    UPDATE public.user_roles SET role = 'admin' 
+    WHERE user_id = (SELECT id FROM auth.users WHERE email = 'admin@guata.test');
+    
+    UPDATE public.user_roles SET role = 'consultant' 
+    WHERE user_id = (SELECT id FROM auth.users WHERE email = 'consultor@guata.test');
+    
+    UPDATE public.user_roles SET role = 'partner' 
+    WHERE user_id = (SELECT id FROM auth.users WHERE email = 'parceiro@guata.test');
+END;
+$$;
+```
+
