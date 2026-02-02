@@ -1,347 +1,175 @@
 
-# Status Atual e Plano de Implementação Completo - Guatá Travel Experience
+# Plano de Correção - Problemas Encontrados na Plataforma Guatá
+
+## Diagnóstico Completo
+
+Após análise detalhada do código e banco de dados, identifiquei os seguintes problemas:
 
 ---
 
-## Status do Projeto
+## PROBLEMA 1: Páginas Institucionais Não Encontradas
 
-### O Que Ja Funciona (Fase 1 + Parte da Fase 2)
+**Páginas afetadas:** Sobre, FAQ, Termos, Privacidade, Contato
 
-| Componente | Status | Observacoes |
-|------------|--------|-------------|
-| Site Publico (Home, Header, Footer) | Completo | Funcional |
-| Autenticacao (Login, Cadastro, Recuperar Senha) | Completo | Demo login funcionando |
-| Sistema de Roles (admin, consultant, partner, client) | Completo | RLS configurado |
-| Paginas CMS (Sobre, FAQ, Contato, Termos, Privacidade) | Completo | Conteudo via banco |
-| Pagina Seja Parceiro (/seja-parceiro) | Completo | Formulario salva no banco |
-| Listagem de Experiencias (/experiencias) | Parcial | Lista funciona, falta detalhe |
-| Listagem de Excursoes (/excursoes) | Parcial | Lista funciona, falta detalhe |
-| Listagem de Pacotes (/pacotes) | Parcial | Lista funciona, falta detalhe |
-| Viagem Personalizada (/viagem-personalizada) | Completo | Formulario envia para travel_requests |
-| Admin Dashboard | Completo | Metricas reais do banco |
-| Admin Kanban de Demandas | Completo | Drag-and-drop funcionando |
-| Admin CRUD Experiencias | Completo | Criar, editar, excluir |
-| Admin CMS Editor | Completo | Editar paginas institucionais |
-| Dados de Exemplo no Banco | Completo | 5 experiencias, 3 demandas, 1 agencia |
+**Causa:** A tabela `cms_pages` está vazia. O SQL de inserção de conteúdo existe na migration, mas os dados não foram populados neste ambiente.
 
-### O Que Esta Faltando
-
-| Componente | Prioridade | Fase |
-|------------|------------|------|
-| Pagina de Detalhe da Experiencia | Alta | 2 |
-| Botao "Ver Detalhes" nas listagens (link funcional) | Alta | 2 |
-| Admin Gestao de Clientes | Media | 2 |
-| Admin Gestao de Equipe | Media | 2 |
-| Admin Gestao de Parceiros (aprovacao) | Media | 2 |
-| Portal do Parceiro | Alta | 3 |
-| Area do Cliente | Media | 4 |
-| Upload de Imagens (Storage) | Media | 2 |
-| Notificacoes/Mensagens | Baixa | 4 |
+**Solução:** Executar INSERT para popular a tabela `cms_pages` com as 5 páginas institucionais (status = 'published').
 
 ---
 
-## O Que Cada Pagina Faz (Guia de Funcionalidades)
+## PROBLEMA 2: Login Redireciona para Tela Inicial
 
-### Site Publico
+**Causa Identificada:** No arquivo `Login.tsx`, após login bem-sucedido:
+- Linha 55: `navigate('/')` - sempre redireciona para home
+- Linha 105: `navigate(account.redirectTo)` - usa redirect do demo account
 
-| Pagina | Rota | Funcionalidade |
-|--------|------|----------------|
-| Home | `/` | Hero + Experiencias em destaque + CTA viagem personalizada + Depoimentos |
-| Experiencias | `/experiencias` | Listagem de todas as experiencias publicadas com filtros e busca |
-| Excursoes | `/excursoes` | Listagem filtrada por tipo "excursion" |
-| Pacotes | `/pacotes` | Listagem filtrada por tipo "package" |
-| Detalhe Experiencia | `/experiencias/:id` | **FALTA** - Ver detalhes, itinerario, inclusoes, reservar |
-| Viagem Personalizada | `/viagem-personalizada` | Formulario para solicitar viagem sob medida |
-| Seja Parceiro | `/seja-parceiro` | Explicacao do modelo + formulario de cadastro de agencias |
-| Sobre | `/sobre` | Historia e valores (conteudo via CMS) |
-| FAQ | `/faq` | Perguntas frequentes (conteudo via CMS) |
-| Contato | `/contato` | Formulario de contato + informacoes |
-| Termos | `/termos` | Termos de uso (conteudo via CMS) |
-| Privacidade | `/privacidade` | Politica de privacidade (conteudo via CMS) |
-| Login | `/login` | Autenticacao + demo logins |
-| Cadastro | `/cadastro` | Registro de novos usuarios |
+O problema é que o login normal (formulário) sempre vai para `/` independente do role do usuário.
 
-### Painel Administrativo (Staff)
+**Comportamento Esperado:**
+| Role | Destino após login |
+|------|-------------------|
+| admin, consultant, manager | `/admin` |
+| partner | `/partner` (portal do parceiro) |
+| client | `/minha-conta` ou `/` |
 
-| Pagina | Rota | Funcionalidade |
-|--------|------|----------------|
-| Dashboard | `/admin` | Metricas gerais, acoes rapidas, ultimas demandas |
-| Demandas | `/admin/demandas` | Kanban com pipeline de solicitacoes (drag-and-drop) |
-| Experiencias | `/admin/experiencias` | CRUD completo de pacotes/excursoes |
-| Clientes | `/admin/clientes` | **PLACEHOLDER** - Listar usuarios com role "client" |
-| Parceiros | `/admin/parceiros` | **PLACEHOLDER** - Aprovar agencias, gerenciar parceiros |
-| Equipe | `/admin/equipe` | **PLACEHOLDER** - Gerenciar consultores e gestores |
-| CMS | `/admin/cms` | Listar paginas editaveis |
-| CMS Editor | `/admin/cms/:slug` | Editar conteudo de uma pagina |
-| Configuracoes | `/admin/configuracoes` | **PLACEHOLDER** - Configuracoes gerais |
+**Solução:** Modificar `Login.tsx` para:
+1. Após login, consultar o role do usuário
+2. Redirecionar baseado no role
 
 ---
 
-## Plano de Implementacao (Ordem de Execucao)
+## PROBLEMA 3: Tabelas de Dados Vazias
 
-### ETAPA 1: Pagina de Detalhe da Experiencia (Prioridade Alta)
+**Tabelas afetadas:**
+- `user_roles` - vazia (users criados sem roles)
+- `profiles` - vazia (users criados sem perfis)
 
-Criar a pagina que mostra todos os detalhes de uma experiencia especifica.
+**Causa:** Quando você fez remix do projeto, os usuários demo foram criados no projeto original. No novo projeto, a função `update_demo_roles` tenta atualizar roles de usuários que não existem.
 
-**Arquivo:** `src/pages/ExperienciaDetalhe.tsx`
+**Solução:** Verificar se os triggers estão funcionando e inserir dados de seed.
 
-**Rota:** `/experiencias/:id`
+---
 
-**Funcionalidades:**
-- Imagem de capa grande
-- Titulo, destino, preco, duracao
-- Descricao completa
-- Itinerario dia-a-dia
-- Lista de inclusoes e exclusoes
-- Datas de saida disponiveis
-- Botao "Reservar" ou "Solicitar Informacoes"
-- Galeria de imagens
-- Experiencias relacionadas
+## PROBLEMA 4: Warning de Ref no Console
 
-**Estrutura Visual:**
-```text
-+------------------------------------------+
-|        [IMAGEM DE CAPA GRANDE]           |
-|  Badge: Pacote | Excursao                |
-+------------------------------------------+
-|                                          |
-|  TITULO DA EXPERIENCIA                   |
-|  Destino | 5 dias | Ate 12 pessoas       |
-|                                          |
-|  A partir de R$ 8.500,00                 |
-|  [BOTAO: SOLICITAR RESERVA]              |
-|                                          |
-+------------------------------------------+
-|                                          |
-|  [TAB: Descricao | Itinerario | Inclui]  |
-|                                          |
-|  Descricao completa da experiencia...    |
-|                                          |
-+------------------------------------------+
-|                                          |
-|  ITINERARIO                              |
-|  Dia 1: Chegada - Descricao...           |
-|  Dia 2: Passeios - Descricao...          |
-|  ...                                     |
-|                                          |
-+------------------------------------------+
-|                                          |
-|  O QUE INCLUI        O QUE NAO INCLUI    |
-|  - Hospedagem        - Passagem aerea    |
-|  - Cafe da manha     - Refeicoes extras  |
-|  - Guia local        - Seguro viagem     |
-|                                          |
-+------------------------------------------+
-|                                          |
-|  EXPERIENCIAS RELACIONADAS               |
-|  [Card] [Card] [Card]                    |
-|                                          |
-+------------------------------------------+
+**Erro:** "Function components cannot be given refs" no `PublicHeader`
+
+**Causa:** O `DropdownMenu` do Radix UI está recebendo uma ref inválida.
+
+**Solução:** Verificar componentes que usam `asChild` e garantir que o filho suporta forwarded refs.
+
+---
+
+## Plano de Implementação
+
+### ETAPA 1: Popular Banco de Dados
+
+Executar SQL para inserir:
+1. Conteúdo CMS (5 páginas institucionais)
+2. Dados de exemplo já existentes (experiências, agências, etc.)
+
+```sql
+-- Inserir páginas CMS se não existirem
+INSERT INTO public.cms_pages (slug, title, content, status) 
+VALUES 
+  ('sobre', 'Sobre a Guatá', {...}, 'published'),
+  ('faq', 'Perguntas Frequentes', {...}, 'published'),
+  ('termos', 'Termos de Uso', {...}, 'published'),
+  ('privacidade', 'Política de Privacidade', {...}, 'published'),
+  ('contato', 'Contato', {...}, 'published')
+ON CONFLICT (slug) DO NOTHING;
 ```
 
-### ETAPA 2: Corrigir Links nas Listagens
+### ETAPA 2: Corrigir Fluxo de Login
 
-Atualizar os botoes "Ver Detalhes" em:
-- `src/pages/Excursoes.tsx`
-- `src/pages/Pacotes.tsx`
-
-Para que apontem corretamente para `/experiencias/:id`
-
-### ETAPA 3: Admin - Gestao de Clientes
-
-**Arquivo:** `src/pages/admin/AdminClientes.tsx`
-
-**Funcionalidades:**
-- Listar todos os usuarios com role "client"
-- Buscar por nome/email
-- Ver perfil do cliente
-- Historico de solicitacoes do cliente
-- Exportar lista (futuro)
-
-### ETAPA 4: Admin - Gestao de Parceiros
-
-**Arquivo:** `src/pages/admin/AdminParceiros.tsx`
-
-**Funcionalidades:**
-- Listar agencias parceiras (ativas e pendentes)
-- Aprovar/rejeitar solicitacoes de parceria
-- Editar dados da agencia
-- Ver demandas atribuidas a agencia
-- Ativar/desativar parceiro
-
-### ETAPA 5: Admin - Gestao de Equipe
-
-**Arquivo:** `src/pages/admin/AdminEquipe.tsx`
-
-**Funcionalidades:**
-- Listar consultores e gestores
-- Atribuir roles (promover/rebaixar)
-- Ver demandas atribuidas ao consultor
-- Metricas de desempenho (futuro)
-
----
-
-## Secao Tecnica
-
-### Arquivos a Criar
-
-| Arquivo | Descricao |
-|---------|-----------|
-| `src/pages/ExperienciaDetalhe.tsx` | Pagina de detalhe da experiencia |
-| `src/components/experience/ExperienceGallery.tsx` | Galeria de imagens |
-| `src/components/experience/ExperienceItinerary.tsx` | Componente de itinerario |
-| `src/components/experience/ExperienceInclusions.tsx` | Lista de inclusoes/exclusoes |
-| `src/components/experience/BookingForm.tsx` | Modal/form de reserva |
-
-### Arquivos a Modificar
-
-| Arquivo | Modificacao |
-|---------|-------------|
-| `src/App.tsx` | Adicionar rota `/experiencias/:id` |
-| `src/pages/Excursoes.tsx` | Link do botao para detalhe |
-| `src/pages/Pacotes.tsx` | Link do botao para detalhe |
-| `src/pages/admin/AdminClientes.tsx` | Implementar listagem |
-| `src/pages/admin/AdminParceiros.tsx` | Implementar gestao |
-| `src/pages/admin/AdminEquipe.tsx` | Implementar gestao |
-
-### Estrutura da Pagina de Detalhe
+Modificar `src/pages/Login.tsx`:
 
 ```typescript
-// src/pages/ExperienciaDetalhe.tsx
-interface ExperienceDetailProps {
-  id: string;
-}
+// Após login bem-sucedido, buscar role e redirecionar
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
 
-// Dados carregados do banco
-const experience = {
-  id: string;
-  title: string;
-  destination: string;
-  description: string;
-  short_description: string;
-  price: number;
-  duration_days: number;
-  max_participants: number;
-  cover_image: string;
-  images: string[];
-  inclusions: string[];
-  exclusions: string[];
-  itinerary: Array<{
-    day: number;
-    title: string;
-    description: string;
-  }>;
-  departure_dates: Array<{
-    date: string;
-    available_spots: number;
-  }>;
-  experience_type: 'package' | 'excursion';
-  is_featured: boolean;
-};
-```
+  const { error } = await signIn(email, password);
 
-### Query para Carregar Experiencia
-
-```typescript
-const { data: experience, isLoading } = useQuery({
-  queryKey: ['experience', id],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from('experiences')
-      .select('*')
-      .eq('id', id)
-      .eq('is_published', true)
-      .single();
+  if (error) {
+    toast({ title: 'Erro ao entrar', variant: 'destructive' });
+  } else {
+    // Buscar role do usuário
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', supabase.auth.getUser()?.data.user?.id)
+      .maybeSingle();
     
-    if (error) throw error;
-    return data;
-  },
-});
-```
-
-### Modal de Reserva
-
-O botao "Solicitar Reserva" abrira um modal que:
-1. Coleta nome, email, telefone
-2. Permite selecionar data de saida (se houver)
-3. Informa numero de viajantes
-4. Cria um registro em `travel_requests` vinculado a `experience_id`
-
-```typescript
-const handleBooking = async (formData) => {
-  await supabase.from('travel_requests').insert({
-    client_name: formData.name,
-    client_email: formData.email,
-    client_phone: formData.phone,
-    client_id: user?.id || null,
-    destination: experience.destination,
-    travel_dates: { start: formData.date },
-    travelers_count: formData.travelers,
-    preferences: { experience_id: experience.id },
-    status: 'pending',
-  });
+    const role = roleData?.role || 'client';
+    const isStaff = ['admin', 'consultant', 'manager'].includes(role);
+    
+    // Redirecionar baseado no role
+    if (isStaff) {
+      navigate('/admin');
+    } else if (role === 'partner') {
+      navigate('/partner'); // ou criar área do parceiro
+    } else {
+      navigate('/');
+    }
+    
+    toast({ title: 'Bem-vindo!' });
+  }
+  setLoading(false);
 };
 ```
 
----
+### ETAPA 3: Melhorar Tratamento de Erros CMS
 
-## Fluxo Completo da Plataforma
+Modificar as páginas CMS para exibir conteúdo padrão quando o banco estiver vazio, em vez de "Não encontrado".
 
-```text
-CLIENTE                     GUATA                       PARCEIRO
-   |                          |                            |
-   |-- Acessa site ---------->|                            |
-   |                          |                            |
-   |-- Ve experiencia ------->|                            |
-   |                          |                            |
-   |-- Solicita reserva ----->|                            |
-   |                          |                            |
-   |                          |-- Demanda no Kanban        |
-   |                          |   (status: pendente)       |
-   |                          |                            |
-   |                          |-- Consultor analisa        |
-   |                          |   (status: em_analise)     |
-   |                          |                            |
-   |                          |-- Atribui a parceiro ----->|
-   |                          |                            |
-   |                          |                            |-- Recebe demanda
-   |                          |                            |
-   |                          |                            |-- Elabora proposta
-   |                          |                            |
-   |                          |<-- Proposta enviada -------|
-   |                          |   (status: proposta_enviada)
-   |                          |                            |
-   |<-- Recebe proposta ------|                            |
-   |                          |                            |
-   |-- Aprova --------------->|                            |
-   |                          |   (status: aprovada)       |
-   |                          |                            |
-   |                          |-- Viagem em operacao ----->|
-   |                          |   (status: em_operacao)    |
-   |                          |                            |
-   |<-- Viagem realizada -----|<---------------------------|
-   |                          |   (status: concluida)      |
-   |                          |                            |
-```
+**Arquivos a modificar:**
+- `src/pages/Sobre.tsx`
+- `src/pages/FAQ.tsx`
+- `src/pages/Termos.tsx`
+- `src/pages/Privacidade.tsx`
+- `src/pages/Contato.tsx`
+
+Lógica: Se não houver dados no CMS, exibir conteúdo estático hardcoded.
+
+### ETAPA 4: Corrigir Warning de Console
+
+Modificar `src/components/layout/PublicHeader.tsx`:
+- Remover ref inválido do DropdownMenu
+- Verificar uso de `asChild` com componentes corretos
 
 ---
 
-## Resultado Apos Implementacao
+## Arquivos a Modificar
 
-1. Cliente pode clicar em qualquer experiencia e ver todos os detalhes
-2. Cliente pode solicitar reserva diretamente da pagina de detalhe
-3. Admin pode gerenciar clientes, ver historico de cada um
-4. Admin pode aprovar agencias parceiras que se cadastraram
-5. Admin pode gerenciar a equipe interna (consultores/gestores)
-6. Fluxo completo de demanda funcional do inicio ao fim
+| Arquivo | Ação |
+|---------|------|
+| `src/pages/Login.tsx` | Implementar redirecionamento por role |
+| `src/pages/Sobre.tsx` | Adicionar fallback para conteúdo estático |
+| `src/pages/FAQ.tsx` | Adicionar fallback para conteúdo estático |
+| `src/pages/Termos.tsx` | Adicionar fallback para conteúdo estático |
+| `src/pages/Privacidade.tsx` | Adicionar fallback para conteúdo estático |
+| `src/pages/Contato.tsx` | Adicionar fallback para conteúdo estático |
+| `src/components/layout/PublicHeader.tsx` | Corrigir warning de ref |
+| **SQL** | Popular `cms_pages` com conteúdo |
 
 ---
 
-## Ordem de Execucao Recomendada
+## Ordem de Execução
 
-1. Pagina de Detalhe da Experiencia (mais critico para UX)
-2. Corrigir links dos botoes nas listagens
-3. Admin Gestao de Parceiros (para aprovar agencias)
-4. Admin Gestao de Clientes
-5. Admin Gestao de Equipe
+1. **SQL:** Inserir conteúdo CMS no banco (resolve páginas "não encontradas")
+2. **Login.tsx:** Implementar redirecionamento inteligente por role
+3. **Páginas CMS:** Adicionar fallback de conteúdo estático
+4. **PublicHeader:** Corrigir warning de ref
 
+---
+
+## Resultado Esperado
+
+Após as correções:
+- Páginas Sobre, FAQ, Termos, Privacidade e Contato funcionarão corretamente
+- Login como Admin/Consultor redirecionará para `/admin`
+- Login como Parceiro redirecionará para área específica
+- Login como Cliente ficará na home ou área do cliente
+- Console limpo de warnings
