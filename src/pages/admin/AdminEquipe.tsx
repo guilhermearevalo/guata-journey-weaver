@@ -1,15 +1,356 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Search, User, Mail, Shield, MoreHorizontal, UserPlus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+interface TeamMember {
+  id: string;
+  user_id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  created_at: string;
+  role: 'consultant' | 'manager' | 'admin';
+}
+
+const roleLabels: Record<string, { label: string; color: string }> = {
+  admin: { label: 'Administrador', color: 'bg-destructive' },
+  manager: { label: 'Gestor', color: 'bg-secondary' },
+  consultant: { label: 'Consultor', color: 'bg-primary' },
+};
+
 const AdminEquipe = () => {
+  const [search, setSearch] = useState('');
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [roleChangeDialog, setRoleChangeDialog] = useState<{ member: TeamMember; newRole: 'consultant' | 'manager' | 'admin' } | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: teamMembers, isLoading } = useQuery({
+    queryKey: ['admin-team'],
+    queryFn: async () => {
+      // Get all users with staff roles (consultant, manager, admin)
+      const { data: staffRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('role', ['consultant', 'manager', 'admin']);
+
+      if (rolesError) throw rolesError;
+
+      if (staffRoles.length === 0) return [];
+
+      const userIds = staffRoles.map(r => r.user_id);
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('user_id', userIds)
+        .order('full_name');
+
+      if (profilesError) throw profilesError;
+
+      // Combine profiles with roles
+      return profiles.map(profile => {
+        const userRole = staffRoles.find(r => r.user_id === profile.user_id);
+        return {
+          ...profile,
+          role: userRole?.role as 'consultant' | 'manager' | 'admin',
+        };
+      }) as TeamMember[];
+    },
+  });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: 'consultant' | 'manager' | 'admin' }) => {
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ role: newRole })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-team'] });
+      toast({
+        title: 'Função atualizada',
+        description: 'A função do membro foi atualizada com sucesso.',
+      });
+      setRoleChangeDialog(null);
+    },
+    onError: () => {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar a função.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const admins = teamMembers?.filter((m) => m.role === 'admin') || [];
+  const managers = teamMembers?.filter((m) => m.role === 'manager') || [];
+  const consultants = teamMembers?.filter((m) => m.role === 'consultant') || [];
+
+  const filteredMembers = teamMembers?.filter(
+    (member) =>
+      member.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      member.email.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl font-bold">Equipe</h1>
         <p className="text-muted-foreground">
-          Gestão de consultores e gestores
+          Gerencie consultores e gestores da plataforma
         </p>
       </div>
-      <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
-        <p>Gestão de equipe será implementada na Fase 2</p>
+
+      {/* Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total da Equipe
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{teamMembers?.length || 0}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Administradores
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">{admins.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Gestores
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-secondary">{managers.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Consultores
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{consultants.length}</div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Search */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome ou email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      {/* Table */}
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Membro</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Função</TableHead>
+                <TableHead>Desde</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array(4)
+                  .fill(0)
+                  .map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-10 w-48" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                    </TableRow>
+                  ))
+              ) : filteredMembers && filteredMembers.length > 0 ? (
+                filteredMembers.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                          <User className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{member.full_name}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        {member.email}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        className={`${roleLabels[member.role]?.color || 'bg-gray-500'} text-white`}
+                      >
+                        {roleLabels[member.role]?.label || member.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(member.created_at), "MMM yyyy", { locale: ptBR })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setSelectedMember(member)}>
+                            <User className="mr-2 h-4 w-4" />
+                            Ver perfil
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => setRoleChangeDialog({ member, newRole: 'consultant' })}
+                            disabled={member.role === 'consultant'}
+                          >
+                            <Shield className="mr-2 h-4 w-4 text-primary" />
+                            Definir como Consultor
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => setRoleChangeDialog({ member, newRole: 'manager' })}
+                            disabled={member.role === 'manager'}
+                          >
+                            <Shield className="mr-2 h-4 w-4 text-secondary" />
+                            Definir como Gestor
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => setRoleChangeDialog({ member, newRole: 'admin' })}
+                            disabled={member.role === 'admin'}
+                          >
+                            <Shield className="mr-2 h-4 w-4 text-destructive" />
+                            Definir como Admin
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    <p className="text-muted-foreground">Nenhum membro da equipe encontrado</p>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Member Detail Dialog */}
+      <Dialog open={!!selectedMember} onOpenChange={(open) => !open && setSelectedMember(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <User className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p>{selectedMember?.full_name}</p>
+                <Badge 
+                  className={`mt-1 ${roleLabels[selectedMember?.role || '']?.color || 'bg-gray-500'} text-white`}
+                >
+                  {roleLabels[selectedMember?.role || '']?.label || selectedMember?.role}
+                </Badge>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedMember && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  {selectedMember.email}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground">Membro desde</p>
+                <p className="font-medium">
+                  {format(new Date(selectedMember.created_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Role Change Confirmation Dialog */}
+      <Dialog open={!!roleChangeDialog} onOpenChange={(open) => !open && setRoleChangeDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Alterar Função</DialogTitle>
+            <DialogDescription>
+              Deseja alterar a função de <strong>{roleChangeDialog?.member.full_name}</strong> de{' '}
+              <strong>{roleLabels[roleChangeDialog?.member.role || '']?.label}</strong> para{' '}
+              <strong>{roleLabels[roleChangeDialog?.newRole || '']?.label}</strong>?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRoleChangeDialog(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (roleChangeDialog) {
+                  updateRoleMutation.mutate({
+                    userId: roleChangeDialog.member.user_id,
+                    newRole: roleChangeDialog.newRole,
+                  });
+                }
+              }}
+              disabled={updateRoleMutation.isPending}
+            >
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

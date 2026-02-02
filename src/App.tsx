@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import Experiencias from "./pages/Experiencias";
+import ExperienciaDetalhe from "./pages/ExperienciaDetalhe";
 import Excursoes from "./pages/Excursoes";
 import Pacotes from "./pages/Pacotes";
 import ViagemPersonalizada from "./pages/ViagemPersonalizada";
@@ -47,6 +48,7 @@ const App = () => (
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Index />} />
               <Route path="/experiencias" element={<Experiencias />} />
+              <Route path="/experiencias/:id" element={<ExperienciaDetalhe />} />
               <Route path="/excursoes" element={<Excursoes />} />
               <Route path="/pacotes" element={<Pacotes />} />
               <Route path="/viagem-personalizada" element={<ViagemPersonalizada />} />
