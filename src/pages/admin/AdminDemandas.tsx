@@ -1,3 +1,5 @@
+import { KanbanBoard } from '@/components/admin/KanbanBoard';
+
 const AdminDemandas = () => {
   return (
     <div className="space-y-6">
@@ -7,9 +9,7 @@ const AdminDemandas = () => {
           Pipeline de solicitações de viagem
         </p>
       </div>
-      <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
-        <p>Kanban de demandas será implementado na Fase 2</p>
-      </div>
+      <KanbanBoard />
     </div>
   );
 };
