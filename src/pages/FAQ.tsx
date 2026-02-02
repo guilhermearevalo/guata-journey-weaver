@@ -8,20 +8,30 @@ import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
 import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
-import CmsPageNotFound from '@/components/cms/CmsPageNotFound';
+
+// Conteúdo padrão caso o CMS esteja vazio
+const defaultContent = {
+  hero: {
+    title: 'Perguntas Frequentes',
+    subtitle: 'Tire suas dúvidas sobre nossos serviços',
+  },
+  items: [
+    { question: 'Como funciona o processo de reserva?', answer: 'Após escolher sua experiência ou solicitar uma viagem personalizada, nossa equipe entrará em contato para entender suas preferências. Elaboramos uma proposta sob medida, e após sua aprovação, cuidamos de toda a logística para você.' },
+    { question: 'Qual é a política de cancelamento?', answer: 'Nossa política varia de acordo com cada experiência e fornecedor. Em geral, cancelamentos com mais de 30 dias de antecedência têm reembolso integral.' },
+    { question: 'Vocês oferecem seguro viagem?', answer: 'Sim! Trabalhamos com as melhores seguradoras do mercado e podemos incluir o seguro viagem no seu pacote.' },
+  ],
+};
 
 const FAQ = () => {
-  const { data: page, isLoading, error } = useCmsPage('faq');
+  const { data: page, isLoading } = useCmsPage('faq');
+
+  // Usa dados do CMS ou fallback para conteúdo padrão
+  const content = page?.content || defaultContent;
+  const { hero, items } = content;
 
   if (isLoading) {
     return <CmsPageSkeleton />;
   }
-
-  if (error || !page) {
-    return <CmsPageNotFound slug="faq" />;
-  }
-
-  const { hero, items } = page.content;
 
   return (
     <div className="min-h-screen bg-background">

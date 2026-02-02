@@ -1,19 +1,29 @@
 import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
-import CmsPageNotFound from '@/components/cms/CmsPageNotFound';
+
+// Conteúdo padrão caso o CMS esteja vazio
+const defaultContent = {
+  hero: {
+    title: 'Política de Privacidade',
+    subtitle: 'Como tratamos e protegemos seus dados pessoais',
+  },
+  sections: [
+    { title: '1. Dados Coletados', content: 'Coletamos informações que você nos fornece diretamente, como nome, e-mail, telefone e preferências de viagem.' },
+    { title: '2. Uso das Informações', content: 'Utilizamos seus dados para processar suas solicitações, personalizar sua experiência e melhorar nossos serviços.' },
+    { title: '3. Segurança', content: 'Implementamos medidas de segurança técnicas e organizacionais para proteger seus dados contra acesso não autorizado.' },
+  ],
+};
 
 const Privacidade = () => {
-  const { data: page, isLoading, error } = useCmsPage('privacidade');
+  const { data: page, isLoading } = useCmsPage('privacidade');
+
+  // Usa dados do CMS ou fallback para conteúdo padrão
+  const content = page?.content || defaultContent;
+  const { hero, sections } = content;
 
   if (isLoading) {
     return <CmsPageSkeleton />;
   }
-
-  if (error || !page) {
-    return <CmsPageNotFound slug="privacidade" />;
-  }
-
-  const { hero, sections } = page.content;
 
   return (
     <div className="min-h-screen bg-background">
