@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Filter, MapPin, Clock, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -137,7 +138,9 @@ const Pacotes = () => {
                       </span>
                     </div>
                   )}
-                  <Button>Ver Detalhes</Button>
+                  <Button asChild>
+                    <Link to={`/experiencias/${pacote.id}`}>Ver Detalhes</Link>
+                  </Button>
                 </CardFooter>
               </Card>
             ))}

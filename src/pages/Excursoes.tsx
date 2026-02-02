@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Filter, MapPin, Clock, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -121,7 +122,9 @@ const Excursoes = () => {
                       R$ {excursao.price.toLocaleString('pt-BR')}
                     </span>
                   )}
-                  <Button>Ver Detalhes</Button>
+                  <Button asChild>
+                    <Link to={`/experiencias/${excursao.id}`}>Ver Detalhes</Link>
+                  </Button>
                 </CardFooter>
               </Card>
             ))}
