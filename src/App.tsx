@@ -18,6 +18,7 @@ import FAQ from "./pages/FAQ";
 import Termos from "./pages/Termos";
 import Privacidade from "./pages/Privacidade";
 import Contato from "./pages/Contato";
+import SejaParceiro from "./pages/SejaParceiro";
 import NotFound from "./pages/NotFound";
 
 // Admin imports
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/termos" element={<Termos />} />
               <Route path="/privacidade" element={<Privacidade />} />
               <Route path="/contato" element={<Contato />} />
+              <Route path="/seja-parceiro" element={<SejaParceiro />} />
             </Route>
             
             {/* Admin routes */}

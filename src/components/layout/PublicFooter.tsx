@@ -98,6 +98,11 @@ export function PublicFooter() {
                   Fale Conosco
                 </Link>
               </li>
+              <li>
+                <Link to="/seja-parceiro" className="text-secondary-foreground/80 hover:text-primary">
+                  Seja Parceiro
+                </Link>
+              </li>
             </ul>
           </div>
 
