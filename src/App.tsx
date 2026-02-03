@@ -34,6 +34,13 @@ import AdminParceiros from "./pages/admin/AdminParceiros";
 import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 
+// Partner imports
+import PartnerLayout from "./pages/partner/PartnerLayout";
+import PartnerDashboard from "./pages/partner/PartnerDashboard";
+import PartnerDemandas from "./pages/partner/PartnerDemandas";
+import PartnerProposta from "./pages/partner/PartnerProposta";
+import PartnerExperiencias from "./pages/partner/PartnerExperiencias";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -71,6 +78,14 @@ const App = () => (
               <Route path="configuracoes" element={<AdminConfiguracoes />} />
               <Route path="cms" element={<AdminCMS />} />
               <Route path="cms/:slug" element={<AdminCMSEditor />} />
+            </Route>
+            
+            {/* Partner routes */}
+            <Route path="/partner" element={<PartnerLayout />}>
+              <Route index element={<PartnerDashboard />} />
+              <Route path="demandas" element={<PartnerDemandas />} />
+              <Route path="proposta/:id" element={<PartnerProposta />} />
+              <Route path="experiencias" element={<PartnerExperiencias />} />
             </Route>
             
             {/* Auth routes without public layout */}

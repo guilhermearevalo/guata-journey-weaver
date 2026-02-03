@@ -21,7 +21,7 @@ interface DemoAccount {
 const demoAccounts: DemoAccount[] = [
   { label: 'Admin', email: 'admin@guata.test', icon: UserCog, color: 'bg-red-500/10 text-red-600 hover:bg-red-500/20', redirectTo: '/admin' },
   { label: 'Consultor', email: 'consultor@guata.test', icon: Users, color: 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20', redirectTo: '/admin' },
-  { label: 'Parceiro', email: 'parceiro@guata.test', icon: Briefcase, color: 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20', redirectTo: '/' },
+  { label: 'Parceiro', email: 'parceiro@guata.test', icon: Briefcase, color: 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20', redirectTo: '/partner' },
   { label: 'Cliente', email: 'cliente@guata.test', icon: User, color: 'bg-green-500/10 text-green-600 hover:bg-green-500/20', redirectTo: '/' },
 ];
 
@@ -71,7 +71,7 @@ export default function Login() {
       if (isStaff) {
         navigate('/admin');
       } else if (role === 'partner') {
-        navigate('/');
+        navigate('/partner');
       } else {
         navigate('/');
       }
