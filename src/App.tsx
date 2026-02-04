@@ -41,6 +41,15 @@ import PartnerDemandas from "./pages/partner/PartnerDemandas";
 import PartnerProposta from "./pages/partner/PartnerProposta";
 import PartnerExperiencias from "./pages/partner/PartnerExperiencias";
 
+// Cliente imports
+import { ProtectedClienteRoute } from "./components/cliente/ProtectedClienteRoute";
+import ClienteLayout from "./pages/cliente/ClienteLayout";
+import ClienteDashboard from "./pages/cliente/ClienteDashboard";
+import ClienteViagens from "./pages/cliente/ClienteViagens";
+import ClienteViagem from "./pages/cliente/ClienteViagem";
+import ClienteMensagens from "./pages/cliente/ClienteMensagens";
+import ClientePerfil from "./pages/cliente/ClientePerfil";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -86,6 +95,15 @@ const App = () => (
               <Route path="demandas" element={<PartnerDemandas />} />
               <Route path="proposta/:id" element={<PartnerProposta />} />
               <Route path="experiencias" element={<PartnerExperiencias />} />
+            </Route>
+            
+            {/* Cliente routes */}
+            <Route element={<ProtectedClienteRoute><ClienteLayout /></ProtectedClienteRoute>}>
+              <Route path="/minha-conta" element={<ClienteDashboard />} />
+              <Route path="/minha-conta/viagens" element={<ClienteViagens />} />
+              <Route path="/minha-conta/viagem/:id" element={<ClienteViagem />} />
+              <Route path="/minha-conta/mensagens" element={<ClienteMensagens />} />
+              <Route path="/minha-conta/perfil" element={<ClientePerfil />} />
             </Route>
             
             {/* Auth routes without public layout */}
