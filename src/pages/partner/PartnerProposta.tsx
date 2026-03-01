@@ -84,8 +84,10 @@ export default function PartnerProposta() {
       setDescription(existingProposal.description || '');
       setTotalPrice(existingProposal.total_price?.toString() || '');
       setInclusions(existingProposal.inclusions?.join('\n') || '');
+      const pl = existingProposal.payment_links as { pix?: string; card?: string } | null;
+      setPixLink(pl?.pix || '');
+      setCardLink(pl?.card || '');
     } else if (request) {
-      // Preencher título padrão
       setTitle(`Proposta de Viagem - ${request.destination || 'Destino Personalizado'}`);
     }
   }, [existingProposal, request]);
