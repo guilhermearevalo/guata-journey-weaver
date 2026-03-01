@@ -277,6 +277,44 @@ export default function ClienteViagem() {
                       Aprovar Proposta
                     </Button>
                   )}
+
+                  {proposal.is_approved && (
+                    <div className="space-y-2">
+                      {(() => {
+                        const pl = proposal.payment_links as { pix?: string; card?: string } | null;
+                        return (
+                          <>
+                            {pl?.pix && (
+                              <Button
+                                className="w-full"
+                                variant="outline"
+                                onClick={() => window.open(pl.pix!, '_blank')}
+                              >
+                                <QrCode className="mr-2 h-4 w-4" />
+                                Pagar com PIX
+                              </Button>
+                            )}
+                            {pl?.card && (
+                              <Button
+                                className="w-full"
+                                variant="outline"
+                                onClick={() => window.open(pl.card!, '_blank')}
+                              >
+                                <CreditCard className="mr-2 h-4 w-4" />
+                                Pagar com Cartão
+                              </Button>
+                            )}
+                            <Button className="w-full" variant="secondary" asChild>
+                              <Link to={`/minha-conta/viagem/${id}/roteiro`}>
+                                <Route className="mr-2 h-4 w-4" />
+                                Planejar Roteiro
+                              </Link>
+                            </Button>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

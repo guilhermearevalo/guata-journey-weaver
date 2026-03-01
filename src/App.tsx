@@ -103,6 +103,7 @@ const App = () => (
               <Route path="/minha-conta" element={<ClienteDashboard />} />
               <Route path="/minha-conta/viagens" element={<ClienteViagens />} />
               <Route path="/minha-conta/viagem/:id" element={<ClienteViagem />} />
+              <Route path="/minha-conta/viagem/:id/roteiro" element={<ClienteRoteiro />} />
               <Route path="/minha-conta/mensagens" element={<ClienteMensagens />} />
               <Route path="/minha-conta/perfil" element={<ClientePerfil />} />
             </Route>
