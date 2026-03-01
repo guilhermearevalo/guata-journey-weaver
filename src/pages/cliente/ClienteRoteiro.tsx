@@ -85,7 +85,7 @@ export default function ClienteRoteiro() {
       if (!proposal?.id) throw new Error('Sem proposta');
       const { error } = await supabase
         .from('proposals')
-        .update({ itinerary: newItinerary as unknown as Record<string, unknown>[] })
+        .update({ itinerary: JSON.parse(JSON.stringify(newItinerary)) })
         .eq('id', proposal.id);
       if (error) throw error;
     },
