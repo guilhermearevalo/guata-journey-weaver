@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Calendar, Users, MapPin, DollarSign, CheckCircle, Clock, FileText } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, MapPin, DollarSign, CheckCircle, Clock, FileText, CreditCard, QrCode, Route } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
