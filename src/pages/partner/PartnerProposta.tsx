@@ -25,6 +25,8 @@ export default function PartnerProposta() {
   const [description, setDescription] = useState('');
   const [totalPrice, setTotalPrice] = useState('');
   const [inclusions, setInclusions] = useState('');
+  const [pixLink, setPixLink] = useState('');
+  const [cardLink, setCardLink] = useState('');
 
   // Buscar agência do parceiro
   const { data: agencyData } = useQuery({
