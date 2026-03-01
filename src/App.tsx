@@ -49,6 +49,7 @@ import ClienteViagens from "./pages/cliente/ClienteViagens";
 import ClienteViagem from "./pages/cliente/ClienteViagem";
 import ClienteMensagens from "./pages/cliente/ClienteMensagens";
 import ClientePerfil from "./pages/cliente/ClientePerfil";
+import ClienteRoteiro from "./pages/cliente/ClienteRoteiro";
 
 const queryClient = new QueryClient();
 
