@@ -25,6 +25,8 @@ export default function PartnerProposta() {
   const [description, setDescription] = useState('');
   const [totalPrice, setTotalPrice] = useState('');
   const [inclusions, setInclusions] = useState('');
+  const [pixLink, setPixLink] = useState('');
+  const [cardLink, setCardLink] = useState('');
 
   // Buscar agência do parceiro
   const { data: agencyData } = useQuery({
@@ -82,8 +84,10 @@ export default function PartnerProposta() {
       setDescription(existingProposal.description || '');
       setTotalPrice(existingProposal.total_price?.toString() || '');
       setInclusions(existingProposal.inclusions?.join('\n') || '');
+      const pl = existingProposal.payment_links as { pix?: string; card?: string } | null;
+      setPixLink(pl?.pix || '');
+      setCardLink(pl?.card || '');
     } else if (request) {
-      // Preencher título padrão
       setTitle(`Proposta de Viagem - ${request.destination || 'Destino Personalizado'}`);
     }
   }, [existingProposal, request]);
@@ -104,6 +108,7 @@ export default function PartnerProposta() {
         description,
         total_price: totalPrice ? parseFloat(totalPrice) : null,
         inclusions: inclusionsArray.length > 0 ? inclusionsArray : null,
+        payment_links: { pix: pixLink || null, card: cardLink || null },
       };
 
       if (existingProposal) {
@@ -250,6 +255,29 @@ export default function PartnerProposta() {
                     placeholder={`Passagem aérea ida e volta\nHospedagem 5 noites\nTransfer aeroporto/hotel\nCafé da manhã`}
                     rows={6}
                   />
+                </div>
+
+                <div className="space-y-2 border-t pt-4">
+                  <Label className="text-base font-semibold">Links de Pagamento</Label>
+                  <p className="text-xs text-muted-foreground">Cole aqui os links para o cliente efetuar o pagamento</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="pix-link">Link PIX</Label>
+                    <Input
+                      id="pix-link"
+                      value={pixLink}
+                      onChange={(e) => setPixLink(e.target.value)}
+                      placeholder="https://link-de-pagamento-pix..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="card-link">Link Cartão de Crédito</Label>
+                    <Input
+                      id="card-link"
+                      value={cardLink}
+                      onChange={(e) => setCardLink(e.target.value)}
+                      placeholder="https://link-de-pagamento-cartao..."
+                    />
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">

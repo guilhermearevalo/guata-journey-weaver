@@ -1,1 +1,4 @@
 project_id = "xddzshslltdxstqpwvzr"
+
+[functions.itinerary-ai]
+verify_jwt = false

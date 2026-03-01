@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Calendar, Users, MapPin, DollarSign, CheckCircle, Clock, FileText } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, MapPin, DollarSign, CheckCircle, Clock, FileText, CreditCard, QrCode, Route } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -276,6 +276,44 @@ export default function ClienteViagem() {
                     >
                       Aprovar Proposta
                     </Button>
+                  )}
+
+                  {proposal.is_approved && (
+                    <div className="space-y-2">
+                      {(() => {
+                        const pl = proposal.payment_links as { pix?: string; card?: string } | null;
+                        return (
+                          <>
+                            {pl?.pix && (
+                              <Button
+                                className="w-full"
+                                variant="outline"
+                                onClick={() => window.open(pl.pix!, '_blank')}
+                              >
+                                <QrCode className="mr-2 h-4 w-4" />
+                                Pagar com PIX
+                              </Button>
+                            )}
+                            {pl?.card && (
+                              <Button
+                                className="w-full"
+                                variant="outline"
+                                onClick={() => window.open(pl.card!, '_blank')}
+                              >
+                                <CreditCard className="mr-2 h-4 w-4" />
+                                Pagar com Cartão
+                              </Button>
+                            )}
+                            <Button className="w-full" variant="secondary" asChild>
+                              <Link to={`/minha-conta/viagem/${id}/roteiro`}>
+                                <Route className="mr-2 h-4 w-4" />
+                                Planejar Roteiro
+                              </Link>
+                            </Button>
+                          </>
+                        );
+                      })()}
+                    </div>
                   )}
                 </div>
               ))}

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Search, MapPin, Calendar, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +9,24 @@ import { Input } from '@/components/ui/input';
 export function HeroSection() {
   const [destination, setDestination] = useState('');
   const navigate = useNavigate();
+
+  const { data: heroSetting } = useQuery({
+    queryKey: ['site-setting', 'hero_image_url'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'hero_image_url')
+        .maybeSingle();
+      if (error) throw error;
+      return data?.value;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const heroImageUrl = heroSetting
+    ? (typeof heroSetting === 'string' ? heroSetting.replace(/^"|"$/g, '') : 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop')
+    : 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop';
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +41,7 @@ export function HeroSection() {
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop)',
+          backgroundImage: `url(${heroImageUrl})`,
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-secondary/80 via-secondary/60 to-background" />
