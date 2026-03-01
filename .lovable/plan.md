@@ -1,132 +1,104 @@
 
-# Plano: Área do Cliente (Fase 4)
 
-## Objetivo
-Criar a área autenticada do cliente onde ele pode acompanhar suas viagens, trocar mensagens com consultores e gerenciar seu perfil.
+# Plano: 3 Novas Funcionalidades
+
+## 1. Upload de Imagem do Hero (Admin)
+
+Permitir que o admin troque a imagem de fundo da pagina inicial fazendo upload do computador.
+
+**O que sera feito:**
+- Criar um bucket de storage chamado `site-assets` para guardar imagens do site
+- Adicionar uma secao em **Configuracoes do Admin** para trocar a imagem do hero
+- O componente HeroSection vai buscar a imagem do banco (tabela `cms_pages` ou uma nova tabela `site_settings`) ao inves de usar URL fixa do Unsplash
+- Upload com preview e botao de salvar
+
+**Paginas afetadas:**
+- `AdminConfiguracoes.tsx` - adicionar secao de upload do hero
+- `HeroSection.tsx` - buscar imagem dinamica do banco
+- Migration SQL para criar bucket e tabela `site_settings`
 
 ---
 
-## Estrutura de Páginas
+## 2. Link de Pagamento (PIX e Cartao)
 
+Adicionar campos na proposta para que o consultor/admin possa inserir links de pagamento (PIX, cartao) que o cliente vera na area dele.
+
+**O que sera feito:**
+- Adicionar colunas `payment_links` (jsonb) na tabela `proposals` para guardar links de PIX e cartao
+- No painel admin/parceiro, ao editar proposta, ter campos para colar o link do PIX e link de pagamento por cartao
+- Na area do cliente (`ClienteViagem.tsx`), mostrar botoes "Pagar com PIX" e "Pagar com Cartao" que abrem os links em nova aba
+- Icones visuais de QR code PIX e cartao de credito
+
+**Paginas afetadas:**
+- `PartnerProposta.tsx` - campos para links de pagamento
+- `ClienteViagem.tsx` - botoes de pagamento visiveis ao cliente
+- Migration SQL para adicionar coluna `payment_links`
+
+---
+
+## 3. Planejador de Roteiro com IA (Timeline)
+
+Interface visual de timeline dia-a-dia onde a IA ajuda a montar o roteiro. NAO e um chatbot - e uma linha do tempo editavel.
+
+**O que sera feito:**
+- Nova pagina `/minha-conta/viagem/:id/roteiro` com interface de timeline
+- Cada dia mostra atividades em cards na timeline vertical
+- Botao "Sugerir com IA" que analisa destino, preferencias e dias e gera sugestoes de atividades
+- O usuario pode editar, reordenar, adicionar e remover atividades de cada dia
+- A IA pode sugerir alternativas para um dia especifico ("O que mais posso fazer nesse dia?")
+- Os gastos estimados aparecem por dia e total
+- Edge function `itinerary-ai` que usa Lovable AI para gerar sugestoes
+
+**Componentes novos:**
+- `ItineraryTimeline.tsx` - timeline visual com dias e atividades
+- `ItineraryDayCard.tsx` - card de um dia com lista de atividades
+- `ItineraryActivityCard.tsx` - card individual de atividade (editavel)
+- `ClienteRoteiro.tsx` - pagina principal do planejador
+
+**Como funciona a timeline:**
+- Coluna vertical com cada dia representado como um no
+- Cada dia expande para mostrar atividades (manha, tarde, noite)
+- Cada atividade mostra: nome, descricao curta, gasto estimado, icone de categoria
+- Botao "Pedir sugestao da IA" por dia ou para o roteiro inteiro
+- A IA retorna sugestoes estruturadas que aparecem como cards "sugeridos" que o usuario aceita ou descarta
+
+**Dados:**
+- Coluna `itinerary` (jsonb) ja existe na tabela `proposals` - sera usada para salvar o roteiro
+- Formato: `[{day: 1, activities: [{name, description, category, estimated_cost, time_slot}]}]`
+
+---
+
+## Detalhes Tecnicos
+
+### Storage (Bucket)
+```sql
+INSERT INTO storage.buckets (id, name, public) VALUES ('site-assets', 'site-assets', true);
+-- RLS: staff pode fazer upload, qualquer um pode ver
 ```
-src/pages/cliente/
-├── ClienteLayout.tsx      (Layout com header/sidebar)
-├── ClienteDashboard.tsx   (Visão geral das viagens)
-├── ClienteViagens.tsx     (Lista de solicitações/viagens)
-├── ClienteViagem.tsx      (Detalhe de uma viagem)
-├── ClienteMensagens.tsx   (Chat com consultor)
-└── ClientePerfil.tsx      (Edição de dados pessoais)
+
+### Tabela site_settings
+```sql
+CREATE TABLE site_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+-- Guardar hero_image_url, etc.
 ```
 
----
-
-## Componentes Auxiliares
-
-```
-src/components/cliente/
-├── ClienteSidebar.tsx           (Menu lateral)
-├── ProtectedClienteRoute.tsx    (Proteção de rotas)
-└── MessageBubble.tsx            (Componente de mensagem)
+### Coluna payment_links em proposals
+```sql
+ALTER TABLE proposals ADD COLUMN payment_links JSONB DEFAULT '{}';
+-- Formato: {"pix": "https://...", "card": "https://..."}
 ```
 
----
+### Edge Function itinerary-ai
+- Recebe: destino, numero de dias, preferencias, atividades ja adicionadas
+- Retorna: sugestoes estruturadas via tool calling (Lovable AI)
+- Modelo: `google/gemini-3-flash-preview`
 
-## Rotas a Implementar
-
-| Rota | Componente | Descrição |
-|------|------------|-----------|
-| `/minha-conta` | ClienteDashboard | Dashboard com resumo |
-| `/minha-conta/viagens` | ClienteViagens | Lista de viagens |
-| `/minha-conta/viagem/:id` | ClienteViagem | Detalhe + propostas |
-| `/minha-conta/mensagens` | ClienteMensagens | Todas as conversas |
-| `/minha-conta/perfil` | ClientePerfil | Editar perfil |
-
----
-
-## Funcionalidades por Página
-
-### ClienteDashboard
-- Cards de resumo (viagens ativas, propostas pendentes)
-- Última atividade/mensagens
-- Ações rápidas (nova solicitação, ver mensagens)
-
-### ClienteViagens
-- Lista de travel_requests do usuário logado
-- Filtro por status
-- Link para detalhes
-
-### ClienteViagem (detalhe)
-- Informações da solicitação
-- Propostas recebidas (da tabela proposals)
-- Status atual
-- Botão para aprovar proposta
-
-### ClienteMensagens
-- Lista de conversas por viagem
-- Envio de novas mensagens
-- Marcação de lidas
-
-### ClientePerfil
-- Edição de nome, telefone, avatar
-- Preferências de viagem
-
----
-
-## Ajustes Necessários
-
-### 1. Atualizar App.tsx
-Adicionar rotas `/minha-conta/*` com o novo layout.
-
-### 2. Atualizar Login.tsx
-Redirecionar clientes para `/minha-conta` após login (já está quase correto).
-
-### 3. Atualizar PublicHeader.tsx
-O link para `/minha-conta` já existe mas precisa funcionar.
-
-### 4. Habilitar Realtime para Messages (opcional)
-Para notificações em tempo real.
-
----
-
-## Detalhes Técnicos
-
-### Proteção de Rotas
-O componente ProtectedClienteRoute verificará:
-- Se o usuário está logado
-- Se o usuário tem role 'client' (ou qualquer role autenticado)
-
-### Queries Principais
-- `travel_requests` com `client_id = auth.uid()`
-- `proposals` vinculadas às requests do cliente
-- `messages` enviadas ou recebidas pelo cliente
-- `profiles` para dados do usuário
-
-### RLS já configurado
-- Clientes podem ver próprios requests
-- Clientes podem ver propostas das suas requests
-- Clientes podem ver/enviar mensagens
-
----
-
-## Ordem de Implementação
-
-1. **ClienteLayout** + **ClienteSidebar** + **ProtectedClienteRoute**
-2. **ClienteDashboard** (página inicial)
-3. **ClienteViagens** (lista de viagens)
-4. **ClienteViagem** (detalhe com propostas)
-5. **ClienteMensagens** (sistema de mensagens)
-6. **ClientePerfil** (edição de perfil)
-7. Atualizar **App.tsx** com as rotas
-8. Testar fluxo completo
-
----
-
-## Resultado Esperado
-
-Após a implementação, o cliente poderá:
-- Fazer login e ser redirecionado para `/minha-conta`
-- Ver resumo das suas viagens e propostas
-- Acompanhar o status de cada solicitação
-- Trocar mensagens com o consultor designado
-- Editar seu perfil e preferências
+### Ordem de implementacao
+1. Storage bucket + upload do hero (mais simples, resultado visual imediato)
+2. Links de pagamento nas propostas
+3. Planejador de roteiro com IA (mais complexo)
 
