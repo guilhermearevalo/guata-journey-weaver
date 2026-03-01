@@ -366,6 +366,7 @@ export type Database = {
           inclusions: string[] | null
           is_approved: boolean | null
           itinerary: Json | null
+          payment_links: Json | null
           request_id: string
           title: string
           total_price: number | null
@@ -382,6 +383,7 @@ export type Database = {
           inclusions?: string[] | null
           is_approved?: boolean | null
           itinerary?: Json | null
+          payment_links?: Json | null
           request_id: string
           title: string
           total_price?: number | null
@@ -398,6 +400,7 @@ export type Database = {
           inclusions?: string[] | null
           is_approved?: boolean | null
           itinerary?: Json | null
+          payment_links?: Json | null
           request_id?: string
           title?: string
           total_price?: number | null
@@ -419,6 +422,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      site_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
       }
       travel_requests: {
         Row: {
