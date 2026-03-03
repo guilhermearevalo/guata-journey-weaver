@@ -90,6 +90,7 @@ const App = () => (
               <Route path="configuracoes" element={<AdminConfiguracoes />} />
               <Route path="cms" element={<AdminCMS />} />
               <Route path="cms/:slug" element={<AdminCMSEditor />} />
+              <Route path="demandas/:id/roteiro" element={<AdminRoteiro />} />
             </Route>
             
             {/* Partner routes */}
