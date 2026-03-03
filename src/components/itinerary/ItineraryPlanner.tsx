@@ -1,0 +1,265 @@
+import { useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign } from 'lucide-react';
+
+interface Activity {
+  name: string;
+  description: string;
+  category: string;
+  estimated_cost: number;
+  time_slot: string;
+  is_suggestion?: boolean;
+}
+
+interface ItineraryDay {
+  day: number;
+  activities: Activity[];
+}
+
+const categoryColors: Record<string, string> = {
+  gastronomia: 'bg-orange-500/10 text-orange-600',
+  cultura: 'bg-purple-500/10 text-purple-600',
+  aventura: 'bg-red-500/10 text-red-600',
+  natureza: 'bg-green-500/10 text-green-600',
+  compras: 'bg-pink-500/10 text-pink-600',
+  transporte: 'bg-blue-500/10 text-blue-600',
+  hospedagem: 'bg-cyan-500/10 text-cyan-600',
+};
+
+const timeSlotOrder = ['manhã', 'tarde', 'noite'];
+
+interface ItineraryPlannerProps {
+  backLink: string;
+  backLabel?: string;
+}
+
+export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: ItineraryPlannerProps) {
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [generating, setGenerating] = useState(false);
+  const [generatingDay, setGeneratingDay] = useState<number | null>(null);
+
+  const { data: proposal, isLoading } = useQuery({
+    queryKey: ['proposal-itinerary', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('proposals')
+        .select('*, travel_requests!inner(destination, travel_dates, travelers_count, preferences)')
+        .eq('request_id', id!)
+        .eq('is_approved', true)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const request = proposal?.travel_requests as unknown as {
+    destination: string;
+    travel_dates: { start?: string; end?: string } | null;
+    travelers_count: number;
+    preferences: Record<string, unknown> | null;
+  } | null;
+
+  const itinerary: ItineraryDay[] = Array.isArray(proposal?.itinerary)
+    ? (proposal.itinerary as unknown as ItineraryDay[])
+    : [];
+
+  const travelDates = request?.travel_dates;
+  const totalDays = travelDates?.start && travelDates?.end
+    ? Math.max(1, Math.ceil((new Date(travelDates.end).getTime() - new Date(travelDates.start).getTime()) / (1000 * 60 * 60 * 24)) + 1)
+    : itinerary.length || 3;
+
+  const saveItinerary = useMutation({
+    mutationFn: async (newItinerary: ItineraryDay[]) => {
+      if (!proposal?.id) throw new Error('Sem proposta');
+      const { error } = await supabase
+        .from('proposals')
+        .update({ itinerary: JSON.parse(JSON.stringify(newItinerary)) })
+        .eq('id', proposal.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] });
+    },
+  });
+
+  const generateFullItinerary = async () => {
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('itinerary-ai', {
+        body: {
+          destination: request?.destination || 'Brasil',
+          days: totalDays,
+          preferences: JSON.stringify(request?.preferences || {}),
+          existing_activities: itinerary,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) { toast({ title: 'Erro', description: data.error, variant: 'destructive' }); return; }
+      const newDays = data?.days as ItineraryDay[] | undefined;
+      if (newDays) {
+        const merged = newDays.map(d => ({ ...d, activities: d.activities.map(a => ({ ...a, is_suggestion: true })) }));
+        await saveItinerary.mutateAsync(merged);
+        toast({ title: 'Roteiro gerado!', description: 'Revise as sugestões e aceite ou descarte.' });
+      }
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Erro ao gerar roteiro', description: 'Tente novamente.', variant: 'destructive' });
+    } finally { setGenerating(false); }
+  };
+
+  const suggestForDay = async (dayNum: number) => {
+    setGeneratingDay(dayNum);
+    try {
+      const dayActivities = itinerary.find(d => d.day === dayNum)?.activities || [];
+      const { data, error } = await supabase.functions.invoke('itinerary-ai', {
+        body: { destination: request?.destination || 'Brasil', days: 1, day_number: dayNum, preferences: JSON.stringify(request?.preferences || {}), existing_activities: dayActivities },
+      });
+      if (error) throw error;
+      if (data?.error) { toast({ title: 'Erro', description: data.error, variant: 'destructive' }); return; }
+      const suggestedDay = (data?.days as ItineraryDay[] | undefined)?.[0];
+      if (suggestedDay) {
+        const updated = [...itinerary];
+        const existingIdx = updated.findIndex(d => d.day === dayNum);
+        const newActivities = suggestedDay.activities.map(a => ({ ...a, is_suggestion: true }));
+        if (existingIdx >= 0) { updated[existingIdx].activities.push(...newActivities); }
+        else { updated.push({ day: dayNum, activities: newActivities }); }
+        updated.sort((a, b) => a.day - b.day);
+        await saveItinerary.mutateAsync(updated);
+        toast({ title: 'Sugestões adicionadas!' });
+      }
+    } catch (err) { console.error(err); toast({ title: 'Erro', variant: 'destructive' }); }
+    finally { setGeneratingDay(null); }
+  };
+
+  const acceptSuggestion = async (dayIdx: number, actIdx: number) => {
+    const updated = [...itinerary];
+    updated[dayIdx].activities[actIdx].is_suggestion = false;
+    await saveItinerary.mutateAsync(updated);
+  };
+
+  const removeActivity = async (dayIdx: number, actIdx: number) => {
+    const updated = [...itinerary];
+    updated[dayIdx].activities.splice(actIdx, 1);
+    await saveItinerary.mutateAsync(updated);
+  };
+
+  const addEmptyDay = async () => {
+    const nextDay = itinerary.length > 0 ? Math.max(...itinerary.map(d => d.day)) + 1 : 1;
+    await saveItinerary.mutateAsync([...itinerary, { day: nextDay, activities: [] }]);
+  };
+
+  const totalCost = itinerary.reduce((sum, day) => sum + day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0), 0);
+
+  if (isLoading) return <div className="space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-64 w-full" /></div>;
+
+  if (!proposal) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-lg font-medium">Nenhuma proposta aprovada encontrada</p>
+        <p className="text-sm text-muted-foreground mt-1">Aprove uma proposta primeiro para planejar o roteiro.</p>
+        <Button className="mt-4" asChild><Link to={backLink}>{backLabel}</Link></Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" asChild><Link to={backLink}><ArrowLeft className="h-4 w-4" /></Link></Button>
+        <div className="flex-1">
+          <h2 className="text-2xl font-bold">Planejador de Roteiro</h2>
+          <p className="text-muted-foreground">{request?.destination || 'Destino'} • {totalDays} dia(s)</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="text-base px-3 py-1"><DollarSign className="mr-1 h-4 w-4" />R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Badge>
+          <Button onClick={generateFullItinerary} disabled={generating}>
+            {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {itinerary.length > 0 ? 'Regenerar com IA' : 'Gerar Roteiro com IA'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="relative">
+        {itinerary.length > 0 && <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />}
+        <div className="space-y-6">
+          {itinerary.map((day, dayIdx) => {
+            const dayCost = day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0);
+            const sorted = [...day.activities].sort((a, b) => timeSlotOrder.indexOf(a.time_slot) - timeSlotOrder.indexOf(b.time_slot));
+            return (
+              <div key={day.day} className="relative pl-16">
+                <div className="absolute left-3 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">{day.day}</div>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">Dia {day.day}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">R$ {dayCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <Button variant="ghost" size="sm" onClick={() => suggestForDay(day.day)} disabled={generatingDay === day.day}>
+                          {generatingDay === day.day ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                          <span className="ml-1 hidden sm:inline">Sugerir mais</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {sorted.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma atividade. Clique em "Sugerir mais" para pedir à IA.</p>}
+                    {sorted.map((activity, actIdx) => {
+                      const realIdx = day.activities.indexOf(activity);
+                      return (
+                        <div key={actIdx} className={`rounded-lg border p-3 space-y-1 transition-colors ${activity.is_suggestion ? 'border-dashed border-primary/50 bg-primary/5' : ''}`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-medium text-sm">{activity.name}</span>
+                                <Badge variant="outline" className="text-xs">{activity.time_slot}</Badge>
+                                <Badge className={`text-xs ${categoryColors[activity.category] || 'bg-muted text-muted-foreground'}`}>{activity.category}</Badge>
+                                {activity.is_suggestion && <Badge className="bg-primary/10 text-primary text-xs"><Sparkles className="mr-1 h-3 w-3" />Sugestão IA</Badge>}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="text-sm font-medium">R$ {(activity.estimated_cost || 0).toLocaleString('pt-BR')}</span>
+                              {activity.is_suggestion && <Button variant="ghost" size="sm" className="h-7 text-xs text-primary" onClick={() => acceptSuggestion(dayIdx, realIdx)}>Aceitar</Button>}
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => removeActivity(dayIdx, realIdx)}><Trash2 className="h-3 w-3" /></Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })}
+        </div>
+        <div className="pl-16 pt-4">
+          <Button variant="outline" onClick={addEmptyDay}><Plus className="mr-2 h-4 w-4" />Adicionar Dia</Button>
+        </div>
+      </div>
+
+      {itinerary.length === 0 && (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Sparkles className="mb-4 h-12 w-12 text-muted-foreground/50" />
+            <h3 className="text-lg font-semibold">Monte seu roteiro</h3>
+            <p className="mt-1 text-sm text-muted-foreground text-center max-w-md">
+              Clique em "Gerar Roteiro com IA" para receber sugestões de atividades dia a dia, ou adicione dias manualmente.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
