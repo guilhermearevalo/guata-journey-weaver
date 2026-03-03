@@ -367,6 +367,7 @@ export type Database = {
           is_approved: boolean | null
           itinerary: Json | null
           payment_links: Json | null
+          payment_status: string | null
           request_id: string
           title: string
           total_price: number | null
@@ -384,6 +385,7 @@ export type Database = {
           is_approved?: boolean | null
           itinerary?: Json | null
           payment_links?: Json | null
+          payment_status?: string | null
           request_id: string
           title: string
           total_price?: number | null
@@ -401,6 +403,7 @@ export type Database = {
           is_approved?: boolean | null
           itinerary?: Json | null
           payment_links?: Json | null
+          payment_status?: string | null
           request_id?: string
           title?: string
           total_price?: number | null
