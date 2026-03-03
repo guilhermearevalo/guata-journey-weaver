@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -27,6 +28,7 @@ export default function PartnerProposta() {
   const [inclusions, setInclusions] = useState('');
   const [pixLink, setPixLink] = useState('');
   const [cardLink, setCardLink] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState('pending');
 
   // Buscar agência do parceiro
   const { data: agencyData } = useQuery({
@@ -87,6 +89,7 @@ export default function PartnerProposta() {
       const pl = existingProposal.payment_links as { pix?: string; card?: string } | null;
       setPixLink(pl?.pix || '');
       setCardLink(pl?.card || '');
+      setPaymentStatus((existingProposal as any).payment_status || 'pending');
     } else if (request) {
       setTitle(`Proposta de Viagem - ${request.destination || 'Destino Personalizado'}`);
     }
@@ -109,6 +112,7 @@ export default function PartnerProposta() {
         total_price: totalPrice ? parseFloat(totalPrice) : null,
         inclusions: inclusionsArray.length > 0 ? inclusionsArray : null,
         payment_links: { pix: pixLink || null, card: cardLink || null },
+        payment_status: paymentStatus,
       };
 
       if (existingProposal) {
@@ -188,6 +192,11 @@ export default function PartnerProposta() {
             {request?.client_name ? `Para: ${request.client_name}` : 'Carregando...'}
           </p>
         </div>
+        {existingProposal?.is_approved && (
+          <Button variant="outline" className="ml-auto" onClick={() => navigate(`/partner/proposta/${requestId}/roteiro`)}>
+            <Route className="mr-2 h-4 w-4" />Ver Roteiro
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -257,7 +266,7 @@ export default function PartnerProposta() {
                   />
                 </div>
 
-                <div className="space-y-2 border-t pt-4">
+                <div className="space-y-3 border-t pt-4">
                   <Label className="text-base font-semibold">Links de Pagamento</Label>
                   <p className="text-xs text-muted-foreground">Cole aqui os links para o cliente efetuar o pagamento</p>
                   <div className="space-y-2">
@@ -278,6 +287,19 @@ export default function PartnerProposta() {
                       placeholder="https://link-de-pagamento-cartao..."
                     />
                   </div>
+                  {existingProposal && (
+                    <div className="space-y-2">
+                      <Label>Status do Pagamento</Label>
+                      <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pendente</SelectItem>
+                          <SelectItem value="partial">Parcial</SelectItem>
+                          <SelectItem value="paid">Pago</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">

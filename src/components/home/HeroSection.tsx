@@ -1,10 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, MapPin, Calendar, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import useEmblaCarousel from 'embla-carousel-react';
+
+interface Slide {
+  type: 'image' | 'video';
+  url: string;
+}
+
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop';
 
 export function HeroSection() {
   const [destination, setDestination] = useState('');
@@ -24,9 +32,29 @@ export function HeroSection() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const heroImageUrl = heroSetting
-    ? (typeof heroSetting === 'string' ? heroSetting.replace(/^"|"$/g, '') : 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop')
-    : 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop';
+  // Parse slides from setting
+  const slides: Slide[] = (() => {
+    if (!heroSetting) return [{ type: 'image' as const, url: DEFAULT_IMAGE }];
+    const val = heroSetting as unknown;
+    if (typeof val === 'object' && val !== null && 'slides' in val) {
+      const s = (val as { slides: Slide[] }).slides;
+      return s?.length ? s : [{ type: 'image' as const, url: DEFAULT_IMAGE }];
+    }
+    // Legacy string
+    const url = typeof val === 'string' ? val.replace(/^"|"$/g, '') : DEFAULT_IMAGE;
+    return [{ type: 'image' as const, url: url || DEFAULT_IMAGE }];
+  })();
+
+  const hasMultipleSlides = slides.length > 1;
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+
+  // Auto-play carousel
+  useEffect(() => {
+    if (!emblaApi || !hasMultipleSlides) return;
+    const interval = setInterval(() => emblaApi.scrollNext(), 6000);
+    return () => clearInterval(interval);
+  }, [emblaApi, hasMultipleSlides]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,15 +65,47 @@ export function HeroSection() {
 
   return (
     <section className="relative min-h-[90vh] overflow-hidden">
-      {/* Background with gradient overlay */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: `url(${heroImageUrl})`,
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-secondary/80 via-secondary/60 to-background" />
-      </div>
+      {/* Background carousel */}
+      {hasMultipleSlides ? (
+        <div className="absolute inset-0" ref={emblaRef}>
+          <div className="flex h-full">
+            {slides.map((slide, i) => (
+              <div key={i} className="relative min-w-0 flex-[0_0_100%]">
+                {slide.type === 'video' ? (
+                  <video
+                    src={slide.url}
+                    className="h-full w-full object-cover"
+                    autoPlay muted loop playsInline
+                  />
+                ) : (
+                  <div
+                    className="h-full w-full bg-cover bg-center"
+                    style={{ backgroundImage: `url(${slide.url})` }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="absolute inset-0">
+          {slides[0]?.type === 'video' ? (
+            <video
+              src={slides[0].url}
+              className="h-full w-full object-cover"
+              autoPlay muted loop playsInline
+            />
+          ) : (
+            <div
+              className="h-full w-full bg-cover bg-center"
+              style={{ backgroundImage: `url(${slides[0]?.url || DEFAULT_IMAGE})` }}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-secondary/80 via-secondary/60 to-background" />
 
       {/* Content */}
       <div className="container relative mx-auto flex min-h-[90vh] flex-col items-center justify-center px-4 py-20 text-center lg:px-8">
