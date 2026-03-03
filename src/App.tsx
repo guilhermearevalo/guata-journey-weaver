@@ -33,6 +33,7 @@ import AdminClientes from "./pages/admin/AdminClientes";
 import AdminParceiros from "./pages/admin/AdminParceiros";
 import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
+import AdminRoteiro from "./pages/admin/AdminRoteiro";
 
 // Partner imports
 import PartnerLayout from "./pages/partner/PartnerLayout";
@@ -40,6 +41,7 @@ import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import PartnerDemandas from "./pages/partner/PartnerDemandas";
 import PartnerProposta from "./pages/partner/PartnerProposta";
 import PartnerExperiencias from "./pages/partner/PartnerExperiencias";
+import PartnerRoteiro from "./pages/partner/PartnerRoteiro";
 
 // Cliente imports
 import { ProtectedClienteRoute } from "./components/cliente/ProtectedClienteRoute";
@@ -88,6 +90,7 @@ const App = () => (
               <Route path="configuracoes" element={<AdminConfiguracoes />} />
               <Route path="cms" element={<AdminCMS />} />
               <Route path="cms/:slug" element={<AdminCMSEditor />} />
+              <Route path="demandas/:id/roteiro" element={<AdminRoteiro />} />
             </Route>
             
             {/* Partner routes */}
@@ -95,6 +98,7 @@ const App = () => (
               <Route index element={<PartnerDashboard />} />
               <Route path="demandas" element={<PartnerDemandas />} />
               <Route path="proposta/:id" element={<PartnerProposta />} />
+              <Route path="proposta/:id/roteiro" element={<PartnerRoteiro />} />
               <Route path="experiencias" element={<PartnerExperiencias />} />
             </Route>
             
