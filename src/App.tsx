@@ -47,6 +47,7 @@ import PartnerDemandas from "./pages/partner/PartnerDemandas";
 import PartnerProposta from "./pages/partner/PartnerProposta";
 import PartnerExperiencias from "./pages/partner/PartnerExperiencias";
 import PartnerRoteiro from "./pages/partner/PartnerRoteiro";
+import PartnerAjuda from "./pages/partner/PartnerAjuda";
 
 // Cliente imports
 import { ProtectedClienteRoute } from "./components/cliente/ProtectedClienteRoute";
