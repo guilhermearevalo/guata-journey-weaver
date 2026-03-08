@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil } from 'lucide-react';
+import ActivityFormDialog from './ActivityFormDialog';
+import DocumentsChecklist from './DocumentsChecklist';
 
 interface Activity {
   name: string;
@@ -22,6 +24,12 @@ interface Activity {
 interface ItineraryDay {
   day: number;
   activities: Activity[];
+}
+
+interface DocumentItem {
+  name: string;
+  checked: boolean;
+  notes?: string;
 }
 
 const categoryColors: Record<string, string> = {
@@ -51,6 +59,12 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   const [copied, setCopied] = useState(false);
   const [sharing, setSharing] = useState(false);
 
+  // Activity form state
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [editingDayIdx, setEditingDayIdx] = useState<number>(0);
+  const [editingActIdx, setEditingActIdx] = useState<number | null>(null);
+
   const { data: proposal, isLoading } = useQuery({
     queryKey: ['proposal-itinerary', id],
     queryFn: async () => {
@@ -76,6 +90,10 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     ? (proposal.itinerary as unknown as ItineraryDay[])
     : [];
 
+  const documentsChecklist: DocumentItem[] = Array.isArray((proposal as any)?.documents_checklist)
+    ? ((proposal as any).documents_checklist as DocumentItem[])
+    : [];
+
   const travelDates = request?.travel_dates;
   const totalDays = travelDates?.start && travelDates?.end
     ? Math.max(1, Math.ceil((new Date(travelDates.end).getTime() - new Date(travelDates.start).getTime()) / (1000 * 60 * 60 * 24)) + 1)
@@ -90,21 +108,26 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         .eq('id', proposal.id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] });
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] }),
+  });
+
+  const saveDocuments = useMutation({
+    mutationFn: async (items: DocumentItem[]) => {
+      if (!proposal?.id) throw new Error('Sem proposta');
+      const { error } = await supabase
+        .from('proposals')
+        .update({ documents_checklist: JSON.parse(JSON.stringify(items)) } as any)
+        .eq('id', proposal.id);
+      if (error) throw error;
     },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] }),
   });
 
   const generateFullItinerary = async () => {
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('itinerary-ai', {
-        body: {
-          destination: request?.destination || 'Brasil',
-          days: totalDays,
-          preferences: JSON.stringify(request?.preferences || {}),
-          existing_activities: itinerary,
-        },
+        body: { destination: request?.destination || 'Brasil', days: totalDays, preferences: JSON.stringify(request?.preferences || {}), existing_activities: itinerary },
       });
       if (error) throw error;
       if (data?.error) { toast({ title: 'Erro', description: data.error, variant: 'destructive' }); return; }
@@ -154,6 +177,33 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     const updated = [...itinerary];
     updated[dayIdx].activities.splice(actIdx, 1);
     await saveItinerary.mutateAsync(updated);
+  };
+
+  const openAddActivity = (dayIdx: number) => {
+    setEditingActivity(null);
+    setEditingDayIdx(dayIdx);
+    setEditingActIdx(null);
+    setActivityDialogOpen(true);
+  };
+
+  const openEditActivity = (dayIdx: number, actIdx: number, activity: Activity) => {
+    setEditingActivity(activity);
+    setEditingDayIdx(dayIdx);
+    setEditingActIdx(actIdx);
+    setActivityDialogOpen(true);
+  };
+
+  const handleSaveActivity = async (activity: Activity) => {
+    const updated = [...itinerary];
+    if (editingActIdx !== null) {
+      // Edit existing
+      updated[editingDayIdx].activities[editingActIdx] = activity;
+    } else {
+      // Add new
+      updated[editingDayIdx].activities.push(activity);
+    }
+    await saveItinerary.mutateAsync(updated);
+    toast({ title: editingActIdx !== null ? 'Atividade atualizada!' : 'Atividade adicionada!' });
   };
 
   const addEmptyDay = async () => {
@@ -225,7 +275,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         </div>
       </div>
 
-      {/* Print header (visible only when printing) */}
+      {/* Print header */}
       <div className="hidden print:block space-y-1 mb-6">
         <p className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Roteiro de Viagem • Guata Viagens</p>
         <h2 className="text-3xl font-bold">{request?.destination || 'Destino'}</h2>
@@ -248,6 +298,10 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                       <CardTitle className="text-lg">Dia {day.day}</CardTitle>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">R$ {dayCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <Button variant="ghost" size="sm" className="print:hidden" onClick={() => openAddActivity(dayIdx)}>
+                          <Plus className="h-4 w-4" />
+                          <span className="ml-1 hidden sm:inline">Adicionar</span>
+                        </Button>
                         <Button variant="ghost" size="sm" className="print:hidden" onClick={() => suggestForDay(day.day)} disabled={generatingDay === day.day}>
                           {generatingDay === day.day ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                           <span className="ml-1 hidden sm:inline">Sugerir mais</span>
@@ -256,7 +310,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {sorted.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma atividade. Clique em "Sugerir mais" para pedir à IA.</p>}
+                    {sorted.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma atividade. Clique em "Adicionar" ou "Sugerir mais".</p>}
                     {sorted.map((activity, actIdx) => {
                       const realIdx = day.activities.indexOf(activity);
                       return (
@@ -274,7 +328,12 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                             <div className="flex items-center gap-1 shrink-0">
                               <span className="text-sm font-medium">R$ {(activity.estimated_cost || 0).toLocaleString('pt-BR')}</span>
                               {activity.is_suggestion && <Button variant="ghost" size="sm" className="h-7 text-xs text-primary print:hidden" onClick={() => acceptSuggestion(dayIdx, realIdx)}>Aceitar</Button>}
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive print:hidden" onClick={() => removeActivity(dayIdx, realIdx)}><Trash2 className="h-3 w-3" /></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => openEditActivity(dayIdx, realIdx, activity)}>
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive print:hidden" onClick={() => removeActivity(dayIdx, realIdx)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -297,11 +356,25 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
             <Sparkles className="mb-4 h-12 w-12 text-muted-foreground/50" />
             <h3 className="text-lg font-semibold">Monte seu roteiro</h3>
             <p className="mt-1 text-sm text-muted-foreground text-center max-w-md">
-              Clique em "Gerar Roteiro com IA" para receber sugestões de atividades dia a dia, ou adicione dias manualmente.
+              Clique em "Gerar Roteiro com IA" para receber sugestões ou adicione dias manualmente.
             </p>
           </CardContent>
         </Card>
       )}
+
+      {/* Documents Checklist */}
+      <DocumentsChecklist
+        items={documentsChecklist}
+        onChange={(items) => saveDocuments.mutate(items)}
+      />
+
+      {/* Activity Form Dialog */}
+      <ActivityFormDialog
+        open={activityDialogOpen}
+        onOpenChange={setActivityDialogOpen}
+        onSave={handleSaveActivity}
+        initialData={editingActivity}
+      />
     </div>
   );
 }

@@ -1,0 +1,1 @@
+ALTER TABLE public.proposals ADD COLUMN IF NOT EXISTS documents_checklist jsonb DEFAULT '[]'::jsonb;

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { MapPin, Calendar, DollarSign, Printer } from 'lucide-react';
+import DocumentsChecklist from '@/components/itinerary/DocumentsChecklist';
 
 interface Activity {
   name: string;
@@ -57,6 +58,10 @@ export default function RoteiroPublico() {
 
   const itinerary: ItineraryDay[] = Array.isArray(proposal?.itinerary)
     ? (proposal.itinerary as unknown as ItineraryDay[])
+    : [];
+
+  const documentsChecklist = Array.isArray((proposal as any)?.documents_checklist)
+    ? ((proposal as any).documents_checklist as { name: string; checked: boolean; notes?: string }[])
     : [];
 
   const travelDates = request?.travel_dates;
@@ -160,6 +165,11 @@ export default function RoteiroPublico() {
             <p className="text-lg font-medium">Roteiro ainda em planejamento</p>
             <p className="text-sm mt-1">As atividades serão adicionadas em breve.</p>
           </div>
+        )}
+
+        {/* Documents Checklist */}
+        {documentsChecklist.length > 0 && (
+          <DocumentsChecklist items={documentsChecklist} onChange={() => {}} readOnly />
         )}
 
         {/* Footer */}
