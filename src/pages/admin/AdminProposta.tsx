@@ -82,6 +82,8 @@ export default function AdminProposta() {
       setInclusions(existingProposal.inclusions?.join('\n') || '');
       setPaymentStatus(existingProposal.payment_status || 'pending');
       setAgencyId(existingProposal.agency_id || 'none');
+      setPaymentEnabled((existingProposal as any).payment_enabled || false);
+      setAccessCode((existingProposal as any).access_code || '');
       const links = existingProposal.payment_links as { pix?: string; card?: string } | null;
       setPixLink(links?.pix || '');
       setCardLink(links?.card || '');
