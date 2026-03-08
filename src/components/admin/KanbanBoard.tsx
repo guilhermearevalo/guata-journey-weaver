@@ -135,13 +135,16 @@ export function KanbanBoard() {
 
   return (
     <>
-      <KanbanFilters
-        agencyId={filterAgency}
-        paymentStatus={filterPayment}
-        onAgencyChange={setFilterAgency}
-        onPaymentStatusChange={setFilterPayment}
-        onClear={() => { setFilterAgency('all'); setFilterPayment('all'); }}
-      />
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <KanbanFilters
+          agencyId={filterAgency}
+          paymentStatus={filterPayment}
+          onAgencyChange={setFilterAgency}
+          onPaymentStatusChange={setFilterPayment}
+          onClear={() => { setFilterAgency('all'); setFilterPayment('all'); }}
+        />
+        <NewRequestDialog />
+      </div>
       <div className="flex gap-4 overflow-x-auto pb-4 mt-4">
         {columns.map((column) => {
           const columnRequests = getRequestsByStatus(column.id);
