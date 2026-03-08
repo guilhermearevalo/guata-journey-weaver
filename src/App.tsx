@@ -33,6 +33,9 @@ import AdminClientes from "./pages/admin/AdminClientes";
 import AdminParceiros from "./pages/admin/AdminParceiros";
 import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
+import AdminRelatorioAgencias from "./pages/admin/AdminRelatorioAgencias";
+import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
+import AdminProposta from "./pages/admin/AdminProposta";
 import AdminRoteiro from "./pages/admin/AdminRoteiro";
 
 // Partner imports
@@ -91,6 +94,9 @@ const App = () => (
               <Route path="cms" element={<AdminCMS />} />
               <Route path="cms/:slug" element={<AdminCMSEditor />} />
               <Route path="demandas/:id/roteiro" element={<AdminRoteiro />} />
+              <Route path="relatorio-agencias" element={<AdminRelatorioAgencias />} />
+              <Route path="financeiro" element={<AdminFinanceiro />} />
+              <Route path="proposta/:id" element={<AdminProposta />} />
             </Route>
             
             {/* Partner routes */}

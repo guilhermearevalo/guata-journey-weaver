@@ -5,6 +5,7 @@ import { Tables, Enums } from '@/integrations/supabase/types';
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
 import { RequestDetailDialog } from './RequestDetailDialog';
+import { KanbanFilters } from './KanbanFilters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,6 +31,8 @@ export function KanbanBoard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] = useState<Tables<'travel_requests'> | null>(null);
+  const [filterAgency, setFilterAgency] = useState('all');
+  const [filterPayment, setFilterPayment] = useState('all');
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['travel_requests'],
@@ -85,8 +88,32 @@ export function KanbanBoard() {
     }
   };
 
+  // Fetch proposals for payment filter
+  const { data: proposalMap } = useQuery({
+    queryKey: ['proposals-payment-map'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('proposals')
+        .select('request_id, payment_status');
+      if (error) throw error;
+      const map = new Map<string, string>();
+      data?.forEach(p => map.set(p.request_id, p.payment_status || 'pending'));
+      return map;
+    },
+    enabled: filterPayment !== 'all',
+  });
+
   const getRequestsByStatus = (status: RequestStatus) => {
-    return requests?.filter(r => r.status === status) || [];
+    let filtered = requests?.filter(r => r.status === status) || [];
+    if (filterAgency === 'none') {
+      filtered = filtered.filter(r => !r.assigned_agency_id);
+    } else if (filterAgency !== 'all') {
+      filtered = filtered.filter(r => r.assigned_agency_id === filterAgency);
+    }
+    if (filterPayment !== 'all' && proposalMap) {
+      filtered = filtered.filter(r => proposalMap.get(r.id) === filterPayment);
+    }
+    return filtered;
   };
 
   if (isLoading) {
@@ -107,7 +134,14 @@ export function KanbanBoard() {
 
   return (
     <>
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <KanbanFilters
+        agencyId={filterAgency}
+        paymentStatus={filterPayment}
+        onAgencyChange={setFilterAgency}
+        onPaymentStatusChange={setFilterPayment}
+        onClear={() => { setFilterAgency('all'); setFilterPayment('all'); }}
+      />
+      <div className="flex gap-4 overflow-x-auto pb-4 mt-4">
         {columns.map((column) => {
           const columnRequests = getRequestsByStatus(column.id);
           return (

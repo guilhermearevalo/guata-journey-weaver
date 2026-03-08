@@ -132,6 +132,17 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
               </Button>
             </>
           )}
+
+          <Separator />
+          <Button
+            className="w-full"
+            onClick={() => {
+              onOpenChange(false);
+              navigate(`/admin/proposta/${request.id}`);
+            }}
+          >
+            Ver / Criar Proposta
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

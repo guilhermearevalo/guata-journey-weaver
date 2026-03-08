@@ -8,7 +8,9 @@ import {
   FileText, 
   Settings,
   ChevronLeft,
-  LogOut
+  LogOut,
+  BarChart3,
+  DollarSign
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -73,6 +75,16 @@ const AdminSidebar = () => {
       icon: FileText, 
       label: 'CMS', 
       href: '/admin/cms' 
+    },
+    { 
+      icon: BarChart3, 
+      label: 'Relatório Agências', 
+      href: '/admin/relatorio-agencias' 
+    },
+    { 
+      icon: DollarSign, 
+      label: 'Financeiro', 
+      href: '/admin/financeiro' 
     },
   ];
 
