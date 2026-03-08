@@ -32,6 +32,8 @@ export default function AdminProposta() {
   const [cardLink, setCardLink] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [agencyId, setAgencyId] = useState<string>('none');
+  const [paymentEnabled, setPaymentEnabled] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
   const [shareLoading, setShareLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
