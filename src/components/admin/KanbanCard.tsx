@@ -75,12 +75,20 @@ export function KanbanCard({ request, onDragStart, onClick }: KanbanCardProps) {
           )}
         </div>
 
-        {request.budget_range && (
-          <Badge variant="secondary" className="text-xs font-normal">
-            <DollarSign className="h-3 w-3 mr-1" />
-            {request.budget_range}
-          </Badge>
-        )}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {request.budget_range && (
+            <Badge variant="secondary" className="text-xs font-normal">
+              <DollarSign className="h-3 w-3 mr-1" />
+              {request.budget_range}
+            </Badge>
+          )}
+          {['approved', 'in_operation', 'completed'].includes(request.status) && (
+            <Badge variant="outline" className="text-xs font-normal text-primary">
+              <Route className="h-3 w-3 mr-1" />
+              Roteiro
+            </Badge>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

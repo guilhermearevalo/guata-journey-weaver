@@ -119,6 +119,9 @@ const App = () => (
               <Route path="/minha-conta/perfil" element={<ClientePerfil />} />
             </Route>
             
+            {/* Public itinerary share */}
+            <Route path="/roteiro/:token" element={<RoteiroPublico />} />
+            
             {/* Auth routes without public layout */}
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
