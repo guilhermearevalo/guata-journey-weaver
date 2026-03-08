@@ -8,7 +8,9 @@ import {
   FileText, 
   Settings,
   ChevronLeft,
-  LogOut
+  LogOut,
+  BarChart3,
+  DollarSign
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
