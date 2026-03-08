@@ -121,6 +121,30 @@ export default function AdminProposta() {
 
   const travelDates = request?.travel_dates as { start?: string; end?: string } | null;
 
+  const handleShareProposal = async () => {
+    if (!existingProposal) return;
+    setShareLoading(true);
+    try {
+      let token = existingProposal.share_token as string | null;
+      if (!token) {
+        token = crypto.randomUUID();
+        const { error } = await supabase
+          .from('proposals')
+          .update({ share_token: token } as any)
+          .eq('id', existingProposal.id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['admin-proposal', requestId] });
+      }
+      const url = `${window.location.origin}/proposta/${token}`;
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      toast({ title: 'Link copiado!', description: 'Envie por WhatsApp, email ou redes sociais.' });
+      setTimeout(() => setShareCopied(false), 3000);
+    } catch {
+      toast({ title: 'Erro ao gerar link', variant: 'destructive' });
+    } finally { setShareLoading(false); }
+  };
+
   if (requestLoading || proposalLoading) {
     return <div className="space-y-4"><Skeleton className="h-8 w-64" /><Skeleton className="h-64" /></div>;
   }
