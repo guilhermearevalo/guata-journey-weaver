@@ -298,7 +298,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         <div className="space-y-6">
           {itinerary.map((day, dayIdx) => {
             const dayCost = day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0);
-            const sorted = [...day.activities].sort((a, b) => timeSlotOrder.indexOf(a.time_slot) - timeSlotOrder.indexOf(b.time_slot));
+            const displayActivities = day.activities;
             return (
               <div key={day.day} className="relative pl-16">
                 <div className="absolute left-3 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">{day.day}</div>
