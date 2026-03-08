@@ -76,6 +76,16 @@ const AdminSidebar = () => {
       label: 'CMS', 
       href: '/admin/cms' 
     },
+    { 
+      icon: BarChart3, 
+      label: 'Relatório Agências', 
+      href: '/admin/relatorio-agencias' 
+    },
+    { 
+      icon: DollarSign, 
+      label: 'Financeiro', 
+      href: '/admin/financeiro' 
+    },
   ];
 
   // Only show team management for admins
