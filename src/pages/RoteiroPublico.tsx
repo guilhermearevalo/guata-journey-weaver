@@ -60,6 +60,10 @@ export default function RoteiroPublico() {
     ? (proposal.itinerary as unknown as ItineraryDay[])
     : [];
 
+  const documentsChecklist = Array.isArray((proposal as any)?.documents_checklist)
+    ? ((proposal as any).documents_checklist as { name: string; checked: boolean; notes?: string }[])
+    : [];
+
   const travelDates = request?.travel_dates;
   const formatDate = (d?: string) => {
     if (!d) return '';
