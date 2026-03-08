@@ -22,6 +22,8 @@ import { Link } from 'react-router-dom';
 interface TravelRequest {
   id: string;
   client_name: string;
+  client_email: string;
+  client_phone: string | null;
   destination: string | null;
   status: string;
   travelers_count: number | null;
