@@ -100,9 +100,11 @@ export default function AdminProposta() {
         inclusions: inclusions.split('\n').filter(Boolean),
         payment_links: { pix: pixLink || null, card: cardLink || null },
         payment_status: paymentStatus,
+        payment_enabled: paymentEnabled,
+        access_code: accessCode.trim() || null,
         created_by: user?.id,
         agency_id: agencyId === 'none' ? null : agencyId,
-      };
+      } as any;
 
       if (existingProposal) {
         const { error } = await supabase.from('proposals').update(payload).eq('id', existingProposal.id);
