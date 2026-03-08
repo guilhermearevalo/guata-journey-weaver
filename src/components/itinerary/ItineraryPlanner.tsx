@@ -7,6 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil, ChevronUp, ChevronDown } from 'lucide-react';
 import ActivityFormDialog from './ActivityFormDialog';
@@ -216,6 +219,16 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     await saveItinerary.mutateAsync(updated);
   };
 
+  const moveActivityToPosition = async (dayIdx: number, fromIdx: number, toIdx: number) => {
+    const updated = [...itinerary];
+    const activities = [...updated[dayIdx].activities];
+    if (toIdx < 0 || toIdx >= activities.length || fromIdx === toIdx) return;
+    const [item] = activities.splice(fromIdx, 1);
+    activities.splice(toIdx, 0, item);
+    updated[dayIdx] = { ...updated[dayIdx], activities };
+    await saveItinerary.mutateAsync(updated);
+  };
+
   const addEmptyDay = async () => {
     const nextDay = itinerary.length > 0 ? Math.max(...itinerary.map(d => d.day)) + 1 : 1;
     await saveItinerary.mutateAsync([...itinerary, { day: nextDay, activities: [] }]);
@@ -261,6 +274,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   }
 
   return (
+    <TooltipProvider>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4 print:hidden">
@@ -325,24 +339,58 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                       return (
                         <div key={actIdx} className={`rounded-lg border p-3 space-y-1 transition-colors ${activity.is_suggestion ? 'border-dashed border-primary/50 bg-primary/5' : ''}`}>
                           <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-medium text-sm">{activity.name}</span>
-                                <Badge variant="outline" className="text-xs">{activity.time_slot}</Badge>
-                                <Badge className={`text-xs ${categoryColors[activity.category] || 'bg-muted text-muted-foreground'}`}>{activity.category}</Badge>
-                                {activity.is_suggestion && <Badge className="bg-primary/10 text-primary text-xs print:hidden"><Sparkles className="mr-1 h-3 w-3" />Sugestão IA</Badge>}
+                            <div className="flex items-start gap-2 flex-1">
+                              {/* Position badge with popover */}
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer print:hidden" title="Clique para mover">
+                                    {actIdx + 1}
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-44 p-3" side="right">
+                                  <p className="text-xs text-muted-foreground mb-2">Mover para posição:</p>
+                                  <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const input = (e.target as HTMLFormElement).elements.namedItem('pos') as HTMLInputElement;
+                                    const newPos = parseInt(input.value, 10) - 1;
+                                    if (!isNaN(newPos)) moveActivityToPosition(dayIdx, actIdx, newPos);
+                                  }}>
+                                    <div className="flex gap-2">
+                                      <Input name="pos" type="number" min={1} max={displayActivities.length} defaultValue={actIdx + 1} className="h-8 text-sm" />
+                                      <Button type="submit" size="sm" className="h-8 px-3">Ir</Button>
+                                    </div>
+                                  </form>
+                                </PopoverContent>
+                              </Popover>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium text-sm">{activity.name}</span>
+                                  <Badge variant="outline" className="text-xs">{activity.time_slot}</Badge>
+                                  <Badge className={`text-xs ${categoryColors[activity.category] || 'bg-muted text-muted-foreground'}`}>{activity.category}</Badge>
+                                  {activity.is_suggestion && <Badge className="bg-primary/10 text-primary text-xs print:hidden"><Sparkles className="mr-1 h-3 w-3" />Sugestão IA</Badge>}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                               <span className="text-sm font-medium">R$ {(activity.estimated_cost || 0).toLocaleString('pt-BR')}</span>
                               {activity.is_suggestion && <Button variant="ghost" size="sm" className="h-7 text-xs text-primary print:hidden" onClick={() => acceptSuggestion(dayIdx, actIdx)}>Aceitar</Button>}
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => moveActivity(dayIdx, actIdx, 'up')} disabled={actIdx === 0}>
-                                <ChevronUp className="h-3 w-3" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => moveActivity(dayIdx, actIdx, 'down')} disabled={actIdx === displayActivities.length - 1}>
-                                <ChevronDown className="h-3 w-3" />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => moveActivity(dayIdx, actIdx, 'up')} disabled={actIdx === 0}>
+                                    <ChevronUp className="h-3 w-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Mover para cima</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => moveActivity(dayIdx, actIdx, 'down')} disabled={actIdx === displayActivities.length - 1}>
+                                    <ChevronDown className="h-3 w-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Mover para baixo</TooltipContent>
+                              </Tooltip>
                               <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => openEditActivity(dayIdx, actIdx, activity)}>
                                 <Pencil className="h-3 w-3" />
                               </Button>
@@ -391,5 +439,6 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         initialData={editingActivity}
       />
     </div>
+    </TooltipProvider>
   );
 }
