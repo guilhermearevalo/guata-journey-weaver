@@ -219,6 +219,16 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     await saveItinerary.mutateAsync(updated);
   };
 
+  const moveActivityToPosition = async (dayIdx: number, fromIdx: number, toIdx: number) => {
+    const updated = [...itinerary];
+    const activities = [...updated[dayIdx].activities];
+    if (toIdx < 0 || toIdx >= activities.length || fromIdx === toIdx) return;
+    const [item] = activities.splice(fromIdx, 1);
+    activities.splice(toIdx, 0, item);
+    updated[dayIdx] = { ...updated[dayIdx], activities };
+    await saveItinerary.mutateAsync(updated);
+  };
+
   const addEmptyDay = async () => {
     const nextDay = itinerary.length > 0 ? Math.max(...itinerary.map(d => d.day)) + 1 : 1;
     await saveItinerary.mutateAsync([...itinerary, { day: nextDay, activities: [] }]);
