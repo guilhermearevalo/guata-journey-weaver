@@ -39,6 +39,7 @@ import AdminRelatorioAgencias from "./pages/admin/AdminRelatorioAgencias";
 import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
 import AdminProposta from "./pages/admin/AdminProposta";
 import AdminRoteiro from "./pages/admin/AdminRoteiro";
+import AdminAjuda from "./pages/admin/AdminAjuda";
 
 // Partner imports
 import PartnerLayout from "./pages/partner/PartnerLayout";
