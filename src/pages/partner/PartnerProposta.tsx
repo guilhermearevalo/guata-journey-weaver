@@ -267,10 +267,33 @@ export default function PartnerProposta() {
                   />
                 </div>
 
-                <div className="space-y-3 border-t pt-4">
-                  <p className="text-xs text-muted-foreground">
-                    O pagamento será feito pelo cliente diretamente via Stripe (cartão ou PIX) na proposta pública.
-                  </p>
+                <div className="space-y-4 border-t pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Habilitar Pagamento</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Quando ativado, o cliente poderá pagar via Stripe na proposta pública.
+                      </p>
+                    </div>
+                    <Switch checked={paymentEnabled} onCheckedChange={setPaymentEnabled} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="accessCode" className="flex items-center gap-1.5">
+                      <Lock className="h-3.5 w-3.5" />Código de Acesso ao Roteiro
+                    </Label>
+                    <Input
+                      id="accessCode"
+                      value={accessCode}
+                      onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                      placeholder="Ex: NORONHA2026 (deixe vazio para acesso livre)"
+                      maxLength={20}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Se definido, o cliente precisará informar este código para visualizar o roteiro.
+                    </p>
+                  </div>
+
                   {existingProposal && (
                     <div className="space-y-2">
                       <Label>Status do Pagamento</Label>

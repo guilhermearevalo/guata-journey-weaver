@@ -231,15 +231,29 @@ export default function AdminProposta() {
             <Textarea value={inclusions} onChange={e => setInclusions(e.target.value)} rows={4} placeholder="Hospedagem 4 noites&#10;Transfer aeroporto&#10;Passeio de barco" />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Link de Pagamento PIX</Label>
-              <Input value={pixLink} onChange={e => setPixLink(e.target.value)} placeholder="https://..." />
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label>Habilitar Pagamento</Label>
+              <p className="text-xs text-muted-foreground">
+                Quando ativado, o cliente poderá pagar via Stripe na proposta pública.
+              </p>
             </div>
-            <div className="space-y-2">
-              <Label>Link de Pagamento Cartão</Label>
-              <Input value={cardLink} onChange={e => setCardLink(e.target.value)} placeholder="https://..." />
-            </div>
+            <Switch checked={paymentEnabled} onCheckedChange={setPaymentEnabled} />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5" />Código de Acesso ao Roteiro
+            </Label>
+            <Input
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+              placeholder="Ex: NORONHA2026 (deixe vazio para acesso livre)"
+              maxLength={20}
+            />
+            <p className="text-xs text-muted-foreground">
+              Se definido, o cliente precisará informar este código para visualizar o roteiro.
+            </p>
           </div>
 
           <div className="space-y-2">
