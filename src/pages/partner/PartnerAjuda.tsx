@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardList, FileText, Map, Share2, Sparkles, CheckSquare } from 'lucide-react';
+import { ClipboardList, FileText, Map, Share2, CheckSquare, DollarSign, Lock } from 'lucide-react';
 
 const steps = [
   {
@@ -26,6 +26,9 @@ const steps = [
     items: [
       'Dentro da demanda, clique em "Criar Proposta".',
       'Preencha o título, descrição, preço total e o que está incluso.',
+      'O Switch "Habilitar Pagamento" começa desligado — envie a proposta para o cliente revisar primeiro.',
+      'Quando o cliente aprovar a viagem, ligue o Switch para liberar o pagamento via Stripe (cartão ou PIX).',
+      'No campo "Código de Acesso", defina uma senha (ex: NORONHA2026) para proteger o roteiro público. Deixe em branco para acesso livre.',
       'A proposta será visível para a Guatá e poderá ser compartilhada com o cliente.',
     ],
   },
@@ -59,8 +62,21 @@ const steps = [
     badge: 'Compartilhar',
     items: [
       'No Roteiro, clique em "Compartilhar" para gerar um link público.',
+      'Se definiu um código de acesso, o cliente precisará digitá-lo para ver o roteiro.',
       'Copie e envie o link para o cliente.',
       'O cliente poderá ver o roteiro completo, custos estimados e checklist de documentos.',
+    ],
+  },
+  {
+    icon: DollarSign,
+    title: '6. Acompanhar Financeiro',
+    badge: 'Financeiro',
+    items: [
+      'Acesse "Financeiro" no menu lateral.',
+      'Veja os cards: Total vendido (bruto), Recebido e A receber.',
+      'Na tabela, acompanhe cada proposta: valor bruto, taxa Stripe, comissão Guatá e seu valor líquido.',
+      'O status do repasse (Pendente / Pago) é atualizado quando a Guatá fizer o PIX/TED.',
+      'Confira a taxa de comissão e quem absorve a taxa Stripe nas informações acima da tabela.',
     ],
   },
 ];

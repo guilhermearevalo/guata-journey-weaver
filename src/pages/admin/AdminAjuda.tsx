@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardList, FileText, Map, Share2, Sparkles, Users, CheckSquare } from 'lucide-react';
+import { ClipboardList, FileText, Map, Share2, Users, CheckSquare, DollarSign, Building2, Lock } from 'lucide-react';
 
 const steps = [
   {
@@ -34,10 +34,13 @@ const steps = [
   {
     icon: FileText,
     title: '3. Criar Proposta',
-    badge: 'Demandas',
+    badge: 'Proposta',
     items: [
       'Nos detalhes da demanda, clique em "Criar Proposta".',
       'Preencha título, descrição, preço total e itens inclusos.',
+      'O Switch "Habilitar Pagamento" começa desligado — o cliente vê a proposta mas sem botão de pagar.',
+      'Quando o cliente aprovar a viagem, ligue o Switch para liberar o pagamento via Stripe (cartão ou PIX).',
+      'No campo "Código de Acesso", defina uma senha (ex: NORONHA2026) para proteger o roteiro público. Deixe em branco para acesso livre.',
       'A proposta fica vinculada à demanda e pode ser editada a qualquer momento.',
     ],
   },
@@ -70,9 +73,36 @@ const steps = [
     badge: 'Compartilhar',
     items: [
       'No Roteiro, clique em "Compartilhar" para gerar um link público.',
+      'Se definiu um código de acesso, o cliente precisará digitá-lo para ver o roteiro.',
       'Envie o link para o cliente via WhatsApp, e-mail, etc.',
       'O cliente poderá visualizar o roteiro completo e o checklist de documentos.',
       'Na Proposta, também é possível gerar um link público de compartilhamento.',
+    ],
+  },
+  {
+    icon: DollarSign,
+    title: '7. Controle Financeiro',
+    badge: 'Financeiro',
+    items: [
+      'Acesse "Financeiro" no menu lateral.',
+      'Veja os cards: Receita total paga, Comissão Guatá, Repasses pendentes.',
+      'Filtre por agência parceira ou status de repasse.',
+      'Na tabela, veja o breakdown de cada proposta: valor bruto, taxa Stripe (3,49% + R$0,39), comissão Guatá e valor líquido do parceiro.',
+      'Clique em "Registrar Repasse" para confirmar que fez o PIX/TED ao parceiro.',
+      'O parceiro verá o status atualizado automaticamente no portal dele.',
+    ],
+  },
+  {
+    icon: Building2,
+    title: '8. Gestão de Parceiros',
+    badge: 'Parceiros',
+    items: [
+      'Acesse "Parceiros" no menu lateral.',
+      'Veja agências pendentes de aprovação na aba "Pendentes".',
+      'Clique em "Aprovar" para ativar uma agência parceira.',
+      'Configure a taxa de comissão (%) de cada agência.',
+      'Defina quem absorve a taxa do Stripe: Guatá, Parceiro ou Dividido.',
+      'Desative agências que não operam mais.',
     ],
   },
 ];
