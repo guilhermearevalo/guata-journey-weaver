@@ -178,62 +178,27 @@ export default function PropostaPublica() {
         )}
 
         {/* Payment section */}
-        {!isPaid && (canPayStripe || hasManualLinks) && (
+        {!isPaid && canPayStripe && (
           <Card>
             <CardHeader><CardTitle className="text-lg">Pagamento</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {/* Stripe checkout - primary */}
-              {canPayStripe && (
-                <div className="space-y-2">
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    onClick={handleStripeCheckout}
-                    disabled={isCheckingOut}
-                  >
-                    {isCheckingOut ? (
-                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Redirecionando...</>
-                    ) : (
-                      <><CreditCard className="mr-2 h-4 w-4" />Pagar Online (Cartão ou PIX)</>
-                    )}
-                  </Button>
-                  <p className="text-xs text-center text-muted-foreground">
-                    Pagamento seguro via Stripe. Confirmação automática.
-                  </p>
-                </div>
-              )}
-
-              {/* Manual fallback links */}
-              {hasManualLinks && (
-                <>
-                  {canPayStripe && (
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">ou</span>
-                      </div>
-                    </div>
+              <div className="space-y-2">
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={handleStripeCheckout}
+                  disabled={isCheckingOut}
+                >
+                  {isCheckingOut ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Redirecionando...</>
+                  ) : (
+                    <><CreditCard className="mr-2 h-4 w-4" />Pagar Online (Cartão ou PIX)</>
                   )}
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    {paymentLinks?.pix && (
-                      <Button className="flex-1" variant="outline" asChild>
-                        <a href={paymentLinks.pix} target="_blank" rel="noopener noreferrer">
-                          <QrCode className="mr-2 h-4 w-4" />PIX Manual
-                        </a>
-                      </Button>
-                    )}
-                    {paymentLinks?.card && (
-                      <Button className="flex-1" variant="outline" asChild>
-                        <a href={paymentLinks.card} target="_blank" rel="noopener noreferrer">
-                          <CreditCard className="mr-2 h-4 w-4" />Link de Pagamento
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
+                </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  Pagamento seguro via Stripe. Confirmação automática.
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}

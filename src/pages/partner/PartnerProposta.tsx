@@ -261,26 +261,9 @@ export default function PartnerProposta() {
                 </div>
 
                 <div className="space-y-3 border-t pt-4">
-                  <Label className="text-base font-semibold">Links de Pagamento</Label>
-                  <p className="text-xs text-muted-foreground">Cole aqui os links para o cliente efetuar o pagamento</p>
-                  <div className="space-y-2">
-                    <Label htmlFor="pix-link">Link PIX</Label>
-                    <Input
-                      id="pix-link"
-                      value={pixLink}
-                      onChange={(e) => setPixLink(e.target.value)}
-                      placeholder="https://link-de-pagamento-pix..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="card-link">Link Cartão de Crédito</Label>
-                    <Input
-                      id="card-link"
-                      value={cardLink}
-                      onChange={(e) => setCardLink(e.target.value)}
-                      placeholder="https://link-de-pagamento-cartao..."
-                    />
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    O pagamento será feito pelo cliente diretamente via Stripe (cartão ou PIX) na proposta pública.
+                  </p>
                   {existingProposal && (
                     <div className="space-y-2">
                       <Label>Status do Pagamento</Label>
