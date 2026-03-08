@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Search, MapPin, Users, Calendar, FileText, Plus } from 'lucide-react';
+import { Search, MapPin, Users, Calendar, FileText, Plus, Mail, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
@@ -22,6 +22,8 @@ import { Link } from 'react-router-dom';
 interface TravelRequest {
   id: string;
   client_name: string;
+  client_email: string;
+  client_phone: string | null;
   destination: string | null;
   status: string;
   travelers_count: number | null;
@@ -243,7 +245,16 @@ export default function PartnerDemandas() {
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Cliente</label>
                   <p className="font-medium">{selectedRequest.client_name}</p>
-                  <p className="text-xs text-muted-foreground italic">Contato intermediado pela Guatá</p>
+                  <div className="flex flex-col gap-1 mt-1">
+                    <a href={`mailto:${selectedRequest.client_email}`} className="flex items-center gap-1.5 text-sm text-primary hover:underline">
+                      <Mail className="h-3.5 w-3.5" />{selectedRequest.client_email}
+                    </a>
+                    {selectedRequest.client_phone && (
+                      <a href={`tel:${selectedRequest.client_phone}`} className="flex items-center gap-1.5 text-sm text-primary hover:underline">
+                        <Phone className="h-3.5 w-3.5" />{selectedRequest.client_phone}
+                      </a>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Destino</label>
