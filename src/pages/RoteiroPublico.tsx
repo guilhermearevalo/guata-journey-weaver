@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { MapPin, Calendar, DollarSign, Printer } from 'lucide-react';
+import DocumentsChecklist from '@/components/itinerary/DocumentsChecklist';
 
 interface Activity {
   name: string;
