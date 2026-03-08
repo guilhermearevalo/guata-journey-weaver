@@ -243,6 +243,7 @@ export default function PartnerDemandas() {
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Cliente</label>
                   <p className="font-medium">{selectedRequest.client_name}</p>
+                  <p className="text-xs text-muted-foreground italic">Contato intermediado pela Guatá</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Destino</label>
