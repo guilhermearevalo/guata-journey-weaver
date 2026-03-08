@@ -297,14 +297,10 @@ export default function PartnerProposta() {
                   {existingProposal && (
                     <div className="space-y-2">
                       <Label>Status do Pagamento</Label>
-                      <Select value={paymentStatus} onValueChange={setPaymentStatus}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pendente</SelectItem>
-                          <SelectItem value="partial">Parcial</SelectItem>
-                          <SelectItem value="paid">Pago</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Badge variant={paymentStatus === 'paid' ? 'default' : 'secondary'} className="text-sm">
+                        {paymentStatus === 'paid' ? 'Pago' : paymentStatus === 'partial' ? 'Parcial' : 'Pendente'}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground">O status é atualizado automaticamente pelo sistema de pagamento.</p>
                     </div>
                   )}
                 </div>
