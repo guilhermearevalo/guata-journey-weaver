@@ -1,26 +1,22 @@
 
+# Plano: Plataforma Guatá - Status de Implementação
 
-# Plano: Corrigir ícone do WhatsApp + GitHub e Backend
+## ✅ Fase 1 - Funcionalidades Base
+- Upload de imagem do hero com carrossel (imagens + vídeo)
+- Links de pagamento (PIX e Cartão) nas propostas
+- Planejador de roteiro com IA (cliente, admin, parceiro)
+- Status de pagamento (pendente, parcial, pago)
 
-## 1. Corrigir o ícone SVG do WhatsApp
+## ✅ Fase 2 - Controle Financeiro e Visibilidade
+- Relatório por Agência (`/admin/relatorio-agencias`): vendas, receita, comissões
+- Dashboard Financeiro (`/admin/financeiro`): resumo de pagamentos pendentes/pagos
+- Filtros no Kanban: por agência e status de pagamento
+- Admin/consultor pode criar propostas diretamente (`/admin/proposta/:id`)
 
-O SVG atual está com o path incompleto/incorreto — mostra apenas o contorno do círculo sem o telefone característico do WhatsApp. Vou substituir por um SVG correto e reconhecível do ícone do WhatsApp (telefone dentro do balão de chat).
+## ✅ Fase 3 - Segurança
+- Dados de contato do cliente ocultos para parceiros (email/telefone não exibidos)
 
-### Arquivo: `src/components/layout/WhatsAppButton.tsx`
-- Substituir o `<svg>` atual por um SVG correto do WhatsApp com o ícone do telefone visível
-
-## 2. GitHub e Backend
-
-Para conectar o GitHub ao seu projeto Lovable:
-- Vá em **Settings → GitHub → Connect project** no editor do Lovable
-- Autorize o Lovable GitHub App e selecione sua conta/organização
-- Clique em "Create Repository" para gerar o repositório
-
-Para acessar o backend (banco de dados, tabelas, funções):
-
-<lov-actions>
-  <lov-open-backend>Abrir Backend</lov-open-backend>
-</lov-actions>
-
-Lá você pode visualizar tabelas, dados, usuários e funções. Se precisar de acesso mais avançado via outra ferramenta, o repositório GitHub terá todo o código incluindo as migrations do banco de dados.
-
+## 🔜 Próximas Fases
+- Log de auditoria (quem mudou o que, quando)
+- Notificações in-app ou por email
+- Filtro por consultor responsável no Kanban
