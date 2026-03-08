@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,10 +14,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Search, MapPin, Users, Calendar, FileText, Plus, Mail, Phone } from 'lucide-react';
+import { Search, MapPin, Users, Calendar, FileText, Plus, Mail, Phone, Play, CheckCircle2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface TravelRequest {
   id: string;
@@ -36,10 +37,11 @@ interface TravelRequest {
 
 export default function PartnerDemandas() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<TravelRequest | null>(null);
 
-  // Buscar agência do parceiro
   const { data: agencyData } = useQuery({
     queryKey: ['partner-agency', user?.id],
     queryFn: async () => {
@@ -48,7 +50,6 @@ export default function PartnerDemandas() {
         .select('agency_id')
         .eq('user_id', user!.id)
         .maybeSingle();
-      
       if (error) throw error;
       return data;
     },
@@ -57,7 +58,6 @@ export default function PartnerDemandas() {
 
   const agencyId = agencyData?.agency_id;
 
-  // Buscar demandas atribuídas
   const { data: requests, isLoading } = useQuery({
     queryKey: ['partner-requests', agencyId, searchTerm],
     queryFn: async () => {
@@ -78,7 +78,6 @@ export default function PartnerDemandas() {
     enabled: !!agencyId,
   });
 
-  // Buscar propostas existentes para as demandas
   const { data: proposals } = useQuery({
     queryKey: ['partner-proposals', agencyId],
     queryFn: async () => {
@@ -86,14 +85,31 @@ export default function PartnerDemandas() {
         .from('proposals')
         .select('id, request_id')
         .eq('agency_id', agencyId!);
-      
       if (error) throw error;
       return data;
     },
     enabled: !!agencyId,
   });
 
-  const hasProposal = (requestId: string) => 
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ requestId, newStatus }: { requestId: string; newStatus: 'in_operation' | 'completed' }) => {
+      const { error } = await supabase
+        .from('travel_requests')
+        .update({ status: newStatus })
+        .eq('id', requestId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partner-requests'] });
+      toast({ title: 'Status atualizado com sucesso!' });
+      setSelectedRequest(null);
+    },
+    onError: () => {
+      toast({ title: 'Erro ao atualizar status', variant: 'destructive' });
+    },
+  });
+
+  const hasProposal = (requestId: string) =>
     proposals?.some(p => p.request_id === requestId);
 
   const statusLabels: Record<string, string> = {
@@ -125,6 +141,46 @@ export default function PartnerDemandas() {
     }
   };
 
+  const canStartOperation = (status: string) =>
+    status === 'proposal_sent' || status === 'approved';
+
+  const canComplete = (status: string) => status === 'in_operation';
+
+  const StatusActions = ({ request }: { request: TravelRequest }) => (
+    <div className="flex gap-2">
+      {canStartOperation(request.status) && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-orange-600 border-orange-200 hover:bg-orange-50"
+          onClick={(e) => {
+            e.stopPropagation();
+            updateStatusMutation.mutate({ requestId: request.id, newStatus: 'in_operation' });
+          }}
+          disabled={updateStatusMutation.isPending}
+        >
+          {updateStatusMutation.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Play className="mr-1 h-3 w-3" />}
+          Iniciar Operação
+        </Button>
+      )}
+      {canComplete(request.status) && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+          onClick={(e) => {
+            e.stopPropagation();
+            updateStatusMutation.mutate({ requestId: request.id, newStatus: 'completed' });
+          }}
+          disabled={updateStatusMutation.isPending}
+        >
+          {updateStatusMutation.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <CheckCircle2 className="mr-1 h-3 w-3" />}
+          Concluir
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -134,7 +190,6 @@ export default function PartnerDemandas() {
         </p>
       </div>
 
-      {/* Search */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -147,7 +202,6 @@ export default function PartnerDemandas() {
         </div>
       </div>
 
-      {/* Requests List */}
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -194,7 +248,8 @@ export default function PartnerDemandas() {
                     <span className="font-medium">Orçamento:</span> {request.budget_range}
                   </p>
                 )}
-                <div className="pt-2">
+                <div className="flex flex-col gap-2 pt-2">
+                  <StatusActions request={request} />
                   {hasProposal(request.id) ? (
                     <Button variant="outline" size="sm" className="w-full" asChild>
                       <Link to={`/partner/proposta/${request.id}`}>
@@ -238,7 +293,7 @@ export default function PartnerDemandas() {
               Informações completas da solicitação de viagem
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedRequest && (
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
@@ -287,15 +342,18 @@ export default function PartnerDemandas() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setSelectedRequest(null)}>
-                  Fechar
-                </Button>
-                <Button asChild>
-                  <Link to={`/partner/proposta/${selectedRequest.id}`}>
-                    {hasProposal(selectedRequest.id) ? 'Ver Proposta' : 'Criar Proposta'}
-                  </Link>
-                </Button>
+              <div className="flex items-center justify-between pt-4 border-t">
+                <StatusActions request={selectedRequest} />
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setSelectedRequest(null)}>
+                    Fechar
+                  </Button>
+                  <Button asChild>
+                    <Link to={`/partner/proposta/${selectedRequest.id}`}>
+                      {hasProposal(selectedRequest.id) ? 'Ver Proposta' : 'Criar Proposta'}
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </div>
           )}

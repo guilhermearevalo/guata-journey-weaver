@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Building2, Mail, Phone, MapPin, Check, X, Edit, Eye, MoreHorizontal } from 'lucide-react';
+import { Search, Building2, Mail, Phone, MapPin, Check, X, Eye, MoreHorizontal, UserPlus, Copy, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -31,6 +32,10 @@ const AdminParceiros = () => {
   const [search, setSearch] = useState('');
   const [selectedAgency, setSelectedAgency] = useState<PartnerAgency | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ type: 'activate' | 'deactivate'; agency: PartnerAgency } | null>(null);
+  const [inviteAgency, setInviteAgency] = useState<PartnerAgency | null>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [inviteResult, setInviteResult] = useState<{ email: string; temporary_password: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -72,6 +77,62 @@ const AdminParceiros = () => {
       });
     },
   });
+
+  const inviteMutation = useMutation({
+    mutationFn: async ({ agency_id, email, full_name }: { agency_id: string; email: string; full_name: string }) => {
+      const { data, error } = await supabase.functions.invoke('invite-partner', {
+        body: { agency_id, email, full_name },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['partner-agencies'] });
+      setInviteResult({ email: data.email, temporary_password: data.temporary_password });
+      toast({
+        title: 'Conta criada com sucesso!',
+        description: 'A agência foi aprovada e o login do parceiro foi criado.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao criar conta',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleInviteSubmit = () => {
+    if (!inviteAgency || !inviteEmail || !inviteName) return;
+    inviteMutation.mutate({
+      agency_id: inviteAgency.id,
+      email: inviteEmail,
+      full_name: inviteName,
+    });
+  };
+
+  const handleCopyPassword = () => {
+    if (inviteResult) {
+      navigator.clipboard.writeText(inviteResult.temporary_password);
+      toast({ title: 'Senha copiada!' });
+    }
+  };
+
+  const handleCloseInvite = () => {
+    setInviteAgency(null);
+    setInviteEmail('');
+    setInviteName('');
+    setInviteResult(null);
+  };
+
+  const handleApproveWithInvite = (agency: PartnerAgency) => {
+    setInviteAgency(agency);
+    setInviteEmail(agency.contact_email);
+    setInviteName('');
+  };
 
   const activeAgencies = agencies?.filter((a) => a.is_active) || [];
   const pendingAgencies = agencies?.filter((a) => !a.is_active) || [];
@@ -146,11 +207,11 @@ const AdminParceiros = () => {
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem
-                onClick={() => setConfirmAction({ type: 'activate', agency })}
+                onClick={() => handleApproveWithInvite(agency)}
                 className="text-green-600"
               >
-                <Check className="mr-2 h-4 w-4" />
-                Aprovar
+                <UserPlus className="mr-2 h-4 w-4" />
+                Aprovar e Criar Login
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -241,17 +302,15 @@ const AdminParceiros = () => {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    Array(3)
-                      .fill(0)
-                      .map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell><Skeleton className="h-10 w-48" /></TableCell>
-                          <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                          <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                          <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
-                        </TableRow>
-                      ))
+                    Array(3).fill(0).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-10 w-48" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                      </TableRow>
+                    ))
                   ) : filteredActive.length > 0 ? (
                     filteredActive.map((agency) => (
                       <AgencyRow key={agency.id} agency={agency} />
@@ -284,17 +343,15 @@ const AdminParceiros = () => {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    Array(3)
-                      .fill(0)
-                      .map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell><Skeleton className="h-10 w-48" /></TableCell>
-                          <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                          <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                          <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
-                        </TableRow>
-                      ))
+                    Array(3).fill(0).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-10 w-48" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                      </TableRow>
+                    ))
                   ) : filteredPending.length > 0 ? (
                     filteredPending.map((agency) => (
                       <AgencyRow key={agency.id} agency={agency} />
@@ -377,7 +434,7 @@ const AdminParceiros = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Action Dialog */}
+      {/* Confirm Deactivate Dialog */}
       <Dialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
         <DialogContent>
           <DialogHeader>
@@ -409,6 +466,84 @@ const AdminParceiros = () => {
               {confirmAction?.type === 'activate' ? 'Aprovar' : 'Desativar'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Partner Dialog */}
+      <Dialog open={!!inviteAgency} onOpenChange={(open) => !open && handleCloseInvite()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-primary" />
+              Aprovar e Criar Login
+            </DialogTitle>
+            <DialogDescription>
+              Aprovar a agência <strong>{inviteAgency?.name}</strong> e criar automaticamente o acesso ao portal do parceiro.
+            </DialogDescription>
+          </DialogHeader>
+
+          {inviteResult ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-3">
+                <p className="text-sm font-medium text-green-800">✅ Conta criada com sucesso!</p>
+                <div>
+                  <Label className="text-xs text-green-700">Email</Label>
+                  <p className="font-mono text-sm">{inviteResult.email}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-green-700">Senha temporária</Label>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 rounded bg-white px-3 py-2 text-sm font-mono border">
+                      {inviteResult.temporary_password}
+                    </code>
+                    <Button size="icon" variant="outline" onClick={handleCopyPassword}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-green-700">
+                  Envie essas credenciais ao responsável da agência. Recomende que a senha seja alterada no primeiro acesso.
+                </p>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleCloseInvite}>Fechar</Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="invite-name">Nome do responsável *</Label>
+                <Input
+                  id="invite-name"
+                  placeholder="Nome completo"
+                  value={inviteName}
+                  onChange={(e) => setInviteName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="invite-email">Email de login *</Label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  placeholder="email@agencia.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={handleCloseInvite}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleInviteSubmit}
+                  disabled={!inviteEmail || !inviteName || inviteMutation.isPending}
+                >
+                  {inviteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Aprovar e Criar Conta
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

@@ -1,118 +1,102 @@
 
+# Como Funciona o Sistema de Agências Parceiras — Visão Completa
 
-# Plano: Resolver lacunas do sistema de agências parceiras
+## 1. Captação — Página "Seja Parceiro" (`/seja-parceiro`)
 
-## Resumo
+Página pública onde agências interessadas preenchem um formulário com:
+- Nome da agência, CNPJ, responsável, email, telefone, website
+- Especialidades (aventura, praia, cultural, ecoturismo, luxo, internacional)
+- Regiões de atuação (Nordeste, Sudeste, Sul, Norte, Centro-Oeste, Internacional)
+- Descrição da agência
 
-Implementar 3 melhorias principais para eliminar processos manuais:
-
-1. **Onboarding automatizado de parceiro** (ao aprovar agência, admin cria login direto)
-2. **Parceiro pode atualizar status da demanda** (marcar "em operação" / "concluído")
-3. **Parceiro pode cadastrar experiências** (com aprovação do admin antes de publicar)
-
----
-
-## 1. Onboarding automatizado — Edge function `invite-partner`
-
-### Edge function: `supabase/functions/invite-partner/index.ts`
-- Recebe `{ agency_id, email, full_name }` do admin
-- Usa `supabase.auth.admin.createUser()` com senha temporária gerada + `email_confirm: true`
-- Insere na `user_roles` com role `partner`
-- Insere na `partner_users` com `user_id` + `agency_id`
-- Insere na `profiles` com `full_name` e `email`
-- Retorna a senha temporária para o admin compartilhar com o parceiro
-
-### UI: `AdminParceiros.tsx`
-- Ao aprovar uma agência pendente, abrir dialog pedindo **email e nome do responsável**
-- Chamar `supabase.functions.invoke('invite-partner')` com os dados
-- Exibir a senha temporária para o admin copiar e enviar ao parceiro
-- Fluxo: Aprovar → Preencher dados → Conta criada automaticamente
+Ao enviar, o cadastro é salvo na tabela `partner_agencies` com `is_active = false` (pendente de aprovação).
 
 ---
 
-## 2. Parceiro atualiza status da demanda
+## 2. Aprovação pelo Admin (`/admin/parceiros`)
 
-### Migração SQL
-- Criar RLS policy para partners poderem fazer UPDATE em `travel_requests` apenas nos campos `status`, restrito à sua agência e apenas para transições permitidas (`proposal_sent → in_operation → completed`)
+O admin vê a lista de agências em duas abas: **Ativos** e **Pendentes**.
 
-### UI: `PartnerDemandas.tsx`
-- No dialog de detalhes e nos cards, adicionar botões contextuais:
-  - Se status = `proposal_sent` ou `approved`: botão "Iniciar Operação" → muda para `in_operation`
-  - Se status = `in_operation`: botão "Marcar Concluído" → muda para `completed`
-- Usar mutation com invalidação do cache
+Pode:
+- Ver detalhes da agência (CNPJ, comissão, contato, endereço)
+- **Aprovar** (muda `is_active` para `true`)
+- **Desativar** uma agência já ativa
 
----
-
-## 3. Parceiro cadastra experiências (com aprovação)
-
-### Migração SQL
-- Adicionar RLS policy para partners poderem INSERT/UPDATE em `experiences` onde `operator_agency_id = get_user_agency(auth.uid())` e `is_published = false`
-- Parceiro cria experiência sempre com `is_published = false`; admin publica
-
-### UI: `PartnerExperiencias.tsx`
-- Adicionar botão "Nova Experiência" que abre formulário (reutilizar padrão do `ExperienceForm` do admin, adaptado)
-- Experiências criadas pelo parceiro ficam com badge "Aguardando Aprovação"
-- Parceiro pode editar apenas experiências não publicadas
+**Lacuna:** Após aprovar a agência, o admin precisa **manualmente criar um usuário** para a agência e vinculá-lo na tabela `partner_users` (user_id + agency_id). Não existe formulário automático para isso no painel atual.
 
 ---
 
-## Detalhes Técnicos
+## 3. Portal do Parceiro (`/partner/`)
 
-### Config TOML
-```toml
-[functions.invite-partner]
-verify_jwt = false
-```
+### Dashboard (`/partner`)
+- Nome da agência como boas-vindas
+- Cards: Total de demandas, Aguardando proposta, Propostas enviadas, Concluídas
+- Lista das 5 demandas mais recentes
 
-### RLS para update de status por parceiro
-```sql
-CREATE POLICY "Partners can update assigned request status"
-ON public.travel_requests
-FOR UPDATE
-TO authenticated
-USING (
-  has_role(auth.uid(), 'partner') 
-  AND assigned_agency_id = get_user_agency(auth.uid())
-)
-WITH CHECK (
-  has_role(auth.uid(), 'partner') 
-  AND assigned_agency_id = get_user_agency(auth.uid())
-);
-```
+### Demandas (`/partner/demandas`)
+- Lista de `travel_requests` onde `assigned_agency_id` = agência do parceiro
+- Cards com: nome do cliente, destino, viajantes, datas, orçamento, status
+- Botão "Criar Proposta" ou "Ver Proposta"
+- Dialog com contato completo do cliente (email + telefone clicáveis)
 
-### RLS para experiências por parceiro
-```sql
-CREATE POLICY "Partners can insert own experiences"
-ON public.experiences FOR INSERT TO authenticated
-WITH CHECK (
-  has_role(auth.uid(), 'partner') 
-  AND operator_agency_id = get_user_agency(auth.uid())
-  AND is_published = false
-);
+### Criar/Editar Proposta (`/partner/proposta/:requestId`)
+- Formulário: título, descrição, preço total, inclusões
+- Links de pagamento: PIX e Cartão (manuais)
+- Status de pagamento (pendente/parcial/pago)
+- Resumo da demanda no painel lateral
+- Ao criar proposta, status muda para `proposal_sent`
 
-CREATE POLICY "Partners can update own unpublished experiences"
-ON public.experiences FOR UPDATE TO authenticated
-USING (
-  has_role(auth.uid(), 'partner') 
-  AND operator_agency_id = get_user_agency(auth.uid())
-  AND is_published = false
-)
-WITH CHECK (
-  has_role(auth.uid(), 'partner') 
-  AND operator_agency_id = get_user_agency(auth.uid())
-  AND is_published = false
-);
+### Experiências (`/partner/experiencias`)
+- Lista read-only de experiências onde `operator_agency_id` = agência do parceiro
 
-CREATE POLICY "Partners can view own experiences"
-ON public.experiences FOR SELECT TO authenticated
-USING (
-  has_role(auth.uid(), 'partner') 
-  AND operator_agency_id = get_user_agency(auth.uid())
-);
-```
+### Roteiro (`/partner/proposta/:id/roteiro`)
+- Planejador de roteiro compartilhado (`ItineraryPlanner`)
 
-### Ordem de implementação
-1. Edge function `invite-partner` + UI no AdminParceiros
-2. RLS + UI para parceiro atualizar status
-3. RLS + UI para parceiro cadastrar experiências
+### Ajuda (`/partner/ajuda`)
+- Página de suporte/FAQ
 
+---
+
+## 4. Atribuição de Demandas (Admin → Parceiro)
+
+No Kanban do admin (`/admin/demandas`):
+- Admin atribui demanda a uma agência via `assigned_agency_id`
+- Kanban tem filtros por agência e status de pagamento
+
+---
+
+## 5. Fluxo de Pagamento (Híbrido)
+
+### Via Stripe (automático):
+- Proposta pública (`/proposta/:token`), botão "Pagar Online"
+- Edge function `create-checkout` → Stripe Checkout Session
+- Webhook `stripe-webhook` atualiza `payment_status` para `paid`
+
+### Via Links Manuais (fallback):
+- Parceiro/consultor cola links de PIX/Cartão na proposta
+- Atualização manual do `payment_status`
+
+---
+
+## 6. Relatórios e Comissões
+
+- `/admin/relatorio-agencias`: vendas, receita, comissões por agência
+- `/admin/financeiro`: resumo de pagamentos pendentes/parciais/pagos
+
+---
+
+## 7. Segurança (RLS)
+
+- Parceiro só vê `travel_requests` com `assigned_agency_id` = sua agência
+- Parceiro só gerencia `proposals` com `agency_id` = sua agência
+- Funções `get_user_agency()` e `has_role()` são `SECURITY DEFINER`
+
+---
+
+## Lacunas / Pontos de Melhoria
+
+1. **Criação de usuário parceiro**: Sem fluxo automatizado pós-aprovação
+2. **Parceiro não pode editar status de demandas**
+3. **Sem notificações** quando nova demanda é atribuída
+4. **Sem chat** parceiro↔cliente na plataforma
+5. **Experiências read-only** para parceiros
