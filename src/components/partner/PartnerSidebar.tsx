@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileText, Map, LogOut, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, FileText, Map, LogOut, HelpCircle, DollarSign } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/lib/auth';
 import { useNavigate } from 'react-router-dom';
