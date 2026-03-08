@@ -116,7 +116,7 @@ export function HeroSection() {
           
           <h1 className="font-display text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl xl:text-7xl">
             Descubra o Mundo com
-            <span className="block text-gradient">Experiências Únicas</span>
+            <span className="block text-guata-teal-light hero-text-shadow">Experiências Únicas</span>
           </h1>
           
           <p className="mx-auto max-w-2xl text-lg text-white/80 md:text-xl">
