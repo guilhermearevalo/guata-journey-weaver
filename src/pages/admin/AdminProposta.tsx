@@ -11,10 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route, Share2, Check, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
+import { useState as useStateExtra } from 'react';
 
 export default function AdminProposta() {
   const { id: requestId } = useParams<{ id: string }>();
@@ -31,6 +32,8 @@ export default function AdminProposta() {
   const [cardLink, setCardLink] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [agencyId, setAgencyId] = useState<string>('none');
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const { data: request, isLoading: requestLoading } = useQuery({
     queryKey: ['travel-request', requestId],
@@ -117,6 +120,30 @@ export default function AdminProposta() {
   });
 
   const travelDates = request?.travel_dates as { start?: string; end?: string } | null;
+
+  const handleShareProposal = async () => {
+    if (!existingProposal) return;
+    setShareLoading(true);
+    try {
+      let token = existingProposal.share_token as string | null;
+      if (!token) {
+        token = crypto.randomUUID();
+        const { error } = await supabase
+          .from('proposals')
+          .update({ share_token: token } as any)
+          .eq('id', existingProposal.id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['admin-proposal', requestId] });
+      }
+      const url = `${window.location.origin}/proposta/${token}`;
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      toast({ title: 'Link copiado!', description: 'Envie por WhatsApp, email ou redes sociais.' });
+      setTimeout(() => setShareCopied(false), 3000);
+    } catch {
+      toast({ title: 'Erro ao gerar link', variant: 'destructive' });
+    } finally { setShareLoading(false); }
+  };
 
   if (requestLoading || proposalLoading) {
     return <div className="space-y-4"><Skeleton className="h-8 w-64" /><Skeleton className="h-64" /></div>;
@@ -221,18 +248,24 @@ export default function AdminProposta() {
             </Select>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 flex-wrap">
             <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !title}>
               {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               {existingProposal ? 'Salvar Alterações' : 'Criar Proposta'}
             </Button>
-            {existingProposal && ['approved', 'in_operation', 'completed'].includes(request?.status || '') && (
-              <Button variant="outline" asChild>
-                <Link to={`/admin/demandas/${requestId}/roteiro`}>
-                  <Route className="mr-2 h-4 w-4" />
-                  Ver Roteiro
-                </Link>
-              </Button>
+            {existingProposal && (
+              <>
+                <Button variant="outline" asChild>
+                  <Link to={`/admin/demandas/${requestId}/roteiro`}>
+                    <Route className="mr-2 h-4 w-4" />
+                    Planejar Roteiro com IA
+                  </Link>
+                </Button>
+                <Button variant="outline" onClick={handleShareProposal} disabled={shareLoading}>
+                  {shareCopied ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
+                  {shareCopied ? 'Link Copiado!' : 'Compartilhar Proposta'}
+                </Button>
+              </>
             )}
           </div>
         </CardContent>

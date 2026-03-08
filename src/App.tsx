@@ -22,6 +22,7 @@ import Contato from "./pages/Contato";
 import SejaParceiro from "./pages/SejaParceiro";
 import NotFound from "./pages/NotFound";
 import RoteiroPublico from "./pages/RoteiroPublico";
+import PropostaPublica from "./pages/PropostaPublica";
 
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
@@ -119,8 +120,9 @@ const App = () => (
               <Route path="/minha-conta/perfil" element={<ClientePerfil />} />
             </Route>
             
-            {/* Public itinerary share */}
+            {/* Public share links */}
             <Route path="/roteiro/:token" element={<RoteiroPublico />} />
+            <Route path="/proposta/:token" element={<PropostaPublica />} />
             
             {/* Auth routes without public layout */}
             <Route path="/login" element={<Login />} />

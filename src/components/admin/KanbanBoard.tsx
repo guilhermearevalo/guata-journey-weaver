@@ -6,6 +6,7 @@ import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
 import { RequestDetailDialog } from './RequestDetailDialog';
 import { KanbanFilters } from './KanbanFilters';
+import { NewRequestDialog } from './NewRequestDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
@@ -134,13 +135,16 @@ export function KanbanBoard() {
 
   return (
     <>
-      <KanbanFilters
-        agencyId={filterAgency}
-        paymentStatus={filterPayment}
-        onAgencyChange={setFilterAgency}
-        onPaymentStatusChange={setFilterPayment}
-        onClear={() => { setFilterAgency('all'); setFilterPayment('all'); }}
-      />
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <KanbanFilters
+          agencyId={filterAgency}
+          paymentStatus={filterPayment}
+          onAgencyChange={setFilterAgency}
+          onPaymentStatusChange={setFilterPayment}
+          onClear={() => { setFilterAgency('all'); setFilterPayment('all'); }}
+        />
+        <NewRequestDialog />
+      </div>
       <div className="flex gap-4 overflow-x-auto pb-4 mt-4">
         {columns.map((column) => {
           const columnRequests = getRequestsByStatus(column.id);

@@ -58,7 +58,6 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         .from('proposals')
         .select('*, travel_requests!inner(destination, travel_dates, travelers_count, preferences)')
         .eq('request_id', id!)
-        .eq('is_approved', true)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -194,8 +193,8 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   if (!proposal) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <p className="text-lg font-medium">Nenhuma proposta aprovada encontrada</p>
-        <p className="text-sm text-muted-foreground mt-1">Aprove uma proposta primeiro para planejar o roteiro.</p>
+        <p className="text-lg font-medium">Nenhuma proposta encontrada</p>
+        <p className="text-sm text-muted-foreground mt-1">Crie uma proposta primeiro para planejar o roteiro.</p>
         <Button className="mt-4" asChild><Link to={backLink}>{backLabel}</Link></Button>
       </div>
     );
