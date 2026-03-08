@@ -111,6 +111,7 @@ const App = () => (
               <Route path="proposta/:id" element={<PartnerProposta />} />
               <Route path="proposta/:id/roteiro" element={<PartnerRoteiro />} />
               <Route path="experiencias" element={<PartnerExperiencias />} />
+              <Route path="ajuda" element={<PartnerAjuda />} />
             </Route>
             
             {/* Cliente routes */}

@@ -104,6 +104,12 @@ const AdminSidebar = () => {
     href: '/admin/configuracoes' 
   });
 
+  menuItems.push({
+    icon: HelpCircle,
+    label: 'Ajuda',
+    href: '/admin/ajuda'
+  });
+
   return (
     <Sidebar collapsible="icon" className="border-r bg-card">
       <SidebarHeader className="border-b p-4">

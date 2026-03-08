@@ -336,11 +336,17 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                               <span className="text-sm font-medium">R$ {(activity.estimated_cost || 0).toLocaleString('pt-BR')}</span>
-                              {activity.is_suggestion && <Button variant="ghost" size="sm" className="h-7 text-xs text-primary print:hidden" onClick={() => acceptSuggestion(dayIdx, realIdx)}>Aceitar</Button>}
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => openEditActivity(dayIdx, realIdx, activity)}>
+                              {activity.is_suggestion && <Button variant="ghost" size="sm" className="h-7 text-xs text-primary print:hidden" onClick={() => acceptSuggestion(dayIdx, actIdx)}>Aceitar</Button>}
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => moveActivity(dayIdx, actIdx, 'up')} disabled={actIdx === 0}>
+                                <ChevronUp className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => moveActivity(dayIdx, actIdx, 'down')} disabled={actIdx === displayActivities.length - 1}>
+                                <ChevronDown className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => openEditActivity(dayIdx, actIdx, activity)}>
                                 <Pencil className="h-3 w-3" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive print:hidden" onClick={() => removeActivity(dayIdx, realIdx)}>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive print:hidden" onClick={() => removeActivity(dayIdx, actIdx)}>
                                 <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
