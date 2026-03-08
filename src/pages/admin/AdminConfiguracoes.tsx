@@ -197,10 +197,111 @@ const AdminConfiguracoes = () => {
           </p>
         </CardContent>
       </Card>
+      <WhatsAppConfigCard />
       <HomepageSectionsCard />
     </div>
   );
 };
+
+/* ── WhatsApp Config Card ── */
+function WhatsAppConfigCard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [saving, setSaving] = useState(false);
+
+  const { data: config } = useQuery({
+    queryKey: ['site-setting', 'whatsapp_config'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'whatsapp_config')
+        .maybeSingle();
+      if (error) throw error;
+      const defaults = { enabled: false, number: '', message: 'Olá! Gostaria de mais informações sobre os pacotes de viagem.' };
+      if (!data?.value) return defaults;
+      return { ...defaults, ...(data.value as unknown as Partial<typeof defaults>) };
+    },
+  });
+
+  const [enabled, setEnabled] = useState(false);
+  const [number, setNumber] = useState('');
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (config) {
+      setEnabled(config.enabled);
+      setNumber(config.number);
+      setMessage(config.message);
+    }
+  }, [config]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          key: 'whatsapp_config',
+          value: { enabled, number, message } as unknown as import('@/integrations/supabase/types').Json,
+          updated_at: new Date().toISOString(),
+        });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['site-setting', 'whatsapp_config'] });
+      toast({ title: 'WhatsApp atualizado!' });
+    } catch {
+      toast({ title: 'Erro ao salvar', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <MessageCircle className="h-5 w-5" />
+          WhatsApp
+        </CardTitle>
+        <CardDescription>
+          Configure o botão flutuante do WhatsApp que aparece em todas as páginas públicas.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Botão ativo</p>
+            <p className="text-sm text-muted-foreground">Exibir o botão do WhatsApp no site</p>
+          </div>
+          <Switch checked={enabled} onCheckedChange={setEnabled} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="whatsapp-number">Número do WhatsApp (com DDI)</Label>
+          <Input
+            id="whatsapp-number"
+            placeholder="5511999999999"
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">Formato: 55 + DDD + número (ex: 5511999999999)</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="whatsapp-message">Mensagem padrão</Label>
+          <Input
+            id="whatsapp-message"
+            placeholder="Olá! Gostaria de mais informações..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+        </div>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Salvar
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 /* ── Homepage Sections Toggle Card ── */
 function HomepageSectionsCard() {
