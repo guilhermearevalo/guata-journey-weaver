@@ -438,6 +438,6 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         onSave={handleSaveActivity}
         initialData={editingActivity}
       />
-    </div>
+    </TooltipProvider>
   );
 }
