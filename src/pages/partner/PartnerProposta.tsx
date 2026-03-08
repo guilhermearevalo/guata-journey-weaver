@@ -88,6 +88,8 @@ export default function PartnerProposta() {
       setTotalPrice(existingProposal.total_price?.toString() || '');
       setInclusions(existingProposal.inclusions?.join('\n') || '');
       setPaymentStatus((existingProposal as any).payment_status || 'pending');
+      setPaymentEnabled((existingProposal as any).payment_enabled || false);
+      setAccessCode((existingProposal as any).access_code || '');
     } else if (request) {
       setTitle(`Proposta de Viagem - ${request.destination || 'Destino Personalizado'}`);
     }
