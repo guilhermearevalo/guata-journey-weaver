@@ -1,15 +1,23 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Clock, Users, DollarSign, Map } from 'lucide-react';
+import { MapPin, Clock, Users, DollarSign, Map, Plus, Pencil } from 'lucide-react';
+import { ExperienceForm } from '@/components/admin/ExperienceForm';
+import { useToast } from '@/hooks/use-toast';
+import { Tables } from '@/integrations/supabase/types';
 
 export default function PartnerExperiencias() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingExperience, setEditingExperience] = useState<Tables<'experiences'> | null>(null);
 
-  // Buscar agência do parceiro
   const { data: agencyData } = useQuery({
     queryKey: ['partner-agency', user?.id],
     queryFn: async () => {
@@ -18,7 +26,6 @@ export default function PartnerExperiencias() {
         .select('agency_id, partner_agencies(name)')
         .eq('user_id', user!.id)
         .maybeSingle();
-      
       if (error) throw error;
       return data;
     },
@@ -27,7 +34,6 @@ export default function PartnerExperiencias() {
 
   const agencyId = agencyData?.agency_id;
 
-  // Buscar experiências operadas pela agência
   const { data: experiences, isLoading } = useQuery({
     queryKey: ['partner-experiences', agencyId],
     queryFn: async () => {
@@ -36,11 +42,42 @@ export default function PartnerExperiencias() {
         .select('*')
         .eq('operator_agency_id', agencyId!)
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       return data;
     },
     enabled: !!agencyId,
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (data: Partial<Tables<'experiences'>>) => {
+      if (editingExperience) {
+        const { error } = await supabase
+          .from('experiences')
+          .update(data)
+          .eq('id', editingExperience.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('experiences')
+          .insert({
+            ...data,
+            operator_agency_id: agencyId!,
+            is_published: false,
+            is_featured: false,
+            created_by: user!.id,
+          } as Tables<'experiences'>);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partner-experiences'] });
+      setFormOpen(false);
+      setEditingExperience(null);
+      toast({ title: editingExperience ? 'Experiência atualizada!' : 'Experiência criada! Aguardando aprovação.' });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' });
+    },
   });
 
   const typeLabels: Record<string, string> = {
@@ -52,19 +89,32 @@ export default function PartnerExperiencias() {
 
   const formatPrice = (price: number | null) => {
     if (!price) return 'Sob consulta';
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(price);
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+  };
+
+  const handleEdit = (exp: Tables<'experiences'>) => {
+    setEditingExperience(exp);
+    setFormOpen(true);
+  };
+
+  const handleNew = () => {
+    setEditingExperience(null);
+    setFormOpen(true);
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Experiências que Você Opera</h1>
-        <p className="text-muted-foreground">
-          Veja as experiências cadastradas pela Guatá que sua agência opera.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Experiências</h1>
+          <p className="text-muted-foreground">
+            Gerencie as experiências operadas pela sua agência.
+          </p>
+        </div>
+        <Button onClick={handleNew}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nova Experiência
+        </Button>
       </div>
 
       {isLoading ? (
@@ -123,9 +173,16 @@ export default function PartnerExperiencias() {
                     <DollarSign className="h-4 w-4" />
                     {formatPrice(exp.price)}
                   </span>
-                  <Badge variant={exp.is_published ? 'default' : 'outline'}>
-                    {exp.is_published ? 'Publicada' : 'Rascunho'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={exp.is_published ? 'default' : 'outline'}>
+                      {exp.is_published ? 'Publicada' : 'Aguardando Aprovação'}
+                    </Badge>
+                    {!exp.is_published && (
+                      <Button size="icon" variant="ghost" onClick={() => handleEdit(exp)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -137,11 +194,29 @@ export default function PartnerExperiencias() {
             <Map className="h-12 w-12 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-medium">Nenhuma experiência cadastrada</h3>
             <p className="text-muted-foreground text-center max-w-sm mt-1">
-              Quando a Guatá cadastrar experiências operadas pela sua agência, elas aparecerão aqui.
+              Cadastre experiências que sua agência opera. Elas ficarão visíveis após aprovação.
             </p>
+            <Button className="mt-4" onClick={handleNew}>
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Primeira Experiência
+            </Button>
           </CardContent>
         </Card>
       )}
+
+      <ExperienceForm
+        experience={editingExperience}
+        open={formOpen}
+        onOpenChange={(open) => {
+          setFormOpen(open);
+          if (!open) setEditingExperience(null);
+        }}
+        onSubmit={async (data) => {
+          // Force unpublished for partner submissions
+          await saveMutation.mutateAsync({ ...data, is_published: false, is_featured: false });
+        }}
+        isSubmitting={saveMutation.isPending}
+      />
     </div>
   );
 }
