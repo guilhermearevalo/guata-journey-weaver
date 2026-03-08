@@ -32,6 +32,8 @@ export default function AdminProposta() {
   const [cardLink, setCardLink] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [agencyId, setAgencyId] = useState<string>('none');
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const { data: request, isLoading: requestLoading } = useQuery({
     queryKey: ['travel-request', requestId],
