@@ -274,6 +274,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   }
 
   return (
+    <TooltipProvider>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4 print:hidden">
