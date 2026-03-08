@@ -22,6 +22,7 @@ import Contato from "./pages/Contato";
 import SejaParceiro from "./pages/SejaParceiro";
 import NotFound from "./pages/NotFound";
 import RoteiroPublico from "./pages/RoteiroPublico";
+import PropostaPublica from "./pages/PropostaPublica";
 
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
