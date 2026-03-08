@@ -362,6 +362,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           documents: string[] | null
+          documents_checklist: Json | null
           id: string
           inclusions: string[] | null
           is_approved: boolean | null
@@ -381,6 +382,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           documents?: string[] | null
+          documents_checklist?: Json | null
           id?: string
           inclusions?: string[] | null
           is_approved?: boolean | null
@@ -400,6 +402,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           documents?: string[] | null
+          documents_checklist?: Json | null
           id?: string
           inclusions?: string[] | null
           is_approved?: boolean | null
