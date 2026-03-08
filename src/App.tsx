@@ -96,6 +96,7 @@ const App = () => (
               <Route path="demandas/:id/roteiro" element={<AdminRoteiro />} />
               <Route path="relatorio-agencias" element={<AdminRelatorioAgencias />} />
               <Route path="financeiro" element={<AdminFinanceiro />} />
+              <Route path="proposta/:id" element={<AdminProposta />} />
             </Route>
             
             {/* Partner routes */}
