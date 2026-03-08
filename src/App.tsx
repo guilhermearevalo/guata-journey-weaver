@@ -39,6 +39,7 @@ import AdminRelatorioAgencias from "./pages/admin/AdminRelatorioAgencias";
 import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
 import AdminProposta from "./pages/admin/AdminProposta";
 import AdminRoteiro from "./pages/admin/AdminRoteiro";
+import AdminAjuda from "./pages/admin/AdminAjuda";
 
 // Partner imports
 import PartnerLayout from "./pages/partner/PartnerLayout";
@@ -47,6 +48,7 @@ import PartnerDemandas from "./pages/partner/PartnerDemandas";
 import PartnerProposta from "./pages/partner/PartnerProposta";
 import PartnerExperiencias from "./pages/partner/PartnerExperiencias";
 import PartnerRoteiro from "./pages/partner/PartnerRoteiro";
+import PartnerAjuda from "./pages/partner/PartnerAjuda";
 
 // Cliente imports
 import { ProtectedClienteRoute } from "./components/cliente/ProtectedClienteRoute";
@@ -99,6 +101,7 @@ const App = () => (
               <Route path="relatorio-agencias" element={<AdminRelatorioAgencias />} />
               <Route path="financeiro" element={<AdminFinanceiro />} />
               <Route path="proposta/:id" element={<AdminProposta />} />
+              <Route path="ajuda" element={<AdminAjuda />} />
             </Route>
             
             {/* Partner routes */}
@@ -108,6 +111,7 @@ const App = () => (
               <Route path="proposta/:id" element={<PartnerProposta />} />
               <Route path="proposta/:id/roteiro" element={<PartnerRoteiro />} />
               <Route path="experiencias" element={<PartnerExperiencias />} />
+              <Route path="ajuda" element={<PartnerAjuda />} />
             </Route>
             
             {/* Cliente routes */}

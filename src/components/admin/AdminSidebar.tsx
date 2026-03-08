@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   LogOut,
   BarChart3,
-  DollarSign
+  DollarSign,
+  HelpCircle
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -101,6 +102,12 @@ const AdminSidebar = () => {
     icon: Settings, 
     label: 'Configurações', 
     href: '/admin/configuracoes' 
+  });
+
+  menuItems.push({
+    icon: HelpCircle,
+    label: 'Ajuda',
+    href: '/admin/ajuda'
   });
 
   return (

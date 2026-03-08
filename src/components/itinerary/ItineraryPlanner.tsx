@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil, ChevronUp, ChevronDown } from 'lucide-react';
 import ActivityFormDialog from './ActivityFormDialog';
 import DocumentsChecklist from './DocumentsChecklist';
 
@@ -206,6 +206,16 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     toast({ title: editingActIdx !== null ? 'Atividade atualizada!' : 'Atividade adicionada!' });
   };
 
+  const moveActivity = async (dayIdx: number, actIdx: number, direction: 'up' | 'down') => {
+    const updated = [...itinerary];
+    const activities = [...updated[dayIdx].activities];
+    const newIdx = direction === 'up' ? actIdx - 1 : actIdx + 1;
+    if (newIdx < 0 || newIdx >= activities.length) return;
+    [activities[actIdx], activities[newIdx]] = [activities[newIdx], activities[actIdx]];
+    updated[dayIdx] = { ...updated[dayIdx], activities };
+    await saveItinerary.mutateAsync(updated);
+  };
+
   const addEmptyDay = async () => {
     const nextDay = itinerary.length > 0 ? Math.max(...itinerary.map(d => d.day)) + 1 : 1;
     await saveItinerary.mutateAsync([...itinerary, { day: nextDay, activities: [] }]);
@@ -288,7 +298,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         <div className="space-y-6">
           {itinerary.map((day, dayIdx) => {
             const dayCost = day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0);
-            const sorted = [...day.activities].sort((a, b) => timeSlotOrder.indexOf(a.time_slot) - timeSlotOrder.indexOf(b.time_slot));
+            const displayActivities = day.activities;
             return (
               <div key={day.day} className="relative pl-16">
                 <div className="absolute left-3 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">{day.day}</div>
@@ -310,9 +320,8 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {sorted.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma atividade. Clique em "Adicionar" ou "Sugerir mais".</p>}
-                    {sorted.map((activity, actIdx) => {
-                      const realIdx = day.activities.indexOf(activity);
+                    {displayActivities.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma atividade. Clique em "Adicionar" ou "Sugerir mais".</p>}
+                    {displayActivities.map((activity, actIdx) => {
                       return (
                         <div key={actIdx} className={`rounded-lg border p-3 space-y-1 transition-colors ${activity.is_suggestion ? 'border-dashed border-primary/50 bg-primary/5' : ''}`}>
                           <div className="flex items-start justify-between gap-2">
@@ -327,11 +336,17 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                               <span className="text-sm font-medium">R$ {(activity.estimated_cost || 0).toLocaleString('pt-BR')}</span>
-                              {activity.is_suggestion && <Button variant="ghost" size="sm" className="h-7 text-xs text-primary print:hidden" onClick={() => acceptSuggestion(dayIdx, realIdx)}>Aceitar</Button>}
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => openEditActivity(dayIdx, realIdx, activity)}>
+                              {activity.is_suggestion && <Button variant="ghost" size="sm" className="h-7 text-xs text-primary print:hidden" onClick={() => acceptSuggestion(dayIdx, actIdx)}>Aceitar</Button>}
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => moveActivity(dayIdx, actIdx, 'up')} disabled={actIdx === 0}>
+                                <ChevronUp className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => moveActivity(dayIdx, actIdx, 'down')} disabled={actIdx === displayActivities.length - 1}>
+                                <ChevronDown className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground print:hidden" onClick={() => openEditActivity(dayIdx, actIdx, activity)}>
                                 <Pencil className="h-3 w-3" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive print:hidden" onClick={() => removeActivity(dayIdx, realIdx)}>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive print:hidden" onClick={() => removeActivity(dayIdx, actIdx)}>
                                 <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
