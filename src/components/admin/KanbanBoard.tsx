@@ -5,6 +5,7 @@ import { Tables, Enums } from '@/integrations/supabase/types';
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
 import { RequestDetailDialog } from './RequestDetailDialog';
+import { KanbanFilters } from './KanbanFilters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,6 +31,8 @@ export function KanbanBoard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] = useState<Tables<'travel_requests'> | null>(null);
+  const [filterAgency, setFilterAgency] = useState('all');
+  const [filterPayment, setFilterPayment] = useState('all');
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['travel_requests'],
