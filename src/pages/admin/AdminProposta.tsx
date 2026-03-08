@@ -28,8 +28,6 @@ export default function AdminProposta() {
   const [description, setDescription] = useState('');
   const [totalPrice, setTotalPrice] = useState('');
   const [inclusions, setInclusions] = useState('');
-  const [pixLink, setPixLink] = useState('');
-  const [cardLink, setCardLink] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [agencyId, setAgencyId] = useState<string>('none');
   const [paymentEnabled, setPaymentEnabled] = useState(false);
