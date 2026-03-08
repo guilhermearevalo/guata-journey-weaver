@@ -127,13 +127,15 @@ export function PublicHeader() {
       {mobileMenuOpen && (
         <div className="border-t bg-background md:hidden">
           <div className="container mx-auto space-y-4 px-4 py-6">
-            <Link
-              to="/experiencias"
-              className="block text-sm font-medium text-muted-foreground"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Experiências
-            </Link>
+            {sections?.featured_experiences !== false && (
+              <Link
+                to="/experiencias"
+                className="block text-sm font-medium text-muted-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Experiências
+              </Link>
+            )}
             <Link
               to="/excursoes"
               className="block text-sm font-medium text-muted-foreground"
@@ -148,13 +150,15 @@ export function PublicHeader() {
             >
               Pacotes
             </Link>
-            <Link
-              to="/viagem-personalizada"
-              className="block text-sm font-medium text-muted-foreground"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Viagem Personalizada
-            </Link>
+            {sections?.custom_travel_cta !== false && (
+              <Link
+                to="/viagem-personalizada"
+                className="block text-sm font-medium text-muted-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Viagem Personalizada
+              </Link>
+            )}
             <Link
               to="/sobre"
               className="block text-sm font-medium text-muted-foreground"
