@@ -11,10 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route, Share2, Check, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
+import { useState as useStateExtra } from 'react';
 
 export default function AdminProposta() {
   const { id: requestId } = useParams<{ id: string }>();
