@@ -106,7 +106,6 @@ export default function PartnerProposta() {
         description,
         total_price: totalPrice ? parseFloat(totalPrice) : null,
         inclusions: inclusionsArray.length > 0 ? inclusionsArray : null,
-        payment_links: { pix: pixLink || null, card: cardLink || null },
         payment_status: paymentStatus,
       };
 
