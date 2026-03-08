@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, Users, MapPin, DollarSign } from 'lucide-react';
+import { Calendar, Users, MapPin, DollarSign, Route } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 
 interface KanbanCardProps {
