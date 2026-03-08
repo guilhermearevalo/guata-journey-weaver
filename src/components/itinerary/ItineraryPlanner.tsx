@@ -206,6 +206,16 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     toast({ title: editingActIdx !== null ? 'Atividade atualizada!' : 'Atividade adicionada!' });
   };
 
+  const moveActivity = async (dayIdx: number, actIdx: number, direction: 'up' | 'down') => {
+    const updated = [...itinerary];
+    const activities = [...updated[dayIdx].activities];
+    const newIdx = direction === 'up' ? actIdx - 1 : actIdx + 1;
+    if (newIdx < 0 || newIdx >= activities.length) return;
+    [activities[actIdx], activities[newIdx]] = [activities[newIdx], activities[actIdx]];
+    updated[dayIdx] = { ...updated[dayIdx], activities };
+    await saveItinerary.mutateAsync(updated);
+  };
+
   const addEmptyDay = async () => {
     const nextDay = itinerary.length > 0 ? Math.max(...itinerary.map(d => d.day)) + 1 : 1;
     await saveItinerary.mutateAsync([...itinerary, { day: nextDay, activities: [] }]);
