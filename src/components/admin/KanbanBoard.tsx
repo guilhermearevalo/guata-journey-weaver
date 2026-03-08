@@ -88,8 +88,32 @@ export function KanbanBoard() {
     }
   };
 
+  // Fetch proposals for payment filter
+  const { data: proposalMap } = useQuery({
+    queryKey: ['proposals-payment-map'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('proposals')
+        .select('request_id, payment_status');
+      if (error) throw error;
+      const map = new Map<string, string>();
+      data?.forEach(p => map.set(p.request_id, p.payment_status || 'pending'));
+      return map;
+    },
+    enabled: filterPayment !== 'all',
+  });
+
   const getRequestsByStatus = (status: RequestStatus) => {
-    return requests?.filter(r => r.status === status) || [];
+    let filtered = requests?.filter(r => r.status === status) || [];
+    if (filterAgency === 'none') {
+      filtered = filtered.filter(r => !r.assigned_agency_id);
+    } else if (filterAgency !== 'all') {
+      filtered = filtered.filter(r => r.assigned_agency_id === filterAgency);
+    }
+    if (filterPayment !== 'all' && proposalMap) {
+      filtered = filtered.filter(r => proposalMap.get(r.id) === filterPayment);
+    }
+    return filtered;
   };
 
   if (isLoading) {
