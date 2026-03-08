@@ -33,6 +33,8 @@ import AdminClientes from "./pages/admin/AdminClientes";
 import AdminParceiros from "./pages/admin/AdminParceiros";
 import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
+import AdminRelatorioAgencias from "./pages/admin/AdminRelatorioAgencias";
+import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
 import AdminRoteiro from "./pages/admin/AdminRoteiro";
 
 // Partner imports
