@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   LogOut,
   BarChart3,
-  DollarSign
+  DollarSign,
+  HelpCircle
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
