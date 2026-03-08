@@ -112,7 +112,9 @@ export default function PartnerProposta() {
         total_price: totalPrice ? parseFloat(totalPrice) : null,
         inclusions: inclusionsArray.length > 0 ? inclusionsArray : null,
         payment_status: paymentStatus,
-      };
+        payment_enabled: paymentEnabled,
+        access_code: accessCode.trim() || null,
+      } as any;
 
       if (existingProposal) {
         const { error } = await supabase
