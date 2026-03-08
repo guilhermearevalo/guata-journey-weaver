@@ -13,8 +13,14 @@
 - Filtros no Kanban: por agência e status de pagamento
 - Admin/consultor pode criar propostas diretamente (`/admin/proposta/:id`)
 
-## ✅ Fase 3 - Segurança
-- Dados de contato do cliente ocultos para parceiros (email/telefone não exibidos)
+## ✅ Fase 3 - Segurança e Acesso
+- Parceiros agora visualizam contato completo do cliente (email/telefone) para operar a viagem
+
+## 🔄 Fase 4 - Pagamentos com Stripe + Fallback Manual
+- ✅ Stripe habilitado na plataforma
+- 🔜 Edge function `create-checkout` para Stripe Checkout Session
+- 🔜 Edge function `stripe-webhook` para atualização automática de status
+- 🔜 UI da proposta pública com botão Stripe + fallback links manuais
 
 ## 🔜 Próximas Fases
 - Log de auditoria (quem mudou o que, quando)
