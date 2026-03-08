@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, Users, DollarSign, Heart, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ export default function ViagemPersonalizada() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
@@ -34,7 +35,7 @@ export default function ViagemPersonalizada() {
     name: '',
     email: '',
     phone: '',
-    destination: '',
+    destination: searchParams.get('destino') || '',
     departureDate: '',
     returnDate: '',
     travelers: '2',

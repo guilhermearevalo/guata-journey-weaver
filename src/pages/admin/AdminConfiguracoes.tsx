@@ -5,8 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Loader2, Image as ImageIcon, Trash2, Film, X, GripVertical } from 'lucide-react';
+import { Upload, Loader2, Image as ImageIcon, Trash2, Film, X, LayoutDashboard } from 'lucide-react';
+import type { HomepageSections } from '@/hooks/useHomepageSections';
 
 interface Slide {
   type: 'image' | 'video';
@@ -195,8 +197,83 @@ const AdminConfiguracoes = () => {
           </p>
         </CardContent>
       </Card>
+      <HomepageSectionsCard />
     </div>
   );
 };
+
+/* ── Homepage Sections Toggle Card ── */
+function HomepageSectionsCard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: sections, isLoading } = useQuery({
+    queryKey: ['site-setting', 'homepage_sections'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'homepage_sections')
+        .maybeSingle();
+      if (error) throw error;
+      const defaults: HomepageSections = { featured_experiences: true, custom_travel_cta: true, testimonials: true };
+      if (!data?.value) return defaults;
+      return { ...defaults, ...(data.value as unknown as Partial<HomepageSections>) };
+    },
+  });
+
+  const toggle = async (key: keyof HomepageSections) => {
+    if (!sections) return;
+    const updated = { ...sections, [key]: !sections[key] };
+    const { error } = await supabase
+      .from('site_settings')
+      .upsert({
+        key: 'homepage_sections',
+        value: updated as unknown as import('@/integrations/supabase/types').Json,
+        updated_at: new Date().toISOString(),
+      });
+    if (error) {
+      toast({ title: 'Erro ao salvar', variant: 'destructive' });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['site-setting', 'homepage_sections'] });
+    toast({ title: 'Seção atualizada!' });
+  };
+
+  const items: { key: keyof HomepageSections; label: string; description: string }[] = [
+    { key: 'featured_experiences', label: 'Experiências em Destaque', description: 'Seção e link "Experiências" no menu' },
+    { key: 'custom_travel_cta', label: 'Sua Viagem dos Sonhos', description: 'Seção e link "Viagem Personalizada" no menu' },
+    { key: 'testimonials', label: 'O que Nossos Viajantes Dizem', description: 'Seção de depoimentos na página inicial' },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <LayoutDashboard className="h-5 w-5" />
+          Seções da Página Inicial
+        </CardTitle>
+        <CardDescription>
+          Ative ou desative seções da home e links correspondentes no menu.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {items.map((item) => (
+          <div key={item.key} className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="font-medium">{item.label}</p>
+              <p className="text-sm text-muted-foreground">{item.description}</p>
+            </div>
+            <Switch
+              checked={sections?.[item.key] ?? true}
+              onCheckedChange={() => toggle(item.key)}
+              disabled={isLoading}
+            />
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default AdminConfiguracoes;

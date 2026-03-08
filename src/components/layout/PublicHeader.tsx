@@ -10,11 +10,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/lib/auth';
+import { useHomepageSections } from '@/hooks/useHomepageSections';
 import logo from '@/assets/logo-guata.png';
 
 export function PublicHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut, isStaff, hasRole } = useAuth();
+  const { data: sections } = useHomepageSections();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -38,12 +40,14 @@ export function PublicHeader() {
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-8 md:flex">
-          <Link
-            to="/experiencias"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            Experiências
-          </Link>
+          {sections?.featured_experiences !== false && (
+            <Link
+              to="/experiencias"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Experiências
+            </Link>
+          )}
           <Link
             to="/excursoes"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
@@ -56,12 +60,14 @@ export function PublicHeader() {
           >
             Pacotes
           </Link>
-          <Link
-            to="/viagem-personalizada"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            Viagem Personalizada
-          </Link>
+          {sections?.custom_travel_cta !== false && (
+            <Link
+              to="/viagem-personalizada"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Viagem Personalizada
+            </Link>
+          )}
           <Link
             to="/sobre"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
@@ -121,13 +127,15 @@ export function PublicHeader() {
       {mobileMenuOpen && (
         <div className="border-t bg-background md:hidden">
           <div className="container mx-auto space-y-4 px-4 py-6">
-            <Link
-              to="/experiencias"
-              className="block text-sm font-medium text-muted-foreground"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Experiências
-            </Link>
+            {sections?.featured_experiences !== false && (
+              <Link
+                to="/experiencias"
+                className="block text-sm font-medium text-muted-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Experiências
+              </Link>
+            )}
             <Link
               to="/excursoes"
               className="block text-sm font-medium text-muted-foreground"
@@ -142,13 +150,15 @@ export function PublicHeader() {
             >
               Pacotes
             </Link>
-            <Link
-              to="/viagem-personalizada"
-              className="block text-sm font-medium text-muted-foreground"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Viagem Personalizada
-            </Link>
+            {sections?.custom_travel_cta !== false && (
+              <Link
+                to="/viagem-personalizada"
+                className="block text-sm font-medium text-muted-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Viagem Personalizada
+              </Link>
+            )}
             <Link
               to="/sobre"
               className="block text-sm font-medium text-muted-foreground"

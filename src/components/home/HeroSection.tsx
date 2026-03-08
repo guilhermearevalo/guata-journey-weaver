@@ -16,6 +16,8 @@ const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8
 
 export function HeroSection() {
   const [destination, setDestination] = useState('');
+  const [travelDate, setTravelDate] = useState('');
+  const [travelers, setTravelers] = useState('');
   const navigate = useNavigate();
 
   const { data: heroSetting } = useQuery({
@@ -58,9 +60,11 @@ export function HeroSection() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (destination.trim()) {
-      navigate(`/experiencias?destino=${encodeURIComponent(destination)}`);
-    }
+    const params = new URLSearchParams();
+    if (destination.trim()) params.set('destino', destination);
+    if (travelDate) params.set('data', travelDate);
+    if (travelers) params.set('viajantes', travelers);
+    navigate(`/experiencias?${params.toString()}`);
   };
 
   return (
@@ -147,26 +151,31 @@ export function HeroSection() {
               />
             </div>
             
-            <div className="hidden flex-1 space-y-2 md:block">
+            <div className="flex-1 space-y-2">
               <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 Quando?
               </label>
               <Input
-                type="text"
-                placeholder="Escolha as datas"
+                type="date"
+                value={travelDate}
+                onChange={(e) => setTravelDate(e.target.value)}
                 className="h-12 text-base"
               />
             </div>
             
-            <div className="hidden flex-1 space-y-2 lg:block">
+            <div className="flex-1 space-y-2">
               <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                 <Users className="h-4 w-4" />
                 Viajantes
               </label>
               <Input
-                type="text"
+                type="number"
+                min="1"
+                max="50"
                 placeholder="Quantas pessoas?"
+                value={travelers}
+                onChange={(e) => setTravelers(e.target.value)}
                 className="h-12 text-base"
               />
             </div>

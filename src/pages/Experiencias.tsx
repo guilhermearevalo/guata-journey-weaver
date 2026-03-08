@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { Search, MapPin, Clock, Users, Filter, X } from 'lucide-react';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { Search, MapPin, Clock, Users, Filter, X, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -100,6 +100,7 @@ const placeholderExperiences: Experience[] = [
 
 export default function Experiencias() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get('destino') || '');
@@ -304,20 +305,39 @@ export default function Experiencias() {
         </div>
 
         {filteredExperiences.length === 0 && !loading && (
-          <div className="py-12 text-center">
-            <p className="text-lg text-muted-foreground">
-              Nenhuma experiência encontrada para "{search}".
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+              <MapPin className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h2 className="mb-2 font-display text-2xl font-bold">
+              Nenhuma experiência encontrada
+            </h2>
+            <p className="mb-6 max-w-md text-muted-foreground">
+              {search
+                ? `Não encontramos experiências para "${search}". Que tal solicitar uma viagem personalizada?`
+                : 'Nenhuma experiência corresponde aos filtros selecionados.'}
             </p>
-            <Button
-              variant="outline"
-              className="mt-4"
-              onClick={() => {
-                setSearch('');
-                setTypeFilter('all');
-              }}
-            >
-              Limpar filtros
-            </Button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              {search && (
+                <Button
+                  onClick={() =>
+                    navigate(`/viagem-personalizada?destino=${encodeURIComponent(search)}`)
+                  }
+                >
+                  <Heart className="mr-2 h-4 w-4" />
+                  Solicitar Viagem Personalizada
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearch('');
+                  setTypeFilter('all');
+                }}
+              >
+                Limpar filtros
+              </Button>
+            </div>
           </div>
         )}
       </div>
