@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy } from 'lucide-react';
 
 interface Activity {
   name: string;
@@ -48,6 +48,8 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
   const [generatingDay, setGeneratingDay] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const { data: proposal, isLoading } = useQuery({
     queryKey: ['proposal-itinerary', id],
@@ -160,6 +162,31 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     await saveItinerary.mutateAsync([...itinerary, { day: nextDay, activities: [] }]);
   };
 
+  const generateShareLink = async () => {
+    if (!proposal?.id) return;
+    setSharing(true);
+    try {
+      let token = proposal.share_token as string | null;
+      if (!token) {
+        token = crypto.randomUUID();
+        const { error } = await supabase
+          .from('proposals')
+          .update({ share_token: token } as any)
+          .eq('id', proposal.id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] });
+      }
+      const url = `${window.location.origin}/roteiro/${token}`;
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast({ title: 'Link copiado!', description: 'Envie para quem quiser visualizar o roteiro.' });
+      setTimeout(() => setCopied(false), 3000);
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Erro ao gerar link', variant: 'destructive' });
+    } finally { setSharing(false); }
+  };
+
   const totalCost = itinerary.reduce((sum, day) => sum + day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0), 0);
 
   if (isLoading) return <div className="space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-64 w-full" /></div>;
@@ -176,14 +203,22 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      {/* Header */}
+      <div className="flex items-center gap-4 print:hidden">
         <Button variant="ghost" size="icon" asChild><Link to={backLink}><ArrowLeft className="h-4 w-4" /></Link></Button>
         <div className="flex-1">
           <h2 className="text-2xl font-bold">Planejador de Roteiro</h2>
           <p className="text-muted-foreground">{request?.destination || 'Destino'} • {totalDays} dia(s)</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" className="text-base px-3 py-1"><DollarSign className="mr-1 h-4 w-4" />R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Badge>
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Printer className="mr-2 h-4 w-4" />PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={generateShareLink} disabled={sharing || itinerary.length === 0}>
+            {copied ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
+            {copied ? 'Copiado!' : 'Compartilhar'}
+          </Button>
           <Button onClick={generateFullItinerary} disabled={generating}>
             {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             {itinerary.length > 0 ? 'Regenerar com IA' : 'Gerar Roteiro com IA'}
@@ -191,6 +226,14 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         </div>
       </div>
 
+      {/* Print header (visible only when printing) */}
+      <div className="hidden print:block space-y-1 mb-6">
+        <p className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Roteiro de Viagem • Guata Viagens</p>
+        <h2 className="text-3xl font-bold">{request?.destination || 'Destino'}</h2>
+        <p className="text-muted-foreground">{totalDays} dia(s) • Custo estimado: R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+      </div>
+
+      {/* Timeline */}
       <div className="relative">
         {itinerary.length > 0 && <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />}
         <div className="space-y-6">
@@ -206,7 +249,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                       <CardTitle className="text-lg">Dia {day.day}</CardTitle>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">R$ {dayCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                        <Button variant="ghost" size="sm" onClick={() => suggestForDay(day.day)} disabled={generatingDay === day.day}>
+                        <Button variant="ghost" size="sm" className="print:hidden" onClick={() => suggestForDay(day.day)} disabled={generatingDay === day.day}>
                           {generatingDay === day.day ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                           <span className="ml-1 hidden sm:inline">Sugerir mais</span>
                         </Button>
@@ -225,14 +268,14 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                                 <span className="font-medium text-sm">{activity.name}</span>
                                 <Badge variant="outline" className="text-xs">{activity.time_slot}</Badge>
                                 <Badge className={`text-xs ${categoryColors[activity.category] || 'bg-muted text-muted-foreground'}`}>{activity.category}</Badge>
-                                {activity.is_suggestion && <Badge className="bg-primary/10 text-primary text-xs"><Sparkles className="mr-1 h-3 w-3" />Sugestão IA</Badge>}
+                                {activity.is_suggestion && <Badge className="bg-primary/10 text-primary text-xs print:hidden"><Sparkles className="mr-1 h-3 w-3" />Sugestão IA</Badge>}
                               </div>
                               <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                               <span className="text-sm font-medium">R$ {(activity.estimated_cost || 0).toLocaleString('pt-BR')}</span>
-                              {activity.is_suggestion && <Button variant="ghost" size="sm" className="h-7 text-xs text-primary" onClick={() => acceptSuggestion(dayIdx, realIdx)}>Aceitar</Button>}
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => removeActivity(dayIdx, realIdx)}><Trash2 className="h-3 w-3" /></Button>
+                              {activity.is_suggestion && <Button variant="ghost" size="sm" className="h-7 text-xs text-primary print:hidden" onClick={() => acceptSuggestion(dayIdx, realIdx)}>Aceitar</Button>}
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive print:hidden" onClick={() => removeActivity(dayIdx, realIdx)}><Trash2 className="h-3 w-3" /></Button>
                             </div>
                           </div>
                         </div>
@@ -244,7 +287,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
             );
           })}
         </div>
-        <div className="pl-16 pt-4">
+        <div className="pl-16 pt-4 print:hidden">
           <Button variant="outline" onClick={addEmptyDay}><Plus className="mr-2 h-4 w-4" />Adicionar Dia</Button>
         </div>
       </div>
