@@ -167,6 +167,11 @@ export default function RoteiroPublico() {
           </div>
         )}
 
+        {/* Documents Checklist */}
+        {documentsChecklist.length > 0 && (
+          <DocumentsChecklist items={documentsChecklist} onChange={() => {}} readOnly />
+        )}
+
         {/* Footer */}
         <div className="text-center text-xs text-muted-foreground pt-8 border-t print:block">
           <p>Roteiro gerado por <strong>Guata Viagens</strong></p>
