@@ -1,22 +1,22 @@
 
-# Plano: Plataforma Guatá - Status de Implementação
 
-## ✅ Fase 1 - Funcionalidades Base
-- Upload de imagem do hero com carrossel (imagens + vídeo)
-- Links de pagamento (PIX e Cartão) nas propostas
-- Planejador de roteiro com IA (cliente, admin, parceiro)
-- Status de pagamento (pendente, parcial, pago)
+# Plano: Reordenacao mais intuitiva de atividades
 
-## ✅ Fase 2 - Controle Financeiro e Visibilidade
-- Relatório por Agência (`/admin/relatorio-agencias`): vendas, receita, comissões
-- Dashboard Financeiro (`/admin/financeiro`): resumo de pagamentos pendentes/pagos
-- Filtros no Kanban: por agência e status de pagamento
-- Admin/consultor pode criar propostas diretamente (`/admin/proposta/:id`)
+## Problema
+As setas sobem/descem 1 posicao por vez, o que e lento e confuso quando ha muitas atividades.
 
-## ✅ Fase 3 - Segurança
-- Dados de contato do cliente ocultos para parceiros (email/telefone não exibidos)
+## Solucao
+Substituir as setas por um **campo de posicao numerica** (ex: "1", "2", "3") ao lado de cada atividade. O usuario clica no numero, digita a nova posicao, e a atividade e movida automaticamente para aquele lugar (as outras se ajustam).
 
-## 🔜 Próximas Fases
-- Log de auditoria (quem mudou o que, quando)
-- Notificações in-app ou por email
-- Filtro por consultor responsável no Kanban
+Alem disso, manter as setas mas torna-las mais claras visualmente (com tooltip "Mover para cima" / "Mover para baixo") e desabilitar quando ja esta no topo/final.
+
+## Alteracoes
+
+### `ItineraryPlanner.tsx`
+- Adicionar um badge clicavel com o numero da posicao (1, 2, 3...) antes do nome da atividade
+- Ao clicar, abre um pequeno popover com input numerico para definir a nova posicao
+- Funcao `moveActivityToPosition(dayIdx, fromIdx, toIdx)` que remove e reinsere na posicao correta
+- Manter setas com tooltips claros como alternativa rapida
+
+Nenhum arquivo novo, nenhuma migration. Apenas modificacao do `ItineraryPlanner.tsx`.
+
