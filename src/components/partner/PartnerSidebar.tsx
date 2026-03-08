@@ -21,6 +21,7 @@ const menuItems = [
   { title: 'Dashboard', url: '/partner', icon: LayoutDashboard },
   { title: 'Demandas', url: '/partner/demandas', icon: FileText },
   { title: 'Experiências', url: '/partner/experiencias', icon: Map },
+  { title: 'Financeiro', url: '/partner/financeiro', icon: DollarSign },
   { title: 'Ajuda', url: '/partner/ajuda', icon: HelpCircle },
 ];
 
