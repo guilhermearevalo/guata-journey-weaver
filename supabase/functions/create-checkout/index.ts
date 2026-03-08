@@ -46,6 +46,10 @@ serve(async (req) => {
       throw new Error("This proposal is already paid");
     }
 
+    if (!proposal.payment_enabled) {
+      throw new Error("Payment is not enabled for this proposal");
+    }
+
     if (!proposal.total_price || proposal.total_price <= 0) {
       throw new Error("Proposal has no valid price");
     }
