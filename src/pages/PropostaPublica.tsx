@@ -94,7 +94,6 @@ export default function PropostaPublica() {
   );
 
   const isPaid = proposal.payment_status === 'paid';
-  const hasManualLinks = paymentLinks?.pix || paymentLinks?.card;
   const canPayStripe = proposal.total_price && proposal.total_price > 0 && !isPaid;
 
   return (
