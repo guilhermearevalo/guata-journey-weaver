@@ -37,6 +37,9 @@ const timeSlotOrder = ['manhã', 'tarde', 'noite'];
 
 export default function RoteiroPublico() {
   const { token } = useParams<{ token: string }>();
+  const [codeInput, setCodeInput] = useState('');
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [codeError, setCodeError] = useState(false);
 
   const { data: proposal, isLoading, error } = useQuery({
     queryKey: ['public-itinerary', token],
