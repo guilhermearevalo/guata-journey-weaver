@@ -119,7 +119,7 @@ export function HeroSection() {
             <span className="block text-guata-teal-light hero-text-shadow">Experiências Únicas</span>
           </h1>
           
-          <p className="mx-auto max-w-2xl text-lg text-white/80 md:text-xl">
+          <p className="mx-auto max-w-2xl text-lg text-white/90 md:text-xl">
             Curadoria turística personalizada para viajantes que buscam 
             momentos inesquecíveis. Do Brasil ao mundo, sua próxima 
             aventura começa aqui.
