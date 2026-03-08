@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/lib/auth';
+import { useHomepageSections } from '@/hooks/useHomepageSections';
 import logo from '@/assets/logo-guata.png';
 
 export function PublicHeader() {
