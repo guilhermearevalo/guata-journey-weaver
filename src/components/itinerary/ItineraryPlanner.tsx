@@ -320,9 +320,8 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {sorted.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma atividade. Clique em "Adicionar" ou "Sugerir mais".</p>}
-                    {sorted.map((activity, actIdx) => {
-                      const realIdx = day.activities.indexOf(activity);
+                    {displayActivities.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma atividade. Clique em "Adicionar" ou "Sugerir mais".</p>}
+                    {displayActivities.map((activity, actIdx) => {
                       return (
                         <div key={actIdx} className={`rounded-lg border p-3 space-y-1 transition-colors ${activity.is_suggestion ? 'border-dashed border-primary/50 bg-primary/5' : ''}`}>
                           <div className="flex items-start justify-between gap-2">
