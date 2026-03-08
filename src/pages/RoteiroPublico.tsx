@@ -46,9 +46,19 @@ export default function RoteiroPublico() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('proposals')
-        .select('*, travel_requests!inner(destination, travel_dates, travelers_count)')
+        .select('id, title, itinerary, documents_checklist, share_token, travel_requests!inner(destination, travel_dates, travelers_count)')
         .eq('share_token', token!)
         .maybeSingle();
+      
+      // Check if access code exists separately (don't expose the actual code)
+      if (data) {
+        const { data: codeCheck } = await supabase
+          .from('proposals')
+          .select('access_code')
+          .eq('id', data.id)
+          .maybeSingle();
+        (data as any)._has_access_code = !!codeCheck?.access_code;
+      }
       if (error) throw error;
       return data;
     },
@@ -95,11 +105,19 @@ export default function RoteiroPublico() {
     </div>
   );
 
-  const proposalAccessCode = (proposal as any).access_code as string | null;
-  const needsCode = !!proposalAccessCode && !isUnlocked;
+  const hasAccessCode = (proposal as any)._has_access_code as boolean;
+  const needsCode = hasAccessCode && !isUnlocked;
 
-  const handleCodeSubmit = () => {
-    if (codeInput.trim().toUpperCase() === proposalAccessCode?.toUpperCase()) {
+  const handleCodeSubmit = async () => {
+    // Validate code on backend by querying with the code
+    const { data } = await supabase
+      .from('proposals')
+      .select('id')
+      .eq('id', proposal!.id)
+      .eq('access_code', codeInput.trim().toUpperCase())
+      .maybeSingle();
+    
+    if (data) {
       setIsUnlocked(true);
       setCodeError(false);
     } else {

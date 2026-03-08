@@ -83,9 +83,13 @@ const SejaParceiro = () => {
         cnpj: formData.cnpj,
         contact_email: formData.email,
         contact_phone: formData.phone,
-        address: formData.description, // Using address field for description temporarily
-        is_active: false, // Pending approval
-      });
+        responsible_name: formData.responsibleName,
+        website: formData.website || null,
+        specialties: formData.specialties,
+        regions: formData.regions,
+        description: formData.description || null,
+        is_active: false,
+      } as any);
 
       if (error) throw error;
 

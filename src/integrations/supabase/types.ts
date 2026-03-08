@@ -315,12 +315,17 @@ export type Database = {
           contact_email: string
           contact_phone: string | null
           created_at: string
+          description: string | null
           id: string
           is_active: boolean | null
           logo_url: string | null
           name: string
+          regions: string[] | null
+          responsible_name: string | null
+          specialties: string[] | null
           stripe_fee_bearer: string | null
           updated_at: string
+          website: string | null
         }
         Insert: {
           address?: string | null
@@ -329,12 +334,17 @@ export type Database = {
           contact_email: string
           contact_phone?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
           name: string
+          regions?: string[] | null
+          responsible_name?: string | null
+          specialties?: string[] | null
           stripe_fee_bearer?: string | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
           address?: string | null
@@ -343,12 +353,17 @@ export type Database = {
           contact_email?: string
           contact_phone?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
           name?: string
+          regions?: string[] | null
+          responsible_name?: string | null
+          specialties?: string[] | null
           stripe_fee_bearer?: string | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }

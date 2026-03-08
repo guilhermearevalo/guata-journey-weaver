@@ -28,8 +28,6 @@ export default function AdminProposta() {
   const [description, setDescription] = useState('');
   const [totalPrice, setTotalPrice] = useState('');
   const [inclusions, setInclusions] = useState('');
-  const [pixLink, setPixLink] = useState('');
-  const [cardLink, setCardLink] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [agencyId, setAgencyId] = useState<string>('none');
   const [paymentEnabled, setPaymentEnabled] = useState(false);
@@ -84,9 +82,6 @@ export default function AdminProposta() {
       setAgencyId(existingProposal.agency_id || 'none');
       setPaymentEnabled((existingProposal as any).payment_enabled || false);
       setAccessCode((existingProposal as any).access_code || '');
-      const links = existingProposal.payment_links as { pix?: string; card?: string } | null;
-      setPixLink(links?.pix || '');
-      setCardLink(links?.card || '');
     }
   }, [existingProposal]);
 
@@ -98,7 +93,6 @@ export default function AdminProposta() {
         description,
         total_price: totalPrice ? parseFloat(totalPrice) : null,
         inclusions: inclusions.split('\n').filter(Boolean),
-        payment_links: { pix: pixLink || null, card: cardLink || null },
         payment_status: paymentStatus,
         payment_enabled: paymentEnabled,
         access_code: accessCode.trim() || null,

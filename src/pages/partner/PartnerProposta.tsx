@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route, Lock } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -111,7 +111,6 @@ export default function PartnerProposta() {
         description,
         total_price: totalPrice ? parseFloat(totalPrice) : null,
         inclusions: inclusionsArray.length > 0 ? inclusionsArray : null,
-        payment_status: paymentStatus,
         payment_enabled: paymentEnabled,
         access_code: accessCode.trim() || null,
       } as any;
@@ -297,14 +296,10 @@ export default function PartnerProposta() {
                   {existingProposal && (
                     <div className="space-y-2">
                       <Label>Status do Pagamento</Label>
-                      <Select value={paymentStatus} onValueChange={setPaymentStatus}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pendente</SelectItem>
-                          <SelectItem value="partial">Parcial</SelectItem>
-                          <SelectItem value="paid">Pago</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Badge variant={paymentStatus === 'paid' ? 'default' : 'secondary'} className="text-sm">
+                        {paymentStatus === 'paid' ? 'Pago' : paymentStatus === 'partial' ? 'Parcial' : 'Pendente'}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground">O status é atualizado automaticamente pelo sistema de pagamento.</p>
                     </div>
                   )}
                 </div>
