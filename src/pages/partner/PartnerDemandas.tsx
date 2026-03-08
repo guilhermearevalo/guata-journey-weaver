@@ -92,7 +92,7 @@ export default function PartnerDemandas() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ requestId, newStatus }: { requestId: string; newStatus: string }) => {
+    mutationFn: async ({ requestId, newStatus }: { requestId: string; newStatus: 'in_operation' | 'completed' }) => {
       const { error } = await supabase
         .from('travel_requests')
         .update({ status: newStatus })
