@@ -30,7 +30,6 @@ serve(async (req) => {
       }
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
     } else {
-      // Fallback: parse without verification (dev mode)
       event = JSON.parse(body) as Stripe.Event;
     }
 
@@ -44,6 +43,7 @@ serve(async (req) => {
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
         );
 
+        // Update proposal payment status
         const { error } = await supabaseAdmin
           .from("proposals")
           .update({
@@ -64,6 +64,54 @@ serve(async (req) => {
         }
 
         console.log(`Proposal ${proposalId} marked as paid via Stripe`);
+
+        // Auto-create commission_payment if proposal has an agency
+        const { data: proposal } = await supabaseAdmin
+          .from("proposals")
+          .select("agency_id, total_price")
+          .eq("id", proposalId)
+          .maybeSingle();
+
+        if (proposal?.agency_id && proposal?.total_price) {
+          // Get agency commission config
+          const { data: agency } = await supabaseAdmin
+            .from("partner_agencies")
+            .select("commission_rate, stripe_fee_bearer")
+            .eq("id", proposal.agency_id)
+            .maybeSingle();
+
+          const grossAmount = proposal.total_price;
+          const commissionRate = agency?.commission_rate ?? 10;
+          const stripeFee = Math.round((grossAmount * 3.49 / 100 + 0.39) * 100) / 100;
+          const guataCommission = Math.round(grossAmount * commissionRate / 100 * 100) / 100;
+
+          let partnerStripeFee = 0;
+          if (agency?.stripe_fee_bearer === 'partner') {
+            partnerStripeFee = stripeFee;
+          } else if (agency?.stripe_fee_bearer === 'split') {
+            partnerStripeFee = Math.round(stripeFee / 2 * 100) / 100;
+          }
+
+          const partnerAmount = Math.round((grossAmount - guataCommission - partnerStripeFee) * 100) / 100;
+
+          const { error: commError } = await supabaseAdmin
+            .from("commission_payments")
+            .insert({
+              agency_id: proposal.agency_id,
+              proposal_id: proposalId,
+              gross_amount: grossAmount,
+              stripe_fee: stripeFee,
+              guata_commission: guataCommission,
+              partner_amount: partnerAmount,
+              status: "pending",
+            });
+
+          if (commError) {
+            console.error("Error creating commission payment:", commError);
+          } else {
+            console.log(`Commission payment created for proposal ${proposalId}`);
+          }
+        }
       }
     }
 

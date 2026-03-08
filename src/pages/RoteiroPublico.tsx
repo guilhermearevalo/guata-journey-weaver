@@ -105,11 +105,19 @@ export default function RoteiroPublico() {
     </div>
   );
 
-  const proposalAccessCode = (proposal as any).access_code as string | null;
-  const needsCode = !!proposalAccessCode && !isUnlocked;
+  const hasAccessCode = (proposal as any)._has_access_code as boolean;
+  const needsCode = hasAccessCode && !isUnlocked;
 
-  const handleCodeSubmit = () => {
-    if (codeInput.trim().toUpperCase() === proposalAccessCode?.toUpperCase()) {
+  const handleCodeSubmit = async () => {
+    // Validate code on backend by querying with the code
+    const { data } = await supabase
+      .from('proposals')
+      .select('id')
+      .eq('id', proposal!.id)
+      .eq('access_code', codeInput.trim().toUpperCase())
+      .maybeSingle();
+    
+    if (data) {
       setIsUnlocked(true);
       setCodeError(false);
     } else {

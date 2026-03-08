@@ -93,7 +93,6 @@ export default function AdminProposta() {
         description,
         total_price: totalPrice ? parseFloat(totalPrice) : null,
         inclusions: inclusions.split('\n').filter(Boolean),
-        payment_links: { pix: pixLink || null, card: cardLink || null },
         payment_status: paymentStatus,
         payment_enabled: paymentEnabled,
         access_code: accessCode.trim() || null,

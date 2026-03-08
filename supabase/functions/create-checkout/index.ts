@@ -27,7 +27,7 @@ serve(async (req) => {
 
     // Fetch proposal
     let query = supabaseAdmin.from("proposals").select(
-      "id, title, total_price, payment_status, share_token, request_id, travel_requests!inner(client_name, client_email)"
+      "id, title, total_price, payment_status, payment_enabled, share_token, request_id, agency_id, travel_requests!inner(client_name, client_email)"
     );
 
     if (share_token) {
