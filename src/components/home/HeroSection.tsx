@@ -105,7 +105,7 @@ export function HeroSection() {
       )}
 
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-secondary/80 via-secondary/60 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-background" />
 
       {/* Content */}
       <div className="container relative mx-auto flex min-h-[90vh] flex-col items-center justify-center px-4 py-20 text-center lg:px-8">
@@ -116,10 +116,10 @@ export function HeroSection() {
           
           <h1 className="font-display text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl xl:text-7xl">
             Descubra o Mundo com
-            <span className="block text-gradient">Experiências Únicas</span>
+            <span className="block text-guata-teal-light hero-text-shadow">Experiências Únicas</span>
           </h1>
           
-          <p className="mx-auto max-w-2xl text-lg text-white/80 md:text-xl">
+          <p className="mx-auto max-w-2xl text-lg text-white/90 md:text-xl">
             Curadoria turística personalizada para viajantes que buscam 
             momentos inesquecíveis. Do Brasil ao mundo, sua próxima 
             aventura começa aqui.

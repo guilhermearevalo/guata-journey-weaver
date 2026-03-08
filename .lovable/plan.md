@@ -1,24 +1,22 @@
 
+# Plano: Plataforma Guatá - Status de Implementação
 
-# Plano: Melhorar visual do texto do Hero
+## ✅ Fase 1 - Funcionalidades Base
+- Upload de imagem do hero com carrossel (imagens + vídeo)
+- Links de pagamento (PIX e Cartão) nas propostas
+- Planejador de roteiro com IA (cliente, admin, parceiro)
+- Status de pagamento (pendente, parcial, pago)
 
-## Problema
-O texto "Experiências Únicas" usa `text-gradient` (gradiente teal→brown) que fica quase invisível sobre a imagem de fundo escura. O overlay `from-secondary/80 via-secondary/60` (marrom escuro) compete com as cores do gradiente do texto, tornando tudo ilegível.
+## ✅ Fase 2 - Controle Financeiro e Visibilidade
+- Relatório por Agência (`/admin/relatorio-agencias`): vendas, receita, comissões
+- Dashboard Financeiro (`/admin/financeiro`): resumo de pagamentos pendentes/pagos
+- Filtros no Kanban: por agência e status de pagamento
+- Admin/consultor pode criar propostas diretamente (`/admin/proposta/:id`)
 
-## Solucao
+## ✅ Fase 3 - Segurança
+- Dados de contato do cliente ocultos para parceiros (email/telefone não exibidos)
 
-### 1. Texto "Experiências Únicas" — trocar gradiente por cor solida e clara
-- Remover a classe `text-gradient` do span
-- Usar uma cor clara e vibrante que contraste bem: **branco com destaque dourado/cream** ou **teal claro** (`text-guata-teal-light` / cor clara custom)
-- Adicionar `text-shadow` sutil para destacar ainda mais sobre qualquer fundo
-
-### 2. Overlay mais suave
-- Ajustar o overlay para `from-black/60 via-black/40 to-background` — preto com transparencia garante contraste universal sem "sujar" as cores do texto
-
-### 3. Subtitulo mais legivel
-- Trocar `text-white/80` para `text-white/90` no paragrafo descritivo
-
-### Arquivo a modificar
-- `src/components/home/HeroSection.tsx` — classes do h1, span e overlay
-- `src/index.css` — opcional, adicionar utilidade de text-shadow
-
+## 🔜 Próximas Fases
+- Log de auditoria (quem mudou o que, quando)
+- Notificações in-app ou por email
+- Filtro por consultor responsável no Kanban
