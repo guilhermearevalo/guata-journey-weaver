@@ -41,10 +41,15 @@ Pode:
 
 ### Criar/Editar Proposta (`/partner/proposta/:requestId`)
 - Formulário: título, descrição, preço total, inclusões
-- Links de pagamento: PIX e Cartão (manuais)
+- **Sem links manuais** — pagamento centralizado via Stripe
 - Status de pagamento (pendente/parcial/pago)
 - Resumo da demanda no painel lateral
 - Ao criar proposta, status muda para `proposal_sent`
+
+### Financeiro (`/partner/financeiro`) ✅ NOVO
+- Cards: Total vendido, Recebido, A receber
+- Info sobre comissão Guatá e quem absorve taxa Stripe
+- Tabela de repasses com breakdown: bruto, taxa Stripe, comissão, valor líquido, status
 
 ### Experiências (`/partner/experiencias`)
 - Lista read-only de experiências onde `operator_agency_id` = agência do parceiro
@@ -65,23 +70,35 @@ No Kanban do admin (`/admin/demandas`):
 
 ---
 
-## 5. Fluxo de Pagamento (Híbrido)
+## 5. Fluxo de Pagamento (Centralizado via Stripe)
 
-### Via Stripe (automático):
-- Proposta pública (`/proposta/:token`), botão "Pagar Online"
+- Proposta pública (`/proposta/:token`), botão "Pagar Online (Cartão ou PIX)"
 - Edge function `create-checkout` → Stripe Checkout Session
 - Webhook `stripe-webhook` atualiza `payment_status` para `paid`
-
-### Via Links Manuais (fallback):
-- Parceiro/consultor cola links de PIX/Cartão na proposta
-- Atualização manual do `payment_status`
+- **Links manuais removidos** — todo pagamento via Stripe
 
 ---
 
-## 6. Relatórios e Comissões
+## 6. Controle Financeiro e Comissões ✅ IMPLEMENTADO
 
-- `/admin/relatorio-agencias`: vendas, receita, comissões por agência
-- `/admin/financeiro`: resumo de pagamentos pendentes/parciais/pagos
+### Tabela `commission_payments`
+- Registra cada repasse: valor bruto, taxa Stripe, comissão Guatá, valor líquido do parceiro
+- Status: pending/paid + data e observações
+
+### Cálculo transparente
+- Taxa Stripe: 3.49% + R$0.39
+- Comissão Guatá: configurável por agência (default 10%)
+- `stripe_fee_bearer`: define quem absorve a taxa (guata/partner/split)
+
+### Admin Financeiro (`/admin/financeiro`) ✅ MELHORADO
+- Cards: Receita paga, Comissão Guatá, Repasses pendentes
+- Filtros por agência e status de repasse
+- Tabela com breakdown completo por proposta
+- Botão "Registrar Repasse" com dialog de confirmação
+
+### Parceiro Financeiro (`/partner/financeiro`) ✅ NOVO
+- Cards: Total vendido, Recebido, A receber
+- Tabela de repasses com todos os valores detalhados
 
 ---
 
@@ -89,6 +106,7 @@ No Kanban do admin (`/admin/demandas`):
 
 - Parceiro só vê `travel_requests` com `assigned_agency_id` = sua agência
 - Parceiro só gerencia `proposals` com `agency_id` = sua agência
+- Parceiro só vê `commission_payments` com `agency_id` = sua agência
 - Funções `get_user_agency()` e `has_role()` são `SECURITY DEFINER`
 
 ---
