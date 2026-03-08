@@ -248,18 +248,24 @@ export default function AdminProposta() {
             </Select>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 flex-wrap">
             <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !title}>
               {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               {existingProposal ? 'Salvar Alterações' : 'Criar Proposta'}
             </Button>
-            {existingProposal && ['approved', 'in_operation', 'completed'].includes(request?.status || '') && (
-              <Button variant="outline" asChild>
-                <Link to={`/admin/demandas/${requestId}/roteiro`}>
-                  <Route className="mr-2 h-4 w-4" />
-                  Ver Roteiro
-                </Link>
-              </Button>
+            {existingProposal && (
+              <>
+                <Button variant="outline" asChild>
+                  <Link to={`/admin/demandas/${requestId}/roteiro`}>
+                    <Route className="mr-2 h-4 w-4" />
+                    Planejar Roteiro com IA
+                  </Link>
+                </Button>
+                <Button variant="outline" onClick={handleShareProposal} disabled={shareLoading}>
+                  {shareCopied ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
+                  {shareCopied ? 'Link Copiado!' : 'Compartilhar Proposta'}
+                </Button>
+              </>
             )}
           </div>
         </CardContent>

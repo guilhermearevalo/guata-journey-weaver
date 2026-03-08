@@ -120,8 +120,9 @@ const App = () => (
               <Route path="/minha-conta/perfil" element={<ClientePerfil />} />
             </Route>
             
-            {/* Public itinerary share */}
+            {/* Public share links */}
             <Route path="/roteiro/:token" element={<RoteiroPublico />} />
+            <Route path="/proposta/:token" element={<PropostaPublica />} />
             
             {/* Auth routes without public layout */}
             <Route path="/login" element={<Login />} />
