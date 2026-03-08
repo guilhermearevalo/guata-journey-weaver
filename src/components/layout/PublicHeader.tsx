@@ -40,12 +40,14 @@ export function PublicHeader() {
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-8 md:flex">
-          <Link
-            to="/experiencias"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            Experiências
-          </Link>
+          {sections?.featured_experiences !== false && (
+            <Link
+              to="/experiencias"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Experiências
+            </Link>
+          )}
           <Link
             to="/excursoes"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
@@ -58,12 +60,14 @@ export function PublicHeader() {
           >
             Pacotes
           </Link>
-          <Link
-            to="/viagem-personalizada"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            Viagem Personalizada
-          </Link>
+          {sections?.custom_travel_cta !== false && (
+            <Link
+              to="/viagem-personalizada"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Viagem Personalizada
+            </Link>
+          )}
           <Link
             to="/sobre"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
