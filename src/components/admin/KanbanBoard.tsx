@@ -134,7 +134,14 @@ export function KanbanBoard() {
 
   return (
     <>
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <KanbanFilters
+        agencyId={filterAgency}
+        paymentStatus={filterPayment}
+        onAgencyChange={setFilterAgency}
+        onPaymentStatusChange={setFilterPayment}
+        onClear={() => { setFilterAgency('all'); setFilterPayment('all'); }}
+      />
+      <div className="flex gap-4 overflow-x-auto pb-4 mt-4">
         {columns.map((column) => {
           const columnRequests = getRequestsByStatus(column.id);
           return (
