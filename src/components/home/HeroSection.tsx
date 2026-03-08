@@ -60,9 +60,11 @@ export function HeroSection() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (destination.trim()) {
-      navigate(`/experiencias?destino=${encodeURIComponent(destination)}`);
-    }
+    const params = new URLSearchParams();
+    if (destination.trim()) params.set('destino', destination);
+    if (travelDate) params.set('data', travelDate);
+    if (travelers) params.set('viajantes', travelers);
+    navigate(`/experiencias?${params.toString()}`);
   };
 
   return (
