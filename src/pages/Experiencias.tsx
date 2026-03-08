@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { Search, MapPin, Clock, Users, Filter, X } from 'lucide-react';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { Search, MapPin, Clock, Users, Filter, X, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
