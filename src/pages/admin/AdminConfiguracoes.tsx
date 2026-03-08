@@ -5,8 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Loader2, Image as ImageIcon, Trash2, Film, X, GripVertical } from 'lucide-react';
+import { Upload, Loader2, Image as ImageIcon, Trash2, Film, X, LayoutDashboard } from 'lucide-react';
+import type { HomepageSections } from '@/hooks/useHomepageSections';
 
 interface Slide {
   type: 'image' | 'video';
