@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { MapPin, Calendar, DollarSign, Printer } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, Printer, Lock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import DocumentsChecklist from '@/components/itinerary/DocumentsChecklist';
+import { useState } from 'react';
 
 interface Activity {
   name: string;
