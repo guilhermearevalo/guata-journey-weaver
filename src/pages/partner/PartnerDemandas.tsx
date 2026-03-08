@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Search, MapPin, Users, Calendar, FileText, Plus } from 'lucide-react';
+import { Search, MapPin, Users, Calendar, FileText, Plus, Mail, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
