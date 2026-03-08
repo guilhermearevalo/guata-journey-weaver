@@ -101,6 +101,7 @@ const App = () => (
               <Route path="relatorio-agencias" element={<AdminRelatorioAgencias />} />
               <Route path="financeiro" element={<AdminFinanceiro />} />
               <Route path="proposta/:id" element={<AdminProposta />} />
+              <Route path="ajuda" element={<AdminAjuda />} />
             </Route>
             
             {/* Partner routes */}
