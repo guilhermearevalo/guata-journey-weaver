@@ -419,6 +419,7 @@ export type Database = {
       }
       proposals: {
         Row: {
+          access_code: string | null
           agency_id: string | null
           client_feedback: string | null
           created_at: string
@@ -430,6 +431,7 @@ export type Database = {
           inclusions: string[] | null
           is_approved: boolean | null
           itinerary: Json | null
+          payment_enabled: boolean | null
           payment_links: Json | null
           payment_status: string | null
           request_id: string
@@ -439,6 +441,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          access_code?: string | null
           agency_id?: string | null
           client_feedback?: string | null
           created_at?: string
@@ -450,6 +453,7 @@ export type Database = {
           inclusions?: string[] | null
           is_approved?: boolean | null
           itinerary?: Json | null
+          payment_enabled?: boolean | null
           payment_links?: Json | null
           payment_status?: string | null
           request_id: string
@@ -459,6 +463,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          access_code?: string | null
           agency_id?: string | null
           client_feedback?: string | null
           created_at?: string
@@ -470,6 +475,7 @@ export type Database = {
           inclusions?: string[] | null
           is_approved?: boolean | null
           itinerary?: Json | null
+          payment_enabled?: boolean | null
           payment_links?: Json | null
           payment_status?: string | null
           request_id?: string

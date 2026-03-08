@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { MapPin, Calendar, DollarSign, Printer } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, Printer, Lock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import DocumentsChecklist from '@/components/itinerary/DocumentsChecklist';
+import { useState } from 'react';
 
 interface Activity {
   name: string;
@@ -35,6 +37,9 @@ const timeSlotOrder = ['manhã', 'tarde', 'noite'];
 
 export default function RoteiroPublico() {
   const { token } = useParams<{ token: string }>();
+  const [codeInput, setCodeInput] = useState('');
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [codeError, setCodeError] = useState(false);
 
   const { data: proposal, isLoading, error } = useQuery({
     queryKey: ['public-itinerary', token],
@@ -87,6 +92,45 @@ export default function RoteiroPublico() {
         <h1 className="text-2xl font-bold">Roteiro não encontrado</h1>
         <p className="text-muted-foreground">Este link pode estar expirado ou inválido.</p>
       </div>
+    </div>
+  );
+
+  const proposalAccessCode = (proposal as any).access_code as string | null;
+  const needsCode = !!proposalAccessCode && !isUnlocked;
+
+  const handleCodeSubmit = () => {
+    if (codeInput.trim().toUpperCase() === proposalAccessCode?.toUpperCase()) {
+      setIsUnlocked(true);
+      setCodeError(false);
+    } else {
+      setCodeError(true);
+    }
+  };
+
+  if (needsCode) return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <Card className="w-full max-w-sm mx-4">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <Lock className="h-6 w-6 text-primary" />
+          </div>
+          <CardTitle>Roteiro Protegido</CardTitle>
+          <p className="text-sm text-muted-foreground">Insira o código de acesso fornecido pela agência.</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input
+            value={codeInput}
+            onChange={(e) => { setCodeInput(e.target.value.toUpperCase()); setCodeError(false); }}
+            placeholder="Código de acesso"
+            onKeyDown={(e) => e.key === 'Enter' && handleCodeSubmit()}
+            className={codeError ? 'border-destructive' : ''}
+          />
+          {codeError && <p className="text-xs text-destructive">Código incorreto. Tente novamente.</p>}
+          <Button className="w-full" onClick={handleCodeSubmit} disabled={!codeInput.trim()}>
+            Acessar Roteiro
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 

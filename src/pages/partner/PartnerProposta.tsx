@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route, Lock } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -27,6 +28,8 @@ export default function PartnerProposta() {
   const [totalPrice, setTotalPrice] = useState('');
   const [inclusions, setInclusions] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('pending');
+  const [paymentEnabled, setPaymentEnabled] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
 
   // Buscar agência do parceiro
   const { data: agencyData } = useQuery({
@@ -85,6 +88,8 @@ export default function PartnerProposta() {
       setTotalPrice(existingProposal.total_price?.toString() || '');
       setInclusions(existingProposal.inclusions?.join('\n') || '');
       setPaymentStatus((existingProposal as any).payment_status || 'pending');
+      setPaymentEnabled((existingProposal as any).payment_enabled || false);
+      setAccessCode((existingProposal as any).access_code || '');
     } else if (request) {
       setTitle(`Proposta de Viagem - ${request.destination || 'Destino Personalizado'}`);
     }
@@ -107,7 +112,9 @@ export default function PartnerProposta() {
         total_price: totalPrice ? parseFloat(totalPrice) : null,
         inclusions: inclusionsArray.length > 0 ? inclusionsArray : null,
         payment_status: paymentStatus,
-      };
+        payment_enabled: paymentEnabled,
+        access_code: accessCode.trim() || null,
+      } as any;
 
       if (existingProposal) {
         const { error } = await supabase
@@ -260,10 +267,33 @@ export default function PartnerProposta() {
                   />
                 </div>
 
-                <div className="space-y-3 border-t pt-4">
-                  <p className="text-xs text-muted-foreground">
-                    O pagamento será feito pelo cliente diretamente via Stripe (cartão ou PIX) na proposta pública.
-                  </p>
+                <div className="space-y-4 border-t pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Habilitar Pagamento</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Quando ativado, o cliente poderá pagar via Stripe na proposta pública.
+                      </p>
+                    </div>
+                    <Switch checked={paymentEnabled} onCheckedChange={setPaymentEnabled} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="accessCode" className="flex items-center gap-1.5">
+                      <Lock className="h-3.5 w-3.5" />Código de Acesso ao Roteiro
+                    </Label>
+                    <Input
+                      id="accessCode"
+                      value={accessCode}
+                      onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                      placeholder="Ex: NORONHA2026 (deixe vazio para acesso livre)"
+                      maxLength={20}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Se definido, o cliente precisará informar este código para visualizar o roteiro.
+                    </p>
+                  </div>
+
                   {existingProposal && (
                     <div className="space-y-2">
                       <Label>Status do Pagamento</Label>

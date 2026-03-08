@@ -11,11 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route, Share2, Check, Copy } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route, Share2, Check, Copy, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
-import { useState as useStateExtra } from 'react';
+import { Switch } from '@/components/ui/switch';
 
 export default function AdminProposta() {
   const { id: requestId } = useParams<{ id: string }>();
@@ -32,6 +32,8 @@ export default function AdminProposta() {
   const [cardLink, setCardLink] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [agencyId, setAgencyId] = useState<string>('none');
+  const [paymentEnabled, setPaymentEnabled] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
   const [shareLoading, setShareLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
@@ -80,6 +82,8 @@ export default function AdminProposta() {
       setInclusions(existingProposal.inclusions?.join('\n') || '');
       setPaymentStatus(existingProposal.payment_status || 'pending');
       setAgencyId(existingProposal.agency_id || 'none');
+      setPaymentEnabled((existingProposal as any).payment_enabled || false);
+      setAccessCode((existingProposal as any).access_code || '');
       const links = existingProposal.payment_links as { pix?: string; card?: string } | null;
       setPixLink(links?.pix || '');
       setCardLink(links?.card || '');
@@ -96,9 +100,11 @@ export default function AdminProposta() {
         inclusions: inclusions.split('\n').filter(Boolean),
         payment_links: { pix: pixLink || null, card: cardLink || null },
         payment_status: paymentStatus,
+        payment_enabled: paymentEnabled,
+        access_code: accessCode.trim() || null,
         created_by: user?.id,
         agency_id: agencyId === 'none' ? null : agencyId,
-      };
+      } as any;
 
       if (existingProposal) {
         const { error } = await supabase.from('proposals').update(payload).eq('id', existingProposal.id);
@@ -225,15 +231,29 @@ export default function AdminProposta() {
             <Textarea value={inclusions} onChange={e => setInclusions(e.target.value)} rows={4} placeholder="Hospedagem 4 noites&#10;Transfer aeroporto&#10;Passeio de barco" />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Link de Pagamento PIX</Label>
-              <Input value={pixLink} onChange={e => setPixLink(e.target.value)} placeholder="https://..." />
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label>Habilitar Pagamento</Label>
+              <p className="text-xs text-muted-foreground">
+                Quando ativado, o cliente poderá pagar via Stripe na proposta pública.
+              </p>
             </div>
-            <div className="space-y-2">
-              <Label>Link de Pagamento Cartão</Label>
-              <Input value={cardLink} onChange={e => setCardLink(e.target.value)} placeholder="https://..." />
-            </div>
+            <Switch checked={paymentEnabled} onCheckedChange={setPaymentEnabled} />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5" />Código de Acesso ao Roteiro
+            </Label>
+            <Input
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+              placeholder="Ex: NORONHA2026 (deixe vazio para acesso livre)"
+              maxLength={20}
+            />
+            <p className="text-xs text-muted-foreground">
+              Se definido, o cliente precisará informar este código para visualizar o roteiro.
+            </p>
           </div>
 
           <div className="space-y-2">

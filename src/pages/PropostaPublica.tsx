@@ -178,7 +178,7 @@ export default function PropostaPublica() {
         )}
 
         {/* Payment section */}
-        {!isPaid && canPayStripe && (
+        {!isPaid && canPayStripe && (proposal as any).payment_enabled && (
           <Card>
             <CardHeader><CardTitle className="text-lg">Pagamento</CardTitle></CardHeader>
             <CardContent className="space-y-4">

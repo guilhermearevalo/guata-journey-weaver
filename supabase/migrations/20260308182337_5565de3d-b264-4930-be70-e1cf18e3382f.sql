@@ -1,0 +1,1 @@
+ALTER TABLE proposals ADD COLUMN payment_enabled boolean DEFAULT false, ADD COLUMN access_code text;
