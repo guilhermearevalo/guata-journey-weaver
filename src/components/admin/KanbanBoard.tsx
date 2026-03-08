@@ -6,6 +6,7 @@ import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
 import { RequestDetailDialog } from './RequestDetailDialog';
 import { KanbanFilters } from './KanbanFilters';
+import { NewRequestDialog } from './NewRequestDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
