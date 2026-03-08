@@ -58,7 +58,6 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         .from('proposals')
         .select('*, travel_requests!inner(destination, travel_dates, travelers_count, preferences)')
         .eq('request_id', id!)
-        .eq('is_approved', true)
         .maybeSingle();
       if (error) throw error;
       return data;
