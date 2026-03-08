@@ -116,33 +116,31 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
             </>
           )}
 
-          {showItinerary && (
-            <>
-              <Separator />
+          <Separator />
+          <div className="flex gap-2">
+            <Button
+              className="flex-1"
+              onClick={() => {
+                onOpenChange(false);
+                navigate(`/admin/proposta/${request.id}`);
+              }}
+            >
+              Ver / Criar Proposta
+            </Button>
+            {showItinerary && (
               <Button
-                className="w-full"
-                variant="outline"
+                variant="secondary"
+                className="flex-1"
                 onClick={() => {
                   onOpenChange(false);
                   navigate(`/admin/demandas/${request.id}/roteiro`);
                 }}
               >
                 <Route className="mr-2 h-4 w-4" />
-                Ver Roteiro da Viagem
+                Roteiro com IA
               </Button>
-            </>
-          )}
-
-          <Separator />
-          <Button
-            className="w-full"
-            onClick={() => {
-              onOpenChange(false);
-              navigate(`/admin/proposta/${request.id}`);
-            }}
-          >
-            Ver / Criar Proposta
-          </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

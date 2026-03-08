@@ -369,6 +369,7 @@ export type Database = {
           payment_links: Json | null
           payment_status: string | null
           request_id: string
+          share_token: string | null
           title: string
           total_price: number | null
           updated_at: string
@@ -387,6 +388,7 @@ export type Database = {
           payment_links?: Json | null
           payment_status?: string | null
           request_id: string
+          share_token?: string | null
           title: string
           total_price?: number | null
           updated_at?: string
@@ -405,6 +407,7 @@ export type Database = {
           payment_links?: Json | null
           payment_status?: string | null
           request_id?: string
+          share_token?: string | null
           title?: string
           total_price?: number | null
           updated_at?: string

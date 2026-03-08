@@ -21,6 +21,7 @@ import Privacidade from "./pages/Privacidade";
 import Contato from "./pages/Contato";
 import SejaParceiro from "./pages/SejaParceiro";
 import NotFound from "./pages/NotFound";
+import RoteiroPublico from "./pages/RoteiroPublico";
 
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
@@ -117,6 +118,9 @@ const App = () => (
               <Route path="/minha-conta/mensagens" element={<ClienteMensagens />} />
               <Route path="/minha-conta/perfil" element={<ClientePerfil />} />
             </Route>
+            
+            {/* Public itinerary share */}
+            <Route path="/roteiro/:token" element={<RoteiroPublico />} />
             
             {/* Auth routes without public layout */}
             <Route path="/login" element={<Login />} />
