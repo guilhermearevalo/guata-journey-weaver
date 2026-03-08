@@ -16,6 +16,8 @@ const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8
 
 export function HeroSection() {
   const [destination, setDestination] = useState('');
+  const [travelDate, setTravelDate] = useState('');
+  const [travelers, setTravelers] = useState('');
   const navigate = useNavigate();
 
   const { data: heroSetting } = useQuery({
