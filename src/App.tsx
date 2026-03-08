@@ -49,6 +49,7 @@ import PartnerProposta from "./pages/partner/PartnerProposta";
 import PartnerExperiencias from "./pages/partner/PartnerExperiencias";
 import PartnerRoteiro from "./pages/partner/PartnerRoteiro";
 import PartnerAjuda from "./pages/partner/PartnerAjuda";
+import PartnerFinanceiro from "./pages/partner/PartnerFinanceiro";
 
 // Cliente imports
 import { ProtectedClienteRoute } from "./components/cliente/ProtectedClienteRoute";
@@ -111,6 +112,7 @@ const App = () => (
               <Route path="proposta/:id" element={<PartnerProposta />} />
               <Route path="proposta/:id/roteiro" element={<PartnerRoteiro />} />
               <Route path="experiencias" element={<PartnerExperiencias />} />
+              <Route path="financeiro" element={<PartnerFinanceiro />} />
               <Route path="ajuda" element={<PartnerAjuda />} />
             </Route>
             

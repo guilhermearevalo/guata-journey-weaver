@@ -26,8 +26,6 @@ export default function PartnerProposta() {
   const [description, setDescription] = useState('');
   const [totalPrice, setTotalPrice] = useState('');
   const [inclusions, setInclusions] = useState('');
-  const [pixLink, setPixLink] = useState('');
-  const [cardLink, setCardLink] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('pending');
 
   // Buscar agência do parceiro
@@ -86,9 +84,6 @@ export default function PartnerProposta() {
       setDescription(existingProposal.description || '');
       setTotalPrice(existingProposal.total_price?.toString() || '');
       setInclusions(existingProposal.inclusions?.join('\n') || '');
-      const pl = existingProposal.payment_links as { pix?: string; card?: string } | null;
-      setPixLink(pl?.pix || '');
-      setCardLink(pl?.card || '');
       setPaymentStatus((existingProposal as any).payment_status || 'pending');
     } else if (request) {
       setTitle(`Proposta de Viagem - ${request.destination || 'Destino Personalizado'}`);
@@ -111,7 +106,6 @@ export default function PartnerProposta() {
         description,
         total_price: totalPrice ? parseFloat(totalPrice) : null,
         inclusions: inclusionsArray.length > 0 ? inclusionsArray : null,
-        payment_links: { pix: pixLink || null, card: cardLink || null },
         payment_status: paymentStatus,
       };
 
@@ -267,26 +261,9 @@ export default function PartnerProposta() {
                 </div>
 
                 <div className="space-y-3 border-t pt-4">
-                  <Label className="text-base font-semibold">Links de Pagamento</Label>
-                  <p className="text-xs text-muted-foreground">Cole aqui os links para o cliente efetuar o pagamento</p>
-                  <div className="space-y-2">
-                    <Label htmlFor="pix-link">Link PIX</Label>
-                    <Input
-                      id="pix-link"
-                      value={pixLink}
-                      onChange={(e) => setPixLink(e.target.value)}
-                      placeholder="https://link-de-pagamento-pix..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="card-link">Link Cartão de Crédito</Label>
-                    <Input
-                      id="card-link"
-                      value={cardLink}
-                      onChange={(e) => setCardLink(e.target.value)}
-                      placeholder="https://link-de-pagamento-cartao..."
-                    />
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    O pagamento será feito pelo cliente diretamente via Stripe (cartão ou PIX) na proposta pública.
+                  </p>
                   {existingProposal && (
                     <div className="space-y-2">
                       <Label>Status do Pagamento</Label>

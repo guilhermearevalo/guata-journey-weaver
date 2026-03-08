@@ -120,6 +120,66 @@ export type Database = {
         }
         Relationships: []
       }
+      commission_payments: {
+        Row: {
+          agency_id: string
+          created_at: string
+          gross_amount: number
+          guata_commission: number
+          id: string
+          notes: string | null
+          paid_at: string | null
+          paid_by: string | null
+          partner_amount: number
+          proposal_id: string | null
+          status: string
+          stripe_fee: number | null
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          gross_amount: number
+          guata_commission: number
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          partner_amount: number
+          proposal_id?: string | null
+          status?: string
+          stripe_fee?: number | null
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          gross_amount?: number
+          guata_commission?: number
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          partner_amount?: number
+          proposal_id?: string | null
+          status?: string
+          stripe_fee?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_payments_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "partner_agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_payments_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       experiences: {
         Row: {
           cover_image: string | null
@@ -259,6 +319,7 @@ export type Database = {
           is_active: boolean | null
           logo_url: string | null
           name: string
+          stripe_fee_bearer: string | null
           updated_at: string
         }
         Insert: {
@@ -272,6 +333,7 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           name: string
+          stripe_fee_bearer?: string | null
           updated_at?: string
         }
         Update: {
@@ -285,6 +347,7 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           name?: string
+          stripe_fee_bearer?: string | null
           updated_at?: string
         }
         Relationships: []

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Calendar, Users, CreditCard, QrCode, CheckCircle, Route, Loader2 } from 'lucide-react';
+import { MapPin, Calendar, Users, CreditCard, CheckCircle, Route, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -45,7 +45,7 @@ export default function PropostaPublica() {
     client_name: string;
   } | null;
 
-  const paymentLinks = proposal?.payment_links as { pix?: string; card?: string; stripe_session_id?: string; paid_at?: string } | null;
+  const paymentLinks = proposal?.payment_links as { stripe_session_id?: string; paid_at?: string } | null;
   const inclusions = proposal?.inclusions as string[] | null;
   const itinerary = Array.isArray(proposal?.itinerary) ? proposal.itinerary : [];
 
@@ -94,7 +94,6 @@ export default function PropostaPublica() {
   );
 
   const isPaid = proposal.payment_status === 'paid';
-  const hasManualLinks = paymentLinks?.pix || paymentLinks?.card;
   const canPayStripe = proposal.total_price && proposal.total_price > 0 && !isPaid;
 
   return (
@@ -179,62 +178,27 @@ export default function PropostaPublica() {
         )}
 
         {/* Payment section */}
-        {!isPaid && (canPayStripe || hasManualLinks) && (
+        {!isPaid && canPayStripe && (
           <Card>
             <CardHeader><CardTitle className="text-lg">Pagamento</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {/* Stripe checkout - primary */}
-              {canPayStripe && (
-                <div className="space-y-2">
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    onClick={handleStripeCheckout}
-                    disabled={isCheckingOut}
-                  >
-                    {isCheckingOut ? (
-                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Redirecionando...</>
-                    ) : (
-                      <><CreditCard className="mr-2 h-4 w-4" />Pagar Online (Cartão ou PIX)</>
-                    )}
-                  </Button>
-                  <p className="text-xs text-center text-muted-foreground">
-                    Pagamento seguro via Stripe. Confirmação automática.
-                  </p>
-                </div>
-              )}
-
-              {/* Manual fallback links */}
-              {hasManualLinks && (
-                <>
-                  {canPayStripe && (
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">ou</span>
-                      </div>
-                    </div>
+              <div className="space-y-2">
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={handleStripeCheckout}
+                  disabled={isCheckingOut}
+                >
+                  {isCheckingOut ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Redirecionando...</>
+                  ) : (
+                    <><CreditCard className="mr-2 h-4 w-4" />Pagar Online (Cartão ou PIX)</>
                   )}
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    {paymentLinks?.pix && (
-                      <Button className="flex-1" variant="outline" asChild>
-                        <a href={paymentLinks.pix} target="_blank" rel="noopener noreferrer">
-                          <QrCode className="mr-2 h-4 w-4" />PIX Manual
-                        </a>
-                      </Button>
-                    )}
-                    {paymentLinks?.card && (
-                      <Button className="flex-1" variant="outline" asChild>
-                        <a href={paymentLinks.card} target="_blank" rel="noopener noreferrer">
-                          <CreditCard className="mr-2 h-4 w-4" />Link de Pagamento
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
+                </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  Pagamento seguro via Stripe. Confirmação automática.
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}

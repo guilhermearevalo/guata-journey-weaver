@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileText, Map, LogOut, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, FileText, Map, LogOut, HelpCircle, DollarSign } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/lib/auth';
 import { useNavigate } from 'react-router-dom';
@@ -21,6 +21,7 @@ const menuItems = [
   { title: 'Dashboard', url: '/partner', icon: LayoutDashboard },
   { title: 'Demandas', url: '/partner/demandas', icon: FileText },
   { title: 'Experiências', url: '/partner/experiencias', icon: Map },
+  { title: 'Financeiro', url: '/partner/financeiro', icon: DollarSign },
   { title: 'Ajuda', url: '/partner/ajuda', icon: HelpCircle },
 ];
 

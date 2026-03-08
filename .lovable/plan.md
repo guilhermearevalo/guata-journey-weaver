@@ -1,114 +1,120 @@
 
+# Como Funciona o Sistema de Agências Parceiras — Visão Completa
 
-# Plano: Controle Financeiro Completo + Eliminação de Links Manuais
+## 1. Captação — Página "Seja Parceiro" (`/seja-parceiro`)
 
-## Como funciona HOJE (problemas)
+Página pública onde agências interessadas preenchem um formulário com:
+- Nome da agência, CNPJ, responsável, email, telefone, website
+- Especialidades (aventura, praia, cultural, ecoturismo, luxo, internacional)
+- Regiões de atuação (Nordeste, Sudeste, Sul, Norte, Centro-Oeste, Internacional)
+- Descrição da agência
 
-1. **Pagamento Stripe** → cai na SUA conta Stripe → você precisa calcular comissão e repassar manualmente via PIX/TED
-2. **Links manuais** (PIX/Cartão) → parceiro cola links externos → sem rastreio, sem confirmação automática
-3. **Taxa Stripe** (~3.49% + R$0.39) → não aparece nos cálculos → pode gerar contenda sobre quem paga a taxa
-4. **Parceiro não vê** seus próprios números financeiros — só o admin vê
-5. **Sem registro de repasses** — não tem como provar que pagou o parceiro
+Ao enviar, o cadastro é salvo na tabela `partner_agencies` com `is_active = false` (pendente de aprovação).
 
 ---
 
-## O que vamos implementar
+## 2. Aprovação pelo Admin (`/admin/parceiros`)
 
-### 1. Tabela `commission_payments` (registro de repasses)
-Nova tabela para registrar cada repasse feito ao parceiro:
-- `proposal_id`, `agency_id`, `gross_amount` (valor bruto), `stripe_fee`, `guata_commission`, `partner_amount` (valor líquido do parceiro), `status` (pending/paid), `paid_at`, `notes`
-- Quando o admin marca um repasse como "pago", fica registrado com data e valor exato
+O admin vê a lista de agências em duas abas: **Ativos** e **Pendentes**.
 
-### 2. Cálculo transparente com taxa Stripe
-Na proposta, o sistema vai calcular e exibir:
-- **Valor bruto**: R$ 5.000,00 (total_price)
-- **Taxa Stripe**: ~R$ 175,00 (3.49% + R$0.39)
-- **Comissão Guatá**: R$ 500,00 (10% sobre o bruto)
-- **Valor a repassar**: R$ 4.325,00
+Pode:
+- Ver detalhes da agência (CNPJ, comissão, contato, endereço)
+- **Aprovar** (muda `is_active` para `true`)
+- **Desativar** uma agência já ativa
 
-Quem paga a taxa Stripe é configurável por agência (campo `stripe_fee_bearer` na tabela `partner_agencies`: `guata`, `partner` ou `split`)
+**Lacuna:** Após aprovar a agência, o admin precisa **manualmente criar um usuário** para a agência e vinculá-lo na tabela `partner_users` (user_id + agency_id). Não existe formulário automático para isso no painel atual.
 
-### 3. Painel Financeiro do Admin melhorado (`/admin/financeiro`)
-- Tabela com coluna extra: **Taxa Stripe**, **Comissão Guatá**, **A Repassar**, **Status do Repasse**
-- Botão "Registrar Repasse" → abre dialog para confirmar valor e data do repasse
-- Filtro por agência e por status de repasse (pendente/pago)
+---
 
-### 4. Dashboard Financeiro do Parceiro (NOVO: `/partner/financeiro`)
+## 3. Portal do Parceiro (`/partner/`)
+
+### Dashboard (`/partner`)
+- Nome da agência como boas-vindas
+- Cards: Total de demandas, Aguardando proposta, Propostas enviadas, Concluídas
+- Lista das 5 demandas mais recentes
+
+### Demandas (`/partner/demandas`)
+- Lista de `travel_requests` onde `assigned_agency_id` = agência do parceiro
+- Cards com: nome do cliente, destino, viajantes, datas, orçamento, status
+- Botão "Criar Proposta" ou "Ver Proposta"
+- Dialog com contato completo do cliente (email + telefone clicáveis)
+
+### Criar/Editar Proposta (`/partner/proposta/:requestId`)
+- Formulário: título, descrição, preço total, inclusões
+- **Sem links manuais** — pagamento centralizado via Stripe
+- Status de pagamento (pendente/parcial/pago)
+- Resumo da demanda no painel lateral
+- Ao criar proposta, status muda para `proposal_sent`
+
+### Financeiro (`/partner/financeiro`) ✅ NOVO
 - Cards: Total vendido, Recebido, A receber
-- Tabela: cada proposta paga com breakdown (valor bruto, taxa, comissão Guatá, valor líquido)
-- Status do repasse (pendente/pago)
-- Nova rota + item no menu lateral do parceiro
+- Info sobre comissão Guatá e quem absorve taxa Stripe
+- Tabela de repasses com breakdown: bruto, taxa Stripe, comissão, valor líquido, status
 
-### 5. Substituir links manuais por Stripe integrado
-- **Remover campos de link PIX/Cartão manual** do formulário de proposta do parceiro
-- Todo pagamento passa pelo Stripe (botão "Pagar Online" na proposta pública)
-- Stripe já aceita PIX + Cartão automaticamente no Checkout
-- Parceiro não precisa mais gerar links externos
+### Experiências (`/partner/experiencias`)
+- Lista read-only de experiências onde `operator_agency_id` = agência do parceiro
 
----
+### Roteiro (`/partner/proposta/:id/roteiro`)
+- Planejador de roteiro compartilhado (`ItineraryPlanner`)
 
-## Mudanças técnicas
-
-### Migração SQL
-```sql
--- Campo para definir quem paga taxa Stripe
-ALTER TABLE partner_agencies 
-  ADD COLUMN stripe_fee_bearer text DEFAULT 'guata';
-
--- Tabela de registro de repasses
-CREATE TABLE commission_payments (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  proposal_id uuid REFERENCES proposals(id),
-  agency_id uuid REFERENCES partner_agencies(id),
-  gross_amount numeric NOT NULL,
-  stripe_fee numeric DEFAULT 0,
-  guata_commission numeric NOT NULL,
-  partner_amount numeric NOT NULL,
-  status text DEFAULT 'pending',
-  paid_at timestamptz,
-  paid_by uuid,
-  notes text,
-  created_at timestamptz DEFAULT now()
-);
-
--- RLS
-ALTER TABLE commission_payments ENABLE ROW LEVEL SECURITY;
--- Admin gerencia tudo
--- Parceiro vê apenas os seus
-```
-
-### Arquivos a criar/editar
-1. **`src/pages/partner/PartnerFinanceiro.tsx`** — novo dashboard financeiro do parceiro
-2. **`src/components/partner/PartnerSidebar.tsx`** — adicionar item "Financeiro" no menu
-3. **`src/pages/admin/AdminFinanceiro.tsx`** — adicionar colunas de taxa/comissão/repasse + botão de registrar repasse
-4. **`src/pages/partner/PartnerProposta.tsx`** — remover campos de links manuais
-5. **`src/pages/PropostaPublica.tsx`** — remover seção de links manuais (manter apenas Stripe)
-6. **Rota** no App.tsx para `/partner/financeiro`
-
-### O que NÃO muda
-- O Stripe continua na sua conta — todo dinheiro cai para você
-- O repasse para o parceiro continua sendo manual (PIX/TED)
-- Mas agora o sistema **registra e comprova** cada repasse
+### Ajuda (`/partner/ajuda`)
+- Página de suporte/FAQ
 
 ---
 
-## Resumo do fluxo final
+## 4. Atribuição de Demandas (Admin → Parceiro)
 
-```text
-Cliente paga R$5.000 via Stripe
-         ↓
-Stripe desconta taxa (~R$175)
-         ↓
-Guatá recebe R$4.825 na conta Stripe
-         ↓
-Sistema calcula:
-  - Comissão Guatá (10%): R$500
-  - A repassar ao parceiro: R$4.325
-         ↓
-Admin faz PIX de R$4.325 → parceiro
-         ↓
-Admin registra repasse no sistema
-         ↓
-Parceiro vê "Recebido" no seu dashboard
-```
+No Kanban do admin (`/admin/demandas`):
+- Admin atribui demanda a uma agência via `assigned_agency_id`
+- Kanban tem filtros por agência e status de pagamento
 
+---
+
+## 5. Fluxo de Pagamento (Centralizado via Stripe)
+
+- Proposta pública (`/proposta/:token`), botão "Pagar Online (Cartão ou PIX)"
+- Edge function `create-checkout` → Stripe Checkout Session
+- Webhook `stripe-webhook` atualiza `payment_status` para `paid`
+- **Links manuais removidos** — todo pagamento via Stripe
+
+---
+
+## 6. Controle Financeiro e Comissões ✅ IMPLEMENTADO
+
+### Tabela `commission_payments`
+- Registra cada repasse: valor bruto, taxa Stripe, comissão Guatá, valor líquido do parceiro
+- Status: pending/paid + data e observações
+
+### Cálculo transparente
+- Taxa Stripe: 3.49% + R$0.39
+- Comissão Guatá: configurável por agência (default 10%)
+- `stripe_fee_bearer`: define quem absorve a taxa (guata/partner/split)
+
+### Admin Financeiro (`/admin/financeiro`) ✅ MELHORADO
+- Cards: Receita paga, Comissão Guatá, Repasses pendentes
+- Filtros por agência e status de repasse
+- Tabela com breakdown completo por proposta
+- Botão "Registrar Repasse" com dialog de confirmação
+
+### Parceiro Financeiro (`/partner/financeiro`) ✅ NOVO
+- Cards: Total vendido, Recebido, A receber
+- Tabela de repasses com todos os valores detalhados
+
+---
+
+## 7. Segurança (RLS)
+
+- Parceiro só vê `travel_requests` com `assigned_agency_id` = sua agência
+- Parceiro só gerencia `proposals` com `agency_id` = sua agência
+- Parceiro só vê `commission_payments` com `agency_id` = sua agência
+- Funções `get_user_agency()` e `has_role()` são `SECURITY DEFINER`
+
+---
+
+## Lacunas / Pontos de Melhoria
+
+1. **Criação de usuário parceiro**: Sem fluxo automatizado pós-aprovação
+2. **Parceiro não pode editar status de demandas**
+3. **Sem notificações** quando nova demanda é atribuída
+4. **Sem chat** parceiro↔cliente na plataforma
+5. **Experiências read-only** para parceiros
