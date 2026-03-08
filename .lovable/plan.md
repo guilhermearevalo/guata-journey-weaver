@@ -1,20 +1,22 @@
 
-# Plano: 3 Novas Funcionalidades (IMPLEMENTADO)
+# Plano: Plataforma Guatá - Status de Implementação
 
-## ✅ 1. Upload de Imagem do Hero (Admin)
-- Bucket `site-assets` criado
-- Tabela `site_settings` criada
-- AdminConfiguracoes com upload funcional
-- HeroSection busca imagem dinâmica do banco
+## ✅ Fase 1 - Funcionalidades Base
+- Upload de imagem do hero com carrossel (imagens + vídeo)
+- Links de pagamento (PIX e Cartão) nas propostas
+- Planejador de roteiro com IA (cliente, admin, parceiro)
+- Status de pagamento (pendente, parcial, pago)
 
-## ✅ 2. Link de Pagamento (PIX e Cartão)
-- Coluna `payment_links` (jsonb) adicionada em `proposals`
-- PartnerProposta com campos para PIX e cartão
-- ClienteViagem com botões de pagamento
+## ✅ Fase 2 - Controle Financeiro e Visibilidade
+- Relatório por Agência (`/admin/relatorio-agencias`): vendas, receita, comissões
+- Dashboard Financeiro (`/admin/financeiro`): resumo de pagamentos pendentes/pagos
+- Filtros no Kanban: por agência e status de pagamento
+- Admin/consultor pode criar propostas diretamente (`/admin/proposta/:id`)
 
-## ✅ 3. Planejador de Roteiro com IA (Timeline)
-- Edge function `itinerary-ai` usando Lovable AI (gemini-3-flash-preview)
-- Página ClienteRoteiro com timeline visual dia a dia
-- Sugestões por IA com aceitar/descartar
-- Custos estimados por dia e total
-- Rota: `/minha-conta/viagem/:id/roteiro`
+## ✅ Fase 3 - Segurança
+- Dados de contato do cliente ocultos para parceiros (email/telefone não exibidos)
+
+## 🔜 Próximas Fases
+- Log de auditoria (quem mudou o que, quando)
+- Notificações in-app ou por email
+- Filtro por consultor responsável no Kanban
