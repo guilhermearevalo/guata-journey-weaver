@@ -16,6 +16,7 @@ import logo from '@/assets/logo-guata.png';
 export function PublicHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut, isStaff, hasRole } = useAuth();
+  const { data: sections } = useHomepageSections();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
