@@ -27,6 +27,7 @@ export default function ViagemPersonalizada() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
@@ -34,7 +35,7 @@ export default function ViagemPersonalizada() {
     name: '',
     email: '',
     phone: '',
-    destination: '',
+    destination: searchParams.get('destino') || '',
     departureDate: '',
     returnDate: '',
     travelers: '2',

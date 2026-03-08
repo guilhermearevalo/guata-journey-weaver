@@ -100,6 +100,7 @@ const placeholderExperiences: Experience[] = [
 
 export default function Experiencias() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get('destino') || '');
