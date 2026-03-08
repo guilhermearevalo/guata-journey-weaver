@@ -45,7 +45,7 @@ export default function PropostaPublica() {
     client_name: string;
   } | null;
 
-  const paymentLinks = proposal?.payment_links as { pix?: string; card?: string; stripe_session_id?: string; paid_at?: string } | null;
+  const paymentLinks = proposal?.payment_links as { stripe_session_id?: string; paid_at?: string } | null;
   const inclusions = proposal?.inclusions as string[] | null;
   const itinerary = Array.isArray(proposal?.itinerary) ? proposal.itinerary : [];
 
