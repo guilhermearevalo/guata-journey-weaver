@@ -26,6 +26,11 @@ interface PartnerAgency {
   commission_rate: number | null;
   is_active: boolean | null;
   created_at: string;
+  responsible_name: string | null;
+  website: string | null;
+  specialties: string[] | null;
+  regions: string[] | null;
+  description: string | null;
 }
 
 const AdminParceiros = () => {
