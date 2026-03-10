@@ -26,6 +26,11 @@ interface PartnerAgency {
   commission_rate: number | null;
   is_active: boolean | null;
   created_at: string;
+  responsible_name: string | null;
+  website: string | null;
+  specialties: string[] | null;
+  regions: string[] | null;
+  description: string | null;
 }
 
 const AdminParceiros = () => {
@@ -410,12 +415,55 @@ const AdminParceiros = () => {
               </div>
 
               <div>
+                <p className="text-sm text-muted-foreground">Responsável</p>
+                <p className="font-medium">{selectedAgency.responsible_name || 'Não informado'}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground">Website</p>
+                <p className="font-medium">
+                  {selectedAgency.website ? (
+                    <a href={selectedAgency.website} target="_blank" rel="noopener noreferrer" className="text-primary underline">{selectedAgency.website}</a>
+                  ) : 'Não informado'}
+                </p>
+              </div>
+
+              <div>
                 <p className="text-sm text-muted-foreground">Endereço</p>
                 <p className="font-medium flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
                   {selectedAgency.address || 'Não informado'}
                 </p>
               </div>
+
+              {selectedAgency.description && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Descrição</p>
+                  <p className="text-sm">{selectedAgency.description}</p>
+                </div>
+              )}
+
+              {selectedAgency.specialties && selectedAgency.specialties.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Especialidades</p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedAgency.specialties.map(s => (
+                      <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedAgency.regions && selectedAgency.regions.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Regiões de Atuação</p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedAgency.regions.map(r => (
+                      <Badge key={r} variant="secondary" className="text-xs">{r}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <p className="text-sm text-muted-foreground">Cadastro</p>

@@ -40,6 +40,7 @@ import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
 import AdminProposta from "./pages/admin/AdminProposta";
 import AdminRoteiro from "./pages/admin/AdminRoteiro";
 import AdminAjuda from "./pages/admin/AdminAjuda";
+import AdminDepoimentos from "./pages/admin/AdminDepoimentos";
 
 // Partner imports
 import PartnerLayout from "./pages/partner/PartnerLayout";
@@ -103,6 +104,7 @@ const App = () => (
               <Route path="financeiro" element={<AdminFinanceiro />} />
               <Route path="proposta/:id" element={<AdminProposta />} />
               <Route path="ajuda" element={<AdminAjuda />} />
+              <Route path="depoimentos" element={<AdminDepoimentos />} />
             </Route>
             
             {/* Partner routes */}

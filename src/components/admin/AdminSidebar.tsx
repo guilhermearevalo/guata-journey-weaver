@@ -11,7 +11,8 @@ import {
   LogOut,
   BarChart3,
   DollarSign,
-  HelpCircle
+  HelpCircle,
+  MessageSquareQuote
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -86,6 +87,11 @@ const AdminSidebar = () => {
       icon: DollarSign, 
       label: 'Financeiro', 
       href: '/admin/financeiro' 
+    },
+    {
+      icon: MessageSquareQuote,
+      label: 'Depoimentos',
+      href: '/admin/depoimentos'
     },
   ];
 
