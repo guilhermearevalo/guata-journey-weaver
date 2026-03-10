@@ -418,9 +418,15 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Sparkles className="mb-4 h-12 w-12 text-muted-foreground/50" />
             <h3 className="text-lg font-semibold">Monte seu roteiro</h3>
-            <p className="mt-1 text-sm text-muted-foreground text-center max-w-md">
-              Clique em "Gerar Roteiro com IA" para receber sugestões ou adicione dias manualmente.
+            <p className="mt-1 mb-4 text-sm text-muted-foreground text-center max-w-md">
+              Escolha como deseja começar:
             </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button variant="outline" onClick={addEmptyDay} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Adicionar Dia Manualmente
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}

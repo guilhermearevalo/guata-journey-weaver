@@ -88,6 +88,11 @@ const AdminSidebar = () => {
       label: 'Financeiro', 
       href: '/admin/financeiro' 
     },
+    {
+      icon: MessageSquareQuote,
+      label: 'Depoimentos',
+      href: '/admin/depoimentos'
+    },
   ];
 
   // Only show team management for admins
