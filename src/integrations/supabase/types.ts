@@ -534,6 +534,45 @@ export type Database = {
         }
         Relationships: []
       }
+      testimonials: {
+        Row: {
+          client_id: string | null
+          client_location: string | null
+          client_name: string
+          client_photo_url: string | null
+          created_at: string | null
+          id: string
+          rating: number | null
+          status: string | null
+          text: string
+          trip_name: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          client_location?: string | null
+          client_name: string
+          client_photo_url?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number | null
+          status?: string | null
+          text: string
+          trip_name?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          client_location?: string | null
+          client_name?: string
+          client_photo_url?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number | null
+          status?: string | null
+          text?: string
+          trip_name?: string | null
+        }
+        Relationships: []
+      }
       travel_requests: {
         Row: {
           assigned_agency_id: string | null
