@@ -40,6 +40,7 @@ import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
 import AdminProposta from "./pages/admin/AdminProposta";
 import AdminRoteiro from "./pages/admin/AdminRoteiro";
 import AdminAjuda from "./pages/admin/AdminAjuda";
+import AdminDepoimentos from "./pages/admin/AdminDepoimentos";
 
 // Partner imports
 import PartnerLayout from "./pages/partner/PartnerLayout";
