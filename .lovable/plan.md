@@ -18,7 +18,7 @@ Ao enviar, o cadastro é salvo na tabela `partner_agencies` com `is_active = fal
 O admin vê a lista de agências em duas abas: **Ativos** e **Pendentes**.
 
 Pode:
-- Ver detalhes da agência (CNPJ, comissão, contato, endereço)
+- Ver detalhes da agência (CNPJ, comissão, contato, endereço, responsável, site, especialidades, regiões, descrição)
 - **Aprovar** (muda `is_active` para `true`)
 - **Desativar** uma agência já ativa
 
@@ -102,7 +102,38 @@ No Kanban do admin (`/admin/demandas`):
 
 ---
 
-## 7. Segurança (RLS)
+## 7. Newsletter ✅ IMPLEMENTADO
+
+### Tabela `newsletter_subscribers`
+- email (único), nome (opcional), status (active/unsubscribed), data
+
+### Footer público
+- Formulário de email em todas as páginas públicas
+- Feedback visual de sucesso/erro
+
+### Admin Newsletter (`/admin/newsletter`)
+- Cards: total, ativos, cancelados
+- Busca por email
+- Exportar CSV
+- Remover assinante
+
+---
+
+## 8. Depoimentos ✅ IMPLEMENTADO
+
+### Tabela `testimonials`
+- Nome, texto, foto, viagem, rating, status (pending/approved/rejected)
+
+### Seção pública
+- Busca depoimentos aprovados do banco (fallback hardcoded)
+- Modal "Compartilhe sua Experiência" com upload de foto
+
+### Admin Depoimentos (`/admin/depoimentos`)
+- Lista pendentes, aprovar/rejeitar
+
+---
+
+## 9. Segurança (RLS)
 
 - Parceiro só vê `travel_requests` com `assigned_agency_id` = sua agência
 - Parceiro só gerencia `proposals` com `agency_id` = sua agência
