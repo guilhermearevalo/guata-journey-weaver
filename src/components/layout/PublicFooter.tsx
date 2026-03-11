@@ -137,7 +137,18 @@ export function PublicFooter() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-secondary-foreground/10 pt-8 text-center text-sm text-secondary-foreground/60">
+        {/* Newsletter */}
+        <div className="mt-12 border-t border-secondary-foreground/10 pt-8">
+          <div className="mx-auto max-w-md text-center">
+            <h4 className="font-display text-lg font-semibold mb-2">Receba nossas novidades</h4>
+            <p className="text-sm text-secondary-foreground/70 mb-4">
+              Cadastre-se para receber ofertas exclusivas e inspirações de viagem.
+            </p>
+            <NewsletterForm />
+          </div>
+        </div>
+
+        <div className="mt-8 border-t border-secondary-foreground/10 pt-8 text-center text-sm text-secondary-foreground/60">
           <p>© {new Date().getFullYear()} Guatá Travel Experience. Todos os direitos reservados.</p>
         </div>
       </div>
