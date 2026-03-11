@@ -1,5 +1,6 @@
-import { MapPin, Heart, Users, Award } from 'lucide-react';
+import { MapPin, Heart, Users, Award, ShieldCheck, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import cadasturCertificate from '@/assets/cadastur-certificate.png';
 import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
 
