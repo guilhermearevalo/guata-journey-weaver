@@ -7,6 +7,63 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import logo from '@/assets/logo-guata.png';
 
+function NewsletterForm() {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setLoading(true);
+    const { error } = await supabase
+      .from('newsletter_subscribers')
+      .insert({ email: email.trim().toLowerCase() });
+
+    setLoading(false);
+
+    if (error) {
+      if (error.code === '23505') {
+        toast.info('Este email já está cadastrado!');
+      } else {
+        toast.error('Erro ao cadastrar. Tente novamente.');
+      }
+      return;
+    }
+
+    setSubscribed(true);
+    setEmail('');
+    toast.success('Cadastrado com sucesso!');
+  };
+
+  if (subscribed) {
+    return (
+      <div className="flex items-center justify-center gap-2 text-primary">
+        <CheckCircle className="h-5 w-5" />
+        <span className="text-sm font-medium">Obrigado por se inscrever!</span>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubscribe} className="flex gap-2">
+      <Input
+        type="email"
+        placeholder="Seu melhor email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+        className="bg-secondary-foreground/10 border-secondary-foreground/20 text-secondary-foreground placeholder:text-secondary-foreground/50"
+      />
+      <Button type="submit" size="sm" disabled={loading} className="shrink-0 gap-2">
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        Assinar
+      </Button>
+    </form>
+  );
+}
+
 export function PublicFooter() {
   return (
     <footer className="border-t bg-secondary text-secondary-foreground">
