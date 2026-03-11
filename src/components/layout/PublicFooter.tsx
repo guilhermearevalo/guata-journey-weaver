@@ -1,5 +1,10 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Instagram, Facebook, Youtube } from 'lucide-react';
+import { MapPin, Phone, Mail, Instagram, Facebook, Youtube, Send, Loader2, CheckCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import logo from '@/assets/logo-guata.png';
 
 export function PublicFooter() {
