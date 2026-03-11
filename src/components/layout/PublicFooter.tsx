@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Instagram, Facebook, Youtube, Send, Loader2, CheckCircle } from 'lucide-react';
+import { MapPin, Phone, Mail, Instagram, Facebook, Youtube, Send, Loader2, CheckCircle, ShieldCheck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
