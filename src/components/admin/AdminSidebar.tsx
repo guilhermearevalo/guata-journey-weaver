@@ -94,6 +94,11 @@ const AdminSidebar = () => {
       label: 'Depoimentos',
       href: '/admin/depoimentos'
     },
+    {
+      icon: Newspaper,
+      label: 'Newsletter',
+      href: '/admin/newsletter'
+    },
   ];
 
   // Only show team management for admins
