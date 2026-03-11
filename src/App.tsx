@@ -41,6 +41,7 @@ import AdminProposta from "./pages/admin/AdminProposta";
 import AdminRoteiro from "./pages/admin/AdminRoteiro";
 import AdminAjuda from "./pages/admin/AdminAjuda";
 import AdminDepoimentos from "./pages/admin/AdminDepoimentos";
+import AdminNewsletter from "./pages/admin/AdminNewsletter";
 
 // Partner imports
 import PartnerLayout from "./pages/partner/PartnerLayout";
@@ -105,6 +106,7 @@ const App = () => (
               <Route path="proposta/:id" element={<AdminProposta />} />
               <Route path="ajuda" element={<AdminAjuda />} />
               <Route path="depoimentos" element={<AdminDepoimentos />} />
+              <Route path="newsletter" element={<AdminNewsletter />} />
             </Route>
             
             {/* Partner routes */}

@@ -1,107 +1,151 @@
 
+# Como Funciona o Sistema de Agências Parceiras — Visão Completa
 
-# Relatório Completo: Como Funciona a Guatá Travel Experience
+## 1. Captação — Página "Seja Parceiro" (`/seja-parceiro`)
 
-## O que é a Guatá
+Página pública onde agências interessadas preenchem um formulário com:
+- Nome da agência, CNPJ, responsável, email, telefone, website
+- Especialidades (aventura, praia, cultural, ecoturismo, luxo, internacional)
+- Regiões de atuação (Nordeste, Sudeste, Sul, Norte, Centro-Oeste, Internacional)
+- Descrição da agência
 
-A Guatá é um **hub de curadoria de viagens** que conecta três atores: **viajantes** (clientes), **equipe Guatá** (admin) e **agências parceiras** (operadoras). A Guatá não opera viagens diretamente — ela capta clientes, curadoria as demandas e distribui para agências parceiras especializadas, cobrando uma comissão sobre cada venda.
-
----
-
-## Fluxo Completo (Passo a Passo)
-
-### 1. Cliente chega ao site
-- Navega experiências, excursões e pacotes
-- Pode pedir uma **viagem personalizada** (`/viagem-personalizada`)
-- O pedido vira uma **demanda** no sistema (tabela `travel_requests`)
-
-### 2. Admin recebe a demanda
-- Aparece no **Kanban** (`/admin/demandas`) com status "Pendente"
-- Admin analisa: destino, datas, orçamento, número de viajantes
-- Atribui a demanda a uma **agência parceira** especializada naquele tipo de viagem
-
-### 3. Parceiro vê a demanda
-- A agência acessa o portal (`/partner`) e vê a demanda atribuída
-- Vê os dados completos: nome do cliente, email, telefone, destino, datas, orçamento
-
-### 4. Parceiro cria proposta
-- Preenche: título, descrição, preço, inclusões
-- **Pagamento desligado** inicialmente — para o cliente revisar antes
-- Define um **código de acesso** (ex: "NORONHA2026") para proteger o roteiro
-
-### 5. Parceiro monta o roteiro
-- Usa o **planejador de roteiro** com IA ou manualmente
-- Adiciona dias, atividades, horários, custos estimados
-- Adiciona checklist de documentos (passaporte, visto, etc.)
-
-### 6. Compartilha com o cliente
-- Gera **link público** da proposta e do roteiro
-- Cliente acessa, digita o código de acesso se necessário
-- Revisa tudo sem poder pagar ainda
-
-### 7. Cliente aprova → pagamento habilitado
-- Parceiro liga o switch "Habilitar Pagamento"
-- O botão "Pagar Online (Cartão ou PIX)" aparece na proposta pública
-- Cliente paga via **Stripe Checkout**
-
-### 8. Repasse financeiro
-- Stripe confirma pagamento → `payment_status = 'paid'`
-- Sistema cria automaticamente um registro de comissão pendente
-- Admin vê no financeiro: valor bruto, taxa Stripe (~3.49%), comissão Guatá (10%), valor líquido
-- Admin faz PIX ao parceiro e registra o repasse
-- Parceiro vê o status atualizado no seu dashboard financeiro
+Ao enviar, o cadastro é salvo na tabela `partner_agencies` com `is_active = false` (pendente de aprovação).
 
 ---
 
-## Como uma agência se torna parceira
+## 2. Aprovação pelo Admin (`/admin/parceiros`)
 
-1. Acessa `/seja-parceiro` → preenche formulário (nome, CNPJ, especialidades, regiões)
-2. Admin vê em `/admin/parceiros` → aba "Pendentes"
-3. Admin clica "Aprovar e Criar Login" → sistema gera email + senha temporária
-4. Parceiro recebe credenciais e acessa `/partner`
+O admin vê a lista de agências em duas abas: **Ativos** e **Pendentes**.
+
+Pode:
+- Ver detalhes da agência (CNPJ, comissão, contato, endereço, responsável, site, especialidades, regiões, descrição)
+- **Aprovar** (muda `is_active` para `true`)
+- **Desativar** uma agência já ativa
+
+**Lacuna:** Após aprovar a agência, o admin precisa **manualmente criar um usuário** para a agência e vinculá-lo na tabela `partner_users` (user_id + agency_id). Não existe formulário automático para isso no painel atual.
 
 ---
 
-## Newsletter — Proposta de Implementação
+## 3. Portal do Parceiro (`/partner/`)
 
-A ideia de newsletter é excelente para manter clientes engajados. Proponho:
+### Dashboard (`/partner`)
+- Nome da agência como boas-vindas
+- Cards: Total de demandas, Aguardando proposta, Propostas enviadas, Concluídas
+- Lista das 5 demandas mais recentes
 
-### O que será feito
-1. **Tabela `newsletter_subscribers`** — email, nome (opcional), status, data
-2. **Formulário no footer** — campo de email + botão "Assinar" em todas as páginas públicas
-3. **Admin gerencia assinantes** — nova página `/admin/newsletter` para ver lista, exportar CSV
-4. **RLS** — qualquer um pode se inscrever, só admin vê a lista
+### Demandas (`/partner/demandas`)
+- Lista de `travel_requests` onde `assigned_agency_id` = agência do parceiro
+- Cards com: nome do cliente, destino, viajantes, datas, orçamento, status
+- Botão "Criar Proposta" ou "Ver Proposta"
+- Dialog com contato completo do cliente (email + telefone clicáveis)
 
-### Migração SQL
-```sql
-CREATE TABLE public.newsletter_subscribers (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email text NOT NULL UNIQUE,
-  name text,
-  status text DEFAULT 'active', -- active, unsubscribed
-  created_at timestamptz DEFAULT now()
-);
-ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+### Criar/Editar Proposta (`/partner/proposta/:requestId`)
+- Formulário: título, descrição, preço total, inclusões
+- **Sem links manuais** — pagamento centralizado via Stripe
+- Status de pagamento (pendente/parcial/pago)
+- Resumo da demanda no painel lateral
+- Ao criar proposta, status muda para `proposal_sent`
 
--- Qualquer um pode se inscrever
-CREATE POLICY "Anyone can subscribe" ON newsletter_subscribers
-  FOR INSERT TO anon, authenticated WITH CHECK (status = 'active');
+### Financeiro (`/partner/financeiro`) ✅ NOVO
+- Cards: Total vendido, Recebido, A receber
+- Info sobre comissão Guatá e quem absorve taxa Stripe
+- Tabela de repasses com breakdown: bruto, taxa Stripe, comissão, valor líquido, status
 
--- Staff vê todos
-CREATE POLICY "Staff can view all" ON newsletter_subscribers
-  FOR SELECT TO authenticated USING (is_staff(auth.uid()));
+### Experiências (`/partner/experiencias`)
+- Lista read-only de experiências onde `operator_agency_id` = agência do parceiro
 
--- Staff pode gerenciar
-CREATE POLICY "Staff can manage" ON newsletter_subscribers
-  FOR ALL TO authenticated USING (is_staff(auth.uid()));
-```
+### Roteiro (`/partner/proposta/:id/roteiro`)
+- Planejador de roteiro compartilhado (`ItineraryPlanner`)
 
-### Arquivos a criar/editar
-| Arquivo | Ação |
-|---------|------|
-| Migração SQL | Criar tabela `newsletter_subscribers` |
-| `src/components/layout/PublicFooter.tsx` | Adicionar formulário de newsletter acima do copyright |
-| `src/pages/admin/AdminNewsletter.tsx` | Criar — lista de assinantes com busca e exportar CSV |
-| `src/components/admin/AdminSidebar.tsx` | Adicionar link "Newsletter" |
-| `src/App.tsx` | Adicionar rota `/admin/newsletter` |
+### Ajuda (`/partner/ajuda`)
+- Página de suporte/FAQ
 
+---
+
+## 4. Atribuição de Demandas (Admin → Parceiro)
+
+No Kanban do admin (`/admin/demandas`):
+- Admin atribui demanda a uma agência via `assigned_agency_id`
+- Kanban tem filtros por agência e status de pagamento
+
+---
+
+## 5. Fluxo de Pagamento (Centralizado via Stripe)
+
+- Proposta pública (`/proposta/:token`), botão "Pagar Online (Cartão ou PIX)"
+- Edge function `create-checkout` → Stripe Checkout Session
+- Webhook `stripe-webhook` atualiza `payment_status` para `paid`
+- **Links manuais removidos** — todo pagamento via Stripe
+
+---
+
+## 6. Controle Financeiro e Comissões ✅ IMPLEMENTADO
+
+### Tabela `commission_payments`
+- Registra cada repasse: valor bruto, taxa Stripe, comissão Guatá, valor líquido do parceiro
+- Status: pending/paid + data e observações
+
+### Cálculo transparente
+- Taxa Stripe: 3.49% + R$0.39
+- Comissão Guatá: configurável por agência (default 10%)
+- `stripe_fee_bearer`: define quem absorve a taxa (guata/partner/split)
+
+### Admin Financeiro (`/admin/financeiro`) ✅ MELHORADO
+- Cards: Receita paga, Comissão Guatá, Repasses pendentes
+- Filtros por agência e status de repasse
+- Tabela com breakdown completo por proposta
+- Botão "Registrar Repasse" com dialog de confirmação
+
+### Parceiro Financeiro (`/partner/financeiro`) ✅ NOVO
+- Cards: Total vendido, Recebido, A receber
+- Tabela de repasses com todos os valores detalhados
+
+---
+
+## 7. Newsletter ✅ IMPLEMENTADO
+
+### Tabela `newsletter_subscribers`
+- email (único), nome (opcional), status (active/unsubscribed), data
+
+### Footer público
+- Formulário de email em todas as páginas públicas
+- Feedback visual de sucesso/erro
+
+### Admin Newsletter (`/admin/newsletter`)
+- Cards: total, ativos, cancelados
+- Busca por email
+- Exportar CSV
+- Remover assinante
+
+---
+
+## 8. Depoimentos ✅ IMPLEMENTADO
+
+### Tabela `testimonials`
+- Nome, texto, foto, viagem, rating, status (pending/approved/rejected)
+
+### Seção pública
+- Busca depoimentos aprovados do banco (fallback hardcoded)
+- Modal "Compartilhe sua Experiência" com upload de foto
+
+### Admin Depoimentos (`/admin/depoimentos`)
+- Lista pendentes, aprovar/rejeitar
+
+---
+
+## 9. Segurança (RLS)
+
+- Parceiro só vê `travel_requests` com `assigned_agency_id` = sua agência
+- Parceiro só gerencia `proposals` com `agency_id` = sua agência
+- Parceiro só vê `commission_payments` com `agency_id` = sua agência
+- Funções `get_user_agency()` e `has_role()` são `SECURITY DEFINER`
+
+---
+
+## Lacunas / Pontos de Melhoria
+
+1. **Criação de usuário parceiro**: Sem fluxo automatizado pós-aprovação
+2. **Parceiro não pode editar status de demandas**
+3. **Sem notificações** quando nova demanda é atribuída
+4. **Sem chat** parceiro↔cliente na plataforma
+5. **Experiências read-only** para parceiros

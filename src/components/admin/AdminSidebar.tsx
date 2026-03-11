@@ -12,7 +12,8 @@ import {
   BarChart3,
   DollarSign,
   HelpCircle,
-  MessageSquareQuote
+  MessageSquareQuote,
+  Newspaper
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -92,6 +93,11 @@ const AdminSidebar = () => {
       icon: MessageSquareQuote,
       label: 'Depoimentos',
       href: '/admin/depoimentos'
+    },
+    {
+      icon: Newspaper,
+      label: 'Newsletter',
+      href: '/admin/newsletter'
     },
   ];
 
