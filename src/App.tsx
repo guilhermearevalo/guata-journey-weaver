@@ -41,6 +41,7 @@ import AdminProposta from "./pages/admin/AdminProposta";
 import AdminRoteiro from "./pages/admin/AdminRoteiro";
 import AdminAjuda from "./pages/admin/AdminAjuda";
 import AdminDepoimentos from "./pages/admin/AdminDepoimentos";
+import AdminNewsletter from "./pages/admin/AdminNewsletter";
 
 // Partner imports
 import PartnerLayout from "./pages/partner/PartnerLayout";
