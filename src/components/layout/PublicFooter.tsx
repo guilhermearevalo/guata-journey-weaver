@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Instagram, Facebook, Youtube, Send, Loader2, CheckCircle } from 'lucide-react';
+import { MapPin, Phone, Mail, Instagram, Facebook, Youtube, Send, Loader2, CheckCircle, ShieldCheck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -205,7 +205,16 @@ export function PublicFooter() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-secondary-foreground/10 pt-8 text-center text-sm text-secondary-foreground/60">
+        <div className="mt-8 border-t border-secondary-foreground/10 pt-8 flex flex-col items-center gap-4 text-sm text-secondary-foreground/60">
+          <a
+            href="https://cadastur.turismo.gov.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-secondary-foreground/70 hover:text-primary transition-colors"
+          >
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            <span>Agência regularizada pelo Ministério do Turismo — Cadastur Nº 64.677.632/0001-77</span>
+          </a>
           <p>© {new Date().getFullYear()} Guatá Travel Experience. Todos os direitos reservados.</p>
         </div>
       </div>
