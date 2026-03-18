@@ -98,7 +98,7 @@ export function HeroSection() {
             {slides.map((slide, i) => (
               <div key={i} className="relative min-w-0 flex-[0_0_100%]">
                 {slide.type === 'video' ? (
-                  <video src={slide.url} className="h-full w-full object-cover" autoPlay muted loop playsInline />
+                  <video src={slide.url} className="h-full w-full object-cover object-center" autoPlay muted loop playsInline preload="auto" poster={DEFAULT_IMAGE} />
                 ) : (
                   <div className="h-full w-full bg-cover bg-center" style={{ backgroundImage: `url(${slide.url})` }} />
                 )}
