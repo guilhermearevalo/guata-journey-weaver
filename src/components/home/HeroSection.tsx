@@ -109,7 +109,7 @@ export function HeroSection() {
       ) : (
         <div className="absolute inset-0">
           {slides[0]?.type === 'video' ? (
-            <video src={slides[0].url} className="h-full w-full object-cover" autoPlay muted loop playsInline />
+            <video src={slides[0].url} className="h-full w-full object-cover object-center" autoPlay muted loop playsInline preload="auto" poster={DEFAULT_IMAGE} />
           ) : (
             <div className="h-full w-full bg-cover bg-center" style={{ backgroundImage: `url(${slides[0]?.url || DEFAULT_IMAGE})` }} />
           )}
