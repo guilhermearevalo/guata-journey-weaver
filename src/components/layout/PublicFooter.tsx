@@ -82,6 +82,7 @@ export function PublicFooter() {
   const cadasturNumber = cadasturConfig?.number || '64.677.632/0001-77';
 
   return (
+    <footer className="border-t bg-secondary text-secondary-foreground">
       <div className="container mx-auto px-4 py-12 lg:px-8">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
