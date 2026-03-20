@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 import logo from '@/assets/logo-guata.png';
 
 function NewsletterForm() {
@@ -65,6 +66,21 @@ function NewsletterForm() {
 }
 
 export function PublicFooter() {
+  const { data: cadasturConfig } = useQuery({
+    queryKey: ['site-setting', 'cadastur_config'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'cadastur_config')
+        .maybeSingle();
+      if (error) throw error;
+      return data?.value as unknown as { number?: string } | null;
+    },
+  });
+
+  const cadasturNumber = cadasturConfig?.number || '64.677.632/0001-77';
+
   return (
     <footer className="border-t bg-secondary text-secondary-foreground">
       <div className="container mx-auto px-4 py-12 lg:px-8">
@@ -213,7 +229,7 @@ export function PublicFooter() {
             className="inline-flex items-center gap-2 text-secondary-foreground/70 hover:text-primary transition-colors"
           >
             <ShieldCheck className="h-5 w-5 text-primary" />
-            <span>Agência regularizada pelo Ministério do Turismo — Cadastur Nº 64.677.632/0001-77</span>
+            <span>Agência regularizada pelo Ministério do Turismo — Cadastur Nº {cadasturNumber}</span>
           </a>
           <p>© {new Date().getFullYear()} Guatá Travel Experience. Todos os direitos reservados.</p>
         </div>

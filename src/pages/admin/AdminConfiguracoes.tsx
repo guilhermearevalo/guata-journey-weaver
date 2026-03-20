@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Loader2, Image as ImageIcon, Trash2, Film, X, LayoutDashboard, MessageCircle, Save } from 'lucide-react';
+import { Upload, Loader2, Image as ImageIcon, Trash2, Film, X, LayoutDashboard, MessageCircle, Save, ShieldCheck } from 'lucide-react';
 import type { HomepageSections } from '@/hooks/useHomepageSections';
 
 interface Slide {
@@ -199,6 +199,7 @@ const AdminConfiguracoes = () => {
       </Card>
       <WhatsAppConfigCard />
       <HomepageSectionsCard />
+      <CadasturConfigCard />
     </div>
   );
 };
@@ -372,6 +373,206 @@ function HomepageSectionsCard() {
             />
           </div>
         ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ── Cadastur Config Card ── */
+function CadasturConfigCard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  const [uploadingCert, setUploadingCert] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  const { data: config } = useQuery({
+    queryKey: ['site-setting', 'cadastur_config'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'cadastur_config')
+        .maybeSingle();
+      if (error) throw error;
+      const defaults = {
+        number: '64.677.632/0001-77',
+        validity: '27/01/2026 a 27/01/2028',
+        description: 'O Cadastur é o sistema de cadastro de pessoas físicas e jurídicas que atuam no setor de turismo. É administrado pelo Ministério do Turismo e garante que a empresa atende às exigências legais para operar como agência de turismo.',
+        certificate_image_url: '',
+        agency_logo_url: '',
+      };
+      if (!data?.value) return defaults;
+      return { ...defaults, ...(data.value as unknown as Partial<typeof defaults>) };
+    },
+  });
+
+  const [number, setNumber] = useState('');
+  const [validity, setValidity] = useState('');
+  const [description, setDescription] = useState('');
+  const [certificateImageUrl, setCertificateImageUrl] = useState('');
+  const [agencyLogoUrl, setAgencyLogoUrl] = useState('');
+
+  useEffect(() => {
+    if (config) {
+      setNumber(config.number);
+      setValidity(config.validity);
+      setDescription(config.description);
+      setCertificateImageUrl(config.certificate_image_url);
+      setAgencyLogoUrl(config.agency_logo_url);
+    }
+  }, [config]);
+
+  const handleUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setUrl: (url: string) => void,
+    setLoading: (v: boolean) => void,
+    prefix: string
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `${prefix}-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('site-assets')
+        .upload(fileName, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+      setUrl(urlData.publicUrl);
+      toast({ title: 'Imagem enviada!' });
+    } catch {
+      toast({ title: 'Erro no upload', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          key: 'cadastur_config',
+          value: { number, validity, description, certificate_image_url: certificateImageUrl, agency_logo_url: agencyLogoUrl } as unknown as import('@/integrations/supabase/types').Json,
+          updated_at: new Date().toISOString(),
+        });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['site-setting', 'cadastur_config'] });
+      toast({ title: 'Cadastur atualizado!' });
+    } catch {
+      toast({ title: 'Erro ao salvar', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5" />
+          Cadastur / Credenciais
+        </CardTitle>
+        <CardDescription>
+          Configure os dados do Cadastur exibidos na página "Sobre" e no rodapé do site.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="cadastur-number">Número do Cadastur</Label>
+            <Input
+              id="cadastur-number"
+              placeholder="64.677.632/0001-77"
+              value={number}
+              onChange={(e) => setNumber(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cadastur-validity">Validade</Label>
+            <Input
+              id="cadastur-validity"
+              placeholder="27/01/2026 a 27/01/2028"
+              value={validity}
+              onChange={(e) => setValidity(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="cadastur-description">Descrição</Label>
+          <textarea
+            id="cadastur-description"
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+          />
+        </div>
+
+        {/* Certificate Image */}
+        <div className="space-y-2">
+          <Label>Imagem do Certificado</Label>
+          <div className="flex items-center gap-4">
+            {certificateImageUrl && (
+              <img src={certificateImageUrl} alt="Certificado" className="h-20 w-auto rounded-md border object-contain" />
+            )}
+            <div>
+              <Label
+                htmlFor="cert-upload"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                {uploadingCert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {certificateImageUrl ? 'Substituir' : 'Enviar Imagem'}
+              </Label>
+              <Input
+                id="cert-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleUpload(e, setCertificateImageUrl, setUploadingCert, 'cadastur-cert')}
+                disabled={uploadingCert}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Agency Logo */}
+        <div className="space-y-2">
+          <Label>Logo da Agência (página Sobre)</Label>
+          <div className="flex items-center gap-4">
+            {agencyLogoUrl && (
+              <img src={agencyLogoUrl} alt="Logo" className="h-20 w-auto rounded-md border object-contain" />
+            )}
+            <div>
+              <Label
+                htmlFor="logo-upload"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                {uploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {agencyLogoUrl ? 'Substituir' : 'Enviar Logo'}
+              </Label>
+              <Input
+                id="logo-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleUpload(e, setAgencyLogoUrl, setUploadingLogo, 'agency-logo')}
+                disabled={uploadingLogo}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">A logo será exibida ao lado do certificado na página "Sobre Nós".</p>
+        </div>
+
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Salvar Credenciais
+        </Button>
       </CardContent>
     </Card>
   );
