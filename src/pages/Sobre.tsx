@@ -3,6 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import cadasturCertificate from '@/assets/cadastur-certificate.png';
 import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 // Conteúdo padrão caso o CMS esteja vazio
 const defaultContent = {
