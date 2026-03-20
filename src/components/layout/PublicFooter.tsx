@@ -228,7 +228,7 @@ export function PublicFooter() {
             className="inline-flex items-center gap-2 text-secondary-foreground/70 hover:text-primary transition-colors"
           >
             <ShieldCheck className="h-5 w-5 text-primary" />
-            <span>Agência regularizada pelo Ministério do Turismo — Cadastur Nº 64.677.632/0001-77</span>
+            <span>Agência regularizada pelo Ministério do Turismo — Cadastur Nº {cadasturNumber}</span>
           </a>
           <p>© {new Date().getFullYear()} Guatá Travel Experience. Todos os direitos reservados.</p>
         </div>

@@ -148,22 +148,30 @@ const Sobre = () => {
             </p>
           </div>
           <div className="mx-auto max-w-4xl flex flex-col md:flex-row items-center gap-8 rounded-2xl border-2 border-primary/20 bg-primary/5 p-8">
-            <img
-              src={cadasturCertificate}
-              alt="Certificado Cadastur - Ministério do Turismo"
-              className="w-full max-w-sm rounded-lg shadow-lg"
-            />
+            <div className="flex flex-col items-center gap-4">
+              {agencyLogo && (
+                <img
+                  src={agencyLogo}
+                  alt="Logo da Agência"
+                  className="w-full max-w-[200px] rounded-lg"
+                />
+              )}
+              <img
+                src={certImage}
+                alt="Certificado Cadastur - Ministério do Turismo"
+                className="w-full max-w-sm rounded-lg shadow-lg"
+              />
+            </div>
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-6 w-6 text-primary" />
-                <h3 className="font-display text-xl font-semibold">Cadastur Nº 64.677.632/0001-77</h3>
+                <h3 className="font-display text-xl font-semibold">Cadastur Nº {cadasturNumber}</h3>
               </div>
               <p className="text-muted-foreground">
-                O Cadastur é o sistema de cadastro de pessoas físicas e jurídicas que atuam no setor de turismo. 
-                É administrado pelo Ministério do Turismo e garante que a empresa atende às exigências legais para operar como agência de turismo.
+                {cadasturDescription}
               </p>
               <p className="text-sm text-muted-foreground">
-                <strong>Validade:</strong> 27/01/2026 a 27/01/2028
+                <strong>Validade:</strong> {cadasturValidity}
               </p>
               <a
                 href="https://cadastur.turismo.gov.br"
