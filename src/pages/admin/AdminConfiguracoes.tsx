@@ -199,6 +199,7 @@ const AdminConfiguracoes = () => {
       </Card>
       <WhatsAppConfigCard />
       <HomepageSectionsCard />
+      <CadasturConfigCard />
     </div>
   );
 };
