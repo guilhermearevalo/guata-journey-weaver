@@ -155,11 +155,11 @@ const Sobre = () => {
             </p>
           </div>
           <div className="mx-auto max-w-5xl flex flex-col md:flex-row items-center gap-8 rounded-2xl border-2 border-primary/20 bg-primary/5 p-8">
-            <div className="flex flex-col items-center gap-4">
+            <div className="flex-shrink-0 md:w-1/2">
               <img
                 src={certImage}
                 alt="Certificado Cadastur - Ministério do Turismo"
-                className="w-full max-w-xl rounded-lg shadow-lg"
+                className="w-full rounded-lg shadow-lg"
               />
             </div>
             <div className="space-y-4">
