@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, MessageCircle, ArrowRight, Eye } from 'lucide-react';
+import { Search, MessageCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import useEmblaCarousel from 'embla-carousel-react';
 
 interface Slide {
@@ -26,7 +24,6 @@ const QUICK_FILTERS = ['All Inclusive', 'Nacional', 'Internacional', 'Aventura',
 
 export function HeroSection() {
   const [destination, setDestination] = useState('');
-  const [viewerCount] = useState(() => Math.floor(Math.random() * 30) + 15);
   const navigate = useNavigate();
 
   const { data: heroSetting } = useQuery({
@@ -122,20 +119,12 @@ export function HeroSection() {
       {/* Content */}
       <div className="container relative mx-auto flex min-h-[92vh] flex-col items-center justify-center px-4 py-20 text-center lg:px-8">
         <div className="animate-fade-in space-y-5">
-          {/* Social proof badge */}
-          <div className="flex items-center justify-center gap-2">
-            <Badge variant="secondary" className="bg-white/15 px-4 py-1.5 text-sm font-medium text-white backdrop-blur-md border-white/20">
-              <Eye className="mr-1.5 h-3.5 w-3.5" />
-              <span className="tabular-nums">{viewerCount}</span> pessoas visualizando agora
-            </Badge>
-          </div>
-
           {/* Main title */}
           <h1 className="font-display text-4xl font-extrabold leading-[1.1] text-white md:text-6xl lg:text-7xl xl:text-8xl">
             Realize sua próxima
-            <span className="block text-guata-teal-light hero-text-shadow">aventura</span>
+            <span className="block text-amber-300 hero-text-shadow">aventura</span>
             <span className="block text-3xl font-bold text-white/90 md:text-4xl lg:text-5xl">
-              com a <span className="text-guata-teal-light hero-text-shadow">Guatá</span>
+              com a <span className="text-amber-300 hero-text-shadow">Guatá</span>
             </span>
           </h1>
 
@@ -215,24 +204,6 @@ export function HeroSection() {
           )}
         </div>
 
-        {/* Social proof avatars */}
-        <div
-          className="mt-8 flex items-center justify-center gap-3 animate-slide-up"
-          style={{ animationDelay: '0.5s' }}
-        >
-          <div className="flex -space-x-2">
-            {['MR', 'AS', 'JC', 'LP'].map((initials, i) => (
-              <Avatar key={i} className="h-8 w-8 border-2 border-white/50">
-                <AvatarFallback className="bg-primary/80 text-[10px] font-bold text-primary-foreground">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-          </div>
-          <p className="text-sm text-white/80">
-            <span className="font-semibold text-white">+500</span> viajantes confiam na Guatá
-          </p>
-        </div>
       </div>
     </section>
   );
