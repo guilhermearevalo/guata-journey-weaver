@@ -94,6 +94,13 @@ const Sobre = () => {
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
             {hero?.subtitle || 'Conheça nossa história e missão'}
           </p>
+          {agencyLogo && (
+            <img
+              src={agencyLogo}
+              alt="Logo da Agência"
+              className="mx-auto mt-8 max-w-[220px] rounded-lg"
+            />
+          )}
         </div>
       </section>
 
@@ -147,19 +154,12 @@ const Sobre = () => {
               Somos uma agência regularizada junto ao Ministério do Turismo, garantindo segurança e confiabilidade para nossos clientes.
             </p>
           </div>
-          <div className="mx-auto max-w-4xl flex flex-col md:flex-row items-center gap-8 rounded-2xl border-2 border-primary/20 bg-primary/5 p-8">
+          <div className="mx-auto max-w-5xl flex flex-col md:flex-row items-center gap-8 rounded-2xl border-2 border-primary/20 bg-primary/5 p-8">
             <div className="flex flex-col items-center gap-4">
-              {agencyLogo && (
-                <img
-                  src={agencyLogo}
-                  alt="Logo da Agência"
-                  className="w-full max-w-[200px] rounded-lg"
-                />
-              )}
               <img
                 src={certImage}
                 alt="Certificado Cadastur - Ministério do Turismo"
-                className="w-full max-w-sm rounded-lg shadow-lg"
+                className="w-full max-w-lg rounded-lg shadow-lg"
               />
             </div>
             <div className="space-y-4">
