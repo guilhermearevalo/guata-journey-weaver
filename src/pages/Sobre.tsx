@@ -159,7 +159,7 @@ const Sobre = () => {
               <img
                 src={certImage}
                 alt="Certificado Cadastur - Ministério do Turismo"
-                className="w-full max-w-lg rounded-lg shadow-lg"
+                className="w-full max-w-xl rounded-lg shadow-lg"
               />
             </div>
             <div className="space-y-4">

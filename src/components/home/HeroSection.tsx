@@ -193,7 +193,7 @@ export function HeroSection() {
             <Button
               variant="outline"
               size="lg"
-              className="h-12 rounded-full border-white/30 bg-white/10 px-8 text-base font-semibold text-white backdrop-blur-sm hover:bg-white/20 hover:text-white"
+              className="h-12 rounded-full border-green-500 bg-green-600 px-8 text-base font-semibold text-white hover:bg-green-700 hover:text-white"
               asChild
             >
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
