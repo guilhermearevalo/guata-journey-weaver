@@ -11,9 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil, ChevronUp, ChevronDown, Save, FolderOpen } from 'lucide-react';
 import ActivityFormDialog from './ActivityFormDialog';
 import DocumentsChecklist from './DocumentsChecklist';
+import TemplateDialog from './TemplateDialog';
 
 interface Activity {
   name: string;
