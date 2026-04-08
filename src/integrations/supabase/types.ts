@@ -266,6 +266,50 @@ export type Database = {
           },
         ]
       }
+      itinerary_templates: {
+        Row: {
+          agency_id: string | null
+          created_at: string
+          created_by: string | null
+          destination: string | null
+          duration_days: number | null
+          id: string
+          itinerary: Json
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          destination?: string | null
+          duration_days?: number | null
+          id?: string
+          itinerary?: Json
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          destination?: string | null
+          duration_days?: number | null
+          id?: string
+          itinerary?: Json
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itinerary_templates_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "partner_agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           channel: string | null
@@ -342,6 +386,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          is_external: boolean | null
           logo_url: string | null
           name: string
           regions: string[] | null
@@ -361,6 +406,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_external?: boolean | null
           logo_url?: string | null
           name: string
           regions?: string[] | null
@@ -380,6 +426,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_external?: boolean | null
           logo_url?: string | null
           name?: string
           regions?: string[] | null
@@ -608,6 +655,7 @@ export type Database = {
           client_phone: string | null
           created_at: string
           destination: string | null
+          external_notes: string | null
           id: string
           internal_notes: string | null
           preferences: Json | null
@@ -627,6 +675,7 @@ export type Database = {
           client_phone?: string | null
           created_at?: string
           destination?: string | null
+          external_notes?: string | null
           id?: string
           internal_notes?: string | null
           preferences?: Json | null
@@ -646,6 +695,7 @@ export type Database = {
           client_phone?: string | null
           created_at?: string
           destination?: string | null
+          external_notes?: string | null
           id?: string
           internal_notes?: string | null
           preferences?: Json | null
