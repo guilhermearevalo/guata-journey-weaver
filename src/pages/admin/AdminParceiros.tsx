@@ -111,6 +111,20 @@ const AdminParceiros = () => {
     },
   });
 
+  const toggleExternalMutation = useMutation({
+    mutationFn: async ({ id, is_external }: { id: string; is_external: boolean }) => {
+      const { error } = await supabase
+        .from('partner_agencies')
+        .update({ is_external } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partner-agencies'] });
+      toast({ title: 'Agência atualizada!' });
+    },
+  });
+
   const handleInviteSubmit = () => {
     if (!inviteAgency || !inviteEmail || !inviteName) return;
     inviteMutation.mutate({
