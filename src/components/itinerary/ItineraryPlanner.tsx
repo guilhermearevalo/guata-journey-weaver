@@ -382,6 +382,11 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                                   {activity.is_suggestion && <Badge className="bg-primary/10 text-primary text-xs print:hidden"><Sparkles className="mr-1 h-3 w-3" />Sugestão IA</Badge>}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
+                                {activity.image_url && (
+                                  <div className="mt-2 rounded-md overflow-hidden border h-24 w-40">
+                                    <img src={activity.image_url} alt={activity.name} className="w-full h-full object-cover" />
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
