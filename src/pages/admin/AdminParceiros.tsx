@@ -187,9 +187,16 @@ const AdminParceiros = () => {
         )}
       </TableCell>
       <TableCell>
-        <Badge variant={agency.is_active ? 'default' : 'secondary'}>
-          {agency.is_active ? 'Ativo' : 'Pendente'}
-        </Badge>
+        <div className="flex items-center gap-1.5">
+          <Badge variant={agency.is_active ? 'default' : 'secondary'}>
+            {agency.is_active ? 'Ativo' : 'Pendente'}
+          </Badge>
+          {agency.is_external && (
+            <Badge variant="outline" className="text-xs">
+              Externa
+            </Badge>
+          )}
+        </div>
       </TableCell>
       <TableCell className="text-right">
         <DropdownMenu>
