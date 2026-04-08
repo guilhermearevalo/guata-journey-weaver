@@ -25,6 +25,7 @@ interface PartnerAgency {
   address: string | null;
   commission_rate: number | null;
   is_active: boolean | null;
+  is_external: boolean | null;
   created_at: string;
   responsible_name: string | null;
   website: string | null;
@@ -110,6 +111,20 @@ const AdminParceiros = () => {
     },
   });
 
+  const toggleExternalMutation = useMutation({
+    mutationFn: async ({ id, is_external }: { id: string; is_external: boolean }) => {
+      const { error } = await supabase
+        .from('partner_agencies')
+        .update({ is_external } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partner-agencies'] });
+      toast({ title: 'Agência atualizada!' });
+    },
+  });
+
   const handleInviteSubmit = () => {
     if (!inviteAgency || !inviteEmail || !inviteName) return;
     inviteMutation.mutate({
@@ -186,9 +201,16 @@ const AdminParceiros = () => {
         )}
       </TableCell>
       <TableCell>
-        <Badge variant={agency.is_active ? 'default' : 'secondary'}>
-          {agency.is_active ? 'Ativo' : 'Pendente'}
-        </Badge>
+        <div className="flex items-center gap-1.5">
+          <Badge variant={agency.is_active ? 'default' : 'secondary'}>
+            {agency.is_active ? 'Ativo' : 'Pendente'}
+          </Badge>
+          {agency.is_external && (
+            <Badge variant="outline" className="text-xs">
+              Externa
+            </Badge>
+          )}
+        </div>
       </TableCell>
       <TableCell className="text-right">
         <DropdownMenu>
@@ -201,6 +223,10 @@ const AdminParceiros = () => {
             <DropdownMenuItem onClick={() => setSelectedAgency(agency)}>
               <Eye className="mr-2 h-4 w-4" />
               Ver detalhes
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toggleExternalMutation.mutate({ id: agency.id, is_external: !agency.is_external })}>
+              <Building2 className="mr-2 h-4 w-4" />
+              {agency.is_external ? 'Remover marca externa' : 'Marcar como externa'}
             </DropdownMenuItem>
             {agency.is_active ? (
               <DropdownMenuItem

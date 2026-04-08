@@ -11,9 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil, ChevronUp, ChevronDown, Save, FolderOpen } from 'lucide-react';
 import ActivityFormDialog from './ActivityFormDialog';
 import DocumentsChecklist from './DocumentsChecklist';
+import TemplateDialog from './TemplateDialog';
 
 interface Activity {
   name: string;
@@ -22,6 +23,7 @@ interface Activity {
   estimated_cost: number;
   time_slot: string;
   is_suggestion?: boolean;
+  image_url?: string;
 }
 
 interface ItineraryDay {
@@ -61,6 +63,8 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   const [generatingDay, setGeneratingDay] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [templateMode, setTemplateMode] = useState<'save' | 'load'>('save');
 
   // Activity form state
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
@@ -292,6 +296,14 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
             {copied ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
             {copied ? 'Copiado!' : 'Compartilhar'}
           </Button>
+          <Button variant="outline" size="sm" onClick={() => { setTemplateMode('load'); setTemplateDialogOpen(true); }}>
+            <FolderOpen className="mr-2 h-4 w-4" />Templates
+          </Button>
+          {itinerary.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => { setTemplateMode('save'); setTemplateDialogOpen(true); }}>
+              <Save className="mr-2 h-4 w-4" />Salvar Template
+            </Button>
+          )}
           <Button onClick={generateFullItinerary} disabled={generating}>
             {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             {itinerary.length > 0 ? 'Regenerar com IA' : 'Gerar Roteiro com IA'}
@@ -370,6 +382,11 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                                   {activity.is_suggestion && <Badge className="bg-primary/10 text-primary text-xs print:hidden"><Sparkles className="mr-1 h-3 w-3" />Sugestão IA</Badge>}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
+                                {activity.image_url && (
+                                  <div className="mt-2 rounded-md overflow-hidden border h-24 w-40">
+                                    <img src={activity.image_url} alt={activity.name} className="w-full h-full object-cover" />
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
@@ -443,6 +460,17 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         onOpenChange={setActivityDialogOpen}
         onSave={handleSaveActivity}
         initialData={editingActivity}
+      />
+
+      {/* Template Dialog */}
+      <TemplateDialog
+        open={templateDialogOpen}
+        onOpenChange={setTemplateDialogOpen}
+        mode={templateMode}
+        currentItinerary={itinerary}
+        destination={request?.destination}
+        totalDays={totalDays}
+        onLoadTemplate={(days) => saveItinerary.mutateAsync(days)}
       />
     </div>
     </TooltipProvider>

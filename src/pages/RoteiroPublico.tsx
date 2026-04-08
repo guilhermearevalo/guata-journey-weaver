@@ -16,6 +16,7 @@ interface Activity {
   category: string;
   estimated_cost: number;
   time_slot: string;
+  image_url?: string;
 }
 
 interface ItineraryDay {
@@ -209,6 +210,11 @@ export default function RoteiroPublico() {
                                 <Badge className={`text-xs ${categoryColors[activity.category] || 'bg-muted text-muted-foreground'}`}>{activity.category}</Badge>
                               </div>
                               <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
+                              {activity.image_url && (
+                                <div className="mt-2 rounded-lg overflow-hidden border h-32 w-full">
+                                  <img src={activity.image_url} alt={activity.name} className="w-full h-full object-cover" />
+                                </div>
+                              )}
                             </div>
                             <span className="text-sm font-medium shrink-0">R$ {(activity.estimated_cost || 0).toLocaleString('pt-BR')}</span>
                           </div>

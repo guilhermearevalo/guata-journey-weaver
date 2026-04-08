@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -9,8 +12,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 import { Tables } from '@/integrations/supabase/types';
-import { Calendar, Users, MapPin, Mail, Phone, DollarSign, MessageSquare, Route } from 'lucide-react';
+import { Calendar, Users, MapPin, Mail, Phone, DollarSign, MessageSquare, Route, Building2, Save, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface RequestDetailDialogProps {
   request: Tables<'travel_requests'> | null;
@@ -30,6 +35,48 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
 
 export function RequestDetailDialog({ request, open, onOpenChange }: RequestDetailDialogProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [externalNotes, setExternalNotes] = useState('');
+  const [notesInitialized, setNotesInitialized] = useState(false);
+
+  // Load agency info if assigned
+  const { data: agency } = useQuery({
+    queryKey: ['agency-for-request', request?.assigned_agency_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('partner_agencies')
+        .select('name, is_external, contact_email, contact_phone')
+        .eq('id', request!.assigned_agency_id!)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!request?.assigned_agency_id,
+  });
+
+  // Initialize external notes when request changes
+  if (request && !notesInitialized) {
+    setExternalNotes((request as any).external_notes || '');
+    setNotesInitialized(true);
+  }
+  if (!request && notesInitialized) {
+    setNotesInitialized(false);
+  }
+
+  const saveNotesMutation = useMutation({
+    mutationFn: async () => {
+      if (!request) return;
+      const { error } = await supabase
+        .from('travel_requests')
+        .update({ external_notes: externalNotes } as any)
+        .eq('id', request.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+      toast({ title: 'Notas salvas com sucesso!' });
+    },
+  });
 
   if (!request) return null;
 
@@ -43,10 +90,11 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
 
   const status = statusLabels[request.status] || { label: request.status, variant: 'outline' as const };
   const showItinerary = ['approved', 'in_operation', 'completed'].includes(request.status);
+  const isExternalAgency = agency?.is_external;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+    <Dialog open={open} onOpenChange={(o) => { if (!o) setNotesInitialized(false); onOpenChange(o); }}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="font-display text-xl">Demanda de {request.client_name}</DialogTitle>
@@ -112,6 +160,60 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold text-muted-foreground">Notas Internas</h4>
                 <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">{request.internal_notes}</p>
+              </div>
+            </>
+          )}
+
+          {/* Assigned Agency Info */}
+          {agency && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Agência Atribuída
+                  {isExternalAgency && (
+                    <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                      Externa
+                    </Badge>
+                  )}
+                </h4>
+                <div className="text-sm space-y-1">
+                  <p className="font-medium">{agency.name}</p>
+                  {agency.contact_email && <p className="text-muted-foreground">{agency.contact_email}</p>}
+                  {agency.contact_phone && <p className="text-muted-foreground">{agency.contact_phone}</p>}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* External Notes - for tracking comms with external agencies */}
+          {(isExternalAgency || (request as any).external_notes) && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-muted-foreground">
+                  Registro de Acompanhamento
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Registre aqui o andamento com a agência externa (e-mails, ligações, status).
+                </p>
+                <Textarea
+                  value={externalNotes}
+                  onChange={(e) => setExternalNotes(e.target.value)}
+                  placeholder="Ex: 12/03 - Enviado por e-mail os detalhes. 15/03 - Agência confirmou recebimento..."
+                  rows={4}
+                  className="text-sm"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => saveNotesMutation.mutate()}
+                  disabled={saveNotesMutation.isPending}
+                >
+                  {saveNotesMutation.isPending ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Save className="mr-2 h-3 w-3" />}
+                  Salvar Notas
+                </Button>
               </div>
             </>
           )}
