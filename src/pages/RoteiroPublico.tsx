@@ -16,6 +16,7 @@ interface Activity {
   category: string;
   estimated_cost: number;
   time_slot: string;
+  image_url?: string;
 }
 
 interface ItineraryDay {
