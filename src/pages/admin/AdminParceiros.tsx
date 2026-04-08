@@ -224,6 +224,10 @@ const AdminParceiros = () => {
               <Eye className="mr-2 h-4 w-4" />
               Ver detalhes
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toggleExternalMutation.mutate({ id: agency.id, is_external: !agency.is_external })}>
+              <Building2 className="mr-2 h-4 w-4" />
+              {agency.is_external ? 'Remover marca externa' : 'Marcar como externa'}
+            </DropdownMenuItem>
             {agency.is_active ? (
               <DropdownMenuItem
                 onClick={() => setConfirmAction({ type: 'deactivate', agency })}
