@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ImagePlus, X } from 'lucide-react';
 
 interface Activity {
   name: string;
@@ -13,6 +14,7 @@ interface Activity {
   estimated_cost: number;
   time_slot: string;
   is_suggestion?: boolean;
+  image_url?: string;
 }
 
 interface ActivityFormDialogProps {
@@ -44,6 +46,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
   const [category, setCategory] = useState('cultura');
   const [timeSlot, setTimeSlot] = useState('manhã');
   const [estimatedCost, setEstimatedCost] = useState('0');
+  const [imageUrl, setImageUrl] = useState('');
 
   useEffect(() => {
     if (initialData) {
@@ -52,12 +55,14 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       setCategory(initialData.category);
       setTimeSlot(initialData.time_slot);
       setEstimatedCost(String(initialData.estimated_cost || 0));
+      setImageUrl(initialData.image_url || '');
     } else {
       setName('');
       setDescription('');
       setCategory('cultura');
       setTimeSlot('manhã');
       setEstimatedCost('0');
+      setImageUrl('');
     }
   }, [initialData, open]);
 
@@ -70,6 +75,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       time_slot: timeSlot,
       estimated_cost: parseFloat(estimatedCost) || 0,
       is_suggestion: false,
+      image_url: imageUrl.trim() || undefined,
     });
     onOpenChange(false);
   };
@@ -112,6 +118,40 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
           <div className="space-y-2">
             <Label htmlFor="act-cost">Custo Estimado (R$)</Label>
             <Input id="act-cost" type="number" min="0" step="0.01" value={estimatedCost} onChange={e => setEstimatedCost(e.target.value)} />
+          </div>
+          {/* Image URL */}
+          <div className="space-y-2">
+            <Label htmlFor="act-image">Imagem (URL)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="act-image"
+                value={imageUrl}
+                onChange={e => setImageUrl(e.target.value)}
+                placeholder="https://exemplo.com/foto.jpg"
+                className="flex-1"
+              />
+              {imageUrl && (
+                <Button type="button" variant="ghost" size="icon" onClick={() => setImageUrl('')} className="shrink-0">
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            {imageUrl && (
+              <div className="relative rounded-lg overflow-hidden border bg-muted h-32">
+                <img
+                  src={imageUrl}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              </div>
+            )}
+            {!imageUrl && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <ImagePlus className="h-3 w-3" />
+                Cole a URL de uma imagem para ilustrar a atividade
+              </p>
+            )}
           </div>
         </div>
         <DialogFooter>
