@@ -63,6 +63,8 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   const [generatingDay, setGeneratingDay] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [templateMode, setTemplateMode] = useState<'save' | 'load'>('save');
 
   // Activity form state
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
