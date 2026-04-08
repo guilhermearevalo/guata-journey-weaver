@@ -23,6 +23,7 @@ interface Activity {
   estimated_cost: number;
   time_slot: string;
   is_suggestion?: boolean;
+  image_url?: string;
 }
 
 interface ItineraryDay {
