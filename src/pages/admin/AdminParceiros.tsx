@@ -25,6 +25,7 @@ interface PartnerAgency {
   address: string | null;
   commission_rate: number | null;
   is_active: boolean | null;
+  is_external: boolean | null;
   created_at: string;
   responsible_name: string | null;
   website: string | null;
