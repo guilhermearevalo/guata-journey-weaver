@@ -296,6 +296,14 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
             {copied ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
             {copied ? 'Copiado!' : 'Compartilhar'}
           </Button>
+          <Button variant="outline" size="sm" onClick={() => { setTemplateMode('load'); setTemplateDialogOpen(true); }}>
+            <FolderOpen className="mr-2 h-4 w-4" />Templates
+          </Button>
+          {itinerary.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => { setTemplateMode('save'); setTemplateDialogOpen(true); }}>
+              <Save className="mr-2 h-4 w-4" />Salvar Template
+            </Button>
+          )}
           <Button onClick={generateFullItinerary} disabled={generating}>
             {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             {itinerary.length > 0 ? 'Regenerar com IA' : 'Gerar Roteiro com IA'}
