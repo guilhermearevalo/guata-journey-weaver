@@ -461,6 +461,17 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         onSave={handleSaveActivity}
         initialData={editingActivity}
       />
+
+      {/* Template Dialog */}
+      <TemplateDialog
+        open={templateDialogOpen}
+        onOpenChange={setTemplateDialogOpen}
+        mode={templateMode}
+        currentItinerary={itinerary}
+        destination={request?.destination}
+        totalDays={totalDays}
+        onLoadTemplate={(days) => saveItinerary.mutateAsync(days)}
+      />
     </div>
     </TooltipProvider>
   );
