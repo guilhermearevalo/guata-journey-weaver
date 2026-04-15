@@ -241,6 +241,18 @@ export default function AdminProposta() {
           </div>
 
           <div className="space-y-2">
+            <Label>Link de Pagamento Manual (PIX, PagSeguro, etc.)</Label>
+            <Input
+              value={manualPaymentLink}
+              onChange={(e) => setManualPaymentLink(e.target.value)}
+              placeholder="https://pag.ae/exemplo ou chave PIX"
+            />
+            <p className="text-xs text-muted-foreground">
+              Link alternativo ao Stripe. Será exibido na proposta pública para o cliente.
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
               <Lock className="h-3.5 w-3.5" />Código de Acesso ao Roteiro
             </Label>
