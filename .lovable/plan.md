@@ -1,27 +1,31 @@
 
 
-# Plano: Ajustes no Hero Section + Certificado Cadastur + Logo na Sobre
+# Plano: Centralizar tabs + Remover imagem de fundo + Melhorias no relatório
 
-## 3 mudanças solicitadas
+## 1. Centralizar tabs na página de experiência (`ExperienciaDetalhe.tsx`)
+- Linha 170: trocar `justify-start` por `justify-center` no `TabsList`
 
-### 1. Certificado Cadastur maior (`src/pages/Sobre.tsx`)
-- Linha 150: `max-w-4xl` → `max-w-5xl` no container
-- Linha 162: `max-w-sm` → `max-w-lg` na imagem do certificado (voltar ao tamanho grande)
+## 2. Remover imagem de fundo que não combina (`ExperienciaDetalhe.tsx`)
+- Verificar se há algum background aplicado no hero/container e simplificar
+- Se a imagem de capa está renderizando como hero gigante sem qualidade, reduzir o aspect ratio ou ajustar
 
-### 2. Logo da agência abaixo do subtítulo do hero da Sobre (`src/pages/Sobre.tsx`)
-- Mover a exibição da `agencyLogo` para dentro do hero section (linhas 89-97), logo abaixo do subtítulo
-- Remover a logo de dentro da seção do Cadastur (linhas 152-158)
+## 3. Adicionar campo "Link de pagamento manual" na proposta (`AdminProposta.tsx`)
+- Novo campo de texto para colar link externo (PIX, PagSeguro, etc.)
+- Salvar em `payment_links` (campo jsonb que já existe na tabela `proposals`)
+- Exibir esse link na página pública da proposta (`PropostaPublica.tsx`) como alternativa ao Stripe
 
-### 3. Hero da Home: remover social proof + ajustar cores (`src/components/home/HeroSection.tsx`)
-- **Remover** o badge "X pessoas visualizando agora" (linhas 126-131)
-- **Remover** o bloco de avatares "+500 viajantes confiam na Guatá" (linhas 218-235)
-- **Remover** imports não utilizados: `Eye`, `Avatar`, `AvatarFallback`, `Badge`, e o state `viewerCount`
-- **Ajustar paleta de cores do título**: trocar `text-guata-teal-light` por `text-guata-brown-light` ou `text-amber-300` para um contraste mais quente e harmonioso contra o fundo escuro — a cor teal atual compete com o overlay esverdeado. Alternativa: usar branco puro com shadow mais forte para "aventura" e destacar "Guatá" com a cor primária do site.
+## 4. Incluir "Guatá (operação própria)" no relatório por agência (`AdminRelatorioAgencias.tsx`)
+- Adicionar uma linha para propostas com `agency_id = null`
+- Mostrar receita e demandas operadas diretamente pela Guatá
 
 ## Arquivos a editar
 
-| Arquivo | Mudanças |
-|---------|----------|
-| `src/components/home/HeroSection.tsx` | Remover social proof, ajustar cores do título |
-| `src/pages/Sobre.tsx` | Certificado maior, logo no hero da página |
+| Arquivo | Mudança |
+|---------|---------|
+| `src/pages/ExperienciaDetalhe.tsx` | Centralizar tabs |
+| `src/pages/admin/AdminProposta.tsx` | Campo link de pagamento manual |
+| `src/pages/PropostaPublica.tsx` | Exibir link de pagamento manual |
+| `src/pages/admin/AdminRelatorioAgencias.tsx` | Linha "Guatá" no relatório |
+
+Migração SQL: nenhuma (usa campo `payment_links` jsonb existente).
 
