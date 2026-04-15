@@ -45,7 +45,7 @@ export default function PropostaPublica() {
     client_name: string;
   } | null;
 
-  const paymentLinks = proposal?.payment_links as { stripe_session_id?: string; paid_at?: string } | null;
+  const paymentLinks = proposal?.payment_links as { stripe_session_id?: string; paid_at?: string; manual_link?: string } | null;
   const inclusions = proposal?.inclusions as string[] | null;
   const itinerary = Array.isArray(proposal?.itinerary) ? proposal.itinerary : [];
 
@@ -182,6 +182,22 @@ export default function PropostaPublica() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Pagamento</CardTitle></CardHeader>
             <CardContent className="space-y-4">
+              {/* Manual payment link */}
+              {paymentLinks?.manual_link && (
+                <div className="space-y-2">
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    variant="outline"
+                    asChild
+                  >
+                    <a href={paymentLinks.manual_link} target="_blank" rel="noopener noreferrer">
+                      <CreditCard className="mr-2 h-4 w-4" />Pagar via Link Externo (PIX / Outro)
+                    </a>
+                  </Button>
+                </div>
+              )}
+              {/* Stripe checkout */}
               <div className="space-y-2">
                 <Button
                   className="w-full"
@@ -192,13 +208,27 @@ export default function PropostaPublica() {
                   {isCheckingOut ? (
                     <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Redirecionando...</>
                   ) : (
-                    <><CreditCard className="mr-2 h-4 w-4" />Pagar Online (Cartão ou PIX)</>
+                    <><CreditCard className="mr-2 h-4 w-4" />Pagar Online (Cartão via Stripe)</>
                   )}
                 </Button>
                 <p className="text-xs text-center text-muted-foreground">
                   Pagamento seguro via Stripe. Confirmação automática.
                 </p>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Manual payment link only (when Stripe not enabled but manual link exists) */}
+        {!isPaid && !(canPayStripe && (proposal as any).payment_enabled) && paymentLinks?.manual_link && (
+          <Card>
+            <CardHeader><CardTitle className="text-lg">Pagamento</CardTitle></CardHeader>
+            <CardContent>
+              <Button className="w-full" size="lg" variant="outline" asChild>
+                <a href={paymentLinks.manual_link} target="_blank" rel="noopener noreferrer">
+                  <CreditCard className="mr-2 h-4 w-4" />Pagar via Link Externo (PIX / Outro)
+                </a>
+              </Button>
             </CardContent>
           </Card>
         )}

@@ -68,27 +68,58 @@ const AdminRelatorioAgencias = () => {
     },
   });
 
-  const agencyReport = agencies?.map((agency) => {
-    const agencyRequests = requests?.filter(r => r.assigned_agency_id === agency.id) || [];
-    const agencyProposals = proposals?.filter(p => p.agency_id === agency.id) || [];
-    const approvedProposals = agencyProposals.filter(p => p.is_approved);
-    const totalRevenue = approvedProposals.reduce((sum, p) => sum + (p.total_price || 0), 0);
-    const paidProposals = agencyProposals.filter(p => p.payment_status === 'paid');
-    const paidRevenue = paidProposals.reduce((sum, p) => sum + (p.total_price || 0), 0);
-    const completedRequests = agencyRequests.filter(r => r.status === 'completed').length;
-    const commission = totalRevenue * ((agency.commission_rate || 10) / 100);
+  // Build agency report including "Guatá (operação própria)" for null agency_id
+  const agencyReport = (() => {
+    const rows = agencies?.map((agency) => {
+      const agencyRequests = requests?.filter(r => r.assigned_agency_id === agency.id) || [];
+      const agencyProposals = proposals?.filter(p => p.agency_id === agency.id) || [];
+      const approvedProposals = agencyProposals.filter(p => p.is_approved);
+      const totalRevenue = approvedProposals.reduce((sum, p) => sum + (p.total_price || 0), 0);
+      const paidProposals = agencyProposals.filter(p => p.payment_status === 'paid');
+      const paidRevenue = paidProposals.reduce((sum, p) => sum + (p.total_price || 0), 0);
+      const completedRequests = agencyRequests.filter(r => r.status === 'completed').length;
+      const commission = totalRevenue * ((agency.commission_rate || 10) / 100);
 
-    return {
-      ...agency,
-      totalRequests: agencyRequests.length,
-      completedRequests,
-      totalProposals: agencyProposals.length,
-      approvedProposals: approvedProposals.length,
-      totalRevenue,
-      paidRevenue,
-      commission,
-    };
-  }) || [];
+      return {
+        id: agency.id,
+        name: agency.name,
+        is_active: agency.is_active,
+        commission_rate: agency.commission_rate,
+        totalRequests: agencyRequests.length,
+        completedRequests,
+        totalProposals: agencyProposals.length,
+        approvedProposals: approvedProposals.length,
+        totalRevenue,
+        paidRevenue,
+        commission,
+      };
+    }) || [];
+
+    // Add Guatá own-operation row
+    const guataRequests = requests?.filter(r => r.assigned_agency_id === null) || [];
+    const guataProposals = proposals?.filter(p => p.agency_id === null) || [];
+    const guataApproved = guataProposals.filter(p => p.is_approved);
+    const guataRevenue = guataApproved.reduce((sum, p) => sum + (p.total_price || 0), 0);
+    const guataPaid = guataProposals.filter(p => p.payment_status === 'paid');
+    const guataPaidRevenue = guataPaid.reduce((sum, p) => sum + (p.total_price || 0), 0);
+    const guataCompleted = guataRequests.filter(r => r.status === 'completed').length;
+
+    rows.unshift({
+      id: '__guata__',
+      name: 'Guatá (operação própria)',
+      is_active: true,
+      commission_rate: 0,
+      totalRequests: guataRequests.length,
+      completedRequests: guataCompleted,
+      totalProposals: guataProposals.length,
+      approvedProposals: guataApproved.length,
+      totalRevenue: guataRevenue,
+      paidRevenue: guataPaidRevenue,
+      commission: 0,
+    });
+
+    return rows;
+  })();
 
   const totals = {
     requests: agencyReport.reduce((s, a) => s + a.totalRequests, 0),

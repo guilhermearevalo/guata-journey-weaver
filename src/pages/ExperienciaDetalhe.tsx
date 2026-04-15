@@ -124,16 +124,23 @@ export default function ExperienciaDetalhe() {
         </div>
 
         {/* Hero Image */}
-        <div className="relative mb-8 aspect-[21/9] overflow-hidden rounded-xl">
-          <img
-            src={experience.cover_image || '/placeholder.svg'}
-            alt={experience.title}
-            className="h-full w-full object-cover"
-          />
-          <Badge className="absolute left-4 top-4 bg-primary text-lg px-4 py-1">
+        {experience.cover_image && (
+          <div className="relative mb-8 aspect-[16/7] max-h-[400px] overflow-hidden rounded-xl">
+            <img
+              src={experience.cover_image}
+              alt={experience.title}
+              className="h-full w-full object-cover"
+            />
+            <Badge className="absolute left-4 top-4 bg-primary text-lg px-4 py-1">
+              {typeLabels[experience.experience_type] || experience.experience_type}
+            </Badge>
+          </div>
+        )}
+        {!experience.cover_image && (
+          <Badge className="mb-4 bg-primary text-lg px-4 py-1">
             {typeLabels[experience.experience_type] || experience.experience_type}
           </Badge>
-        </div>
+        )}
 
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Content */}
@@ -167,7 +174,7 @@ export default function ExperienciaDetalhe() {
 
             {/* Tabs */}
             <Tabs defaultValue="description" className="mt-8">
-              <TabsList className="w-full justify-start">
+              <TabsList className="w-full justify-center">
                 <TabsTrigger value="description">Descrição</TabsTrigger>
                 {itinerary.length > 0 && (
                   <TabsTrigger value="itinerary">Itinerário</TabsTrigger>

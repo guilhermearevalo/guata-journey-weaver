@@ -32,6 +32,7 @@ export default function AdminProposta() {
   const [agencyId, setAgencyId] = useState<string>('none');
   const [paymentEnabled, setPaymentEnabled] = useState(false);
   const [accessCode, setAccessCode] = useState('');
+  const [manualPaymentLink, setManualPaymentLink] = useState('');
   const [shareLoading, setShareLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
@@ -82,11 +83,14 @@ export default function AdminProposta() {
       setAgencyId(existingProposal.agency_id || 'none');
       setPaymentEnabled((existingProposal as any).payment_enabled || false);
       setAccessCode((existingProposal as any).access_code || '');
+      const pl = existingProposal.payment_links as Record<string, any> | null;
+      setManualPaymentLink(pl?.manual_link || '');
     }
   }, [existingProposal]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const existingPaymentLinks = (existingProposal?.payment_links as Record<string, any>) || {};
       const payload = {
         request_id: requestId!,
         title,
@@ -96,6 +100,7 @@ export default function AdminProposta() {
         payment_status: paymentStatus,
         payment_enabled: paymentEnabled,
         access_code: accessCode.trim() || null,
+        payment_links: { ...existingPaymentLinks, manual_link: manualPaymentLink.trim() || null },
         created_by: user?.id,
         agency_id: agencyId === 'none' ? null : agencyId,
       } as any;
@@ -233,6 +238,18 @@ export default function AdminProposta() {
               </p>
             </div>
             <Switch checked={paymentEnabled} onCheckedChange={setPaymentEnabled} />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Link de Pagamento Manual (PIX, PagSeguro, etc.)</Label>
+            <Input
+              value={manualPaymentLink}
+              onChange={(e) => setManualPaymentLink(e.target.value)}
+              placeholder="https://pag.ae/exemplo ou chave PIX"
+            />
+            <p className="text-xs text-muted-foreground">
+              Link alternativo ao Stripe. Será exibido na proposta pública para o cliente.
+            </p>
           </div>
 
           <div className="space-y-2">
