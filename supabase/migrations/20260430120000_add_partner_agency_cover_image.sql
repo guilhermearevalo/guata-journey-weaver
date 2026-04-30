@@ -1,18 +1,9 @@
 ALTER TABLE public.partner_agencies
 ADD COLUMN IF NOT EXISTS cover_image_url TEXT;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'partner_agencies'
-      AND policyname = 'Anyone can view active agency branding'
-  ) THEN
-    CREATE POLICY "Anyone can view active agency branding"
-    ON public.partner_agencies
-    FOR SELECT
-    TO anon, authenticated
-    USING (is_active = true);
-  END IF;
-END $$;
+CREATE OR REPLACE VIEW public.partner_agency_branding AS
+SELECT id, name, logo_url, cover_image_url
+FROM public.partner_agencies
+WHERE is_active = true;
+
+GRANT SELECT ON public.partner_agency_branding TO anon, authenticated;
