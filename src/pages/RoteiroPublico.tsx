@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { MapPin, Calendar, DollarSign, Printer, Lock } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, Printer, Lock, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import DocumentsChecklist from '@/components/itinerary/DocumentsChecklist';
 import { useState } from 'react';
@@ -17,6 +17,7 @@ interface Activity {
   estimated_cost: number;
   time_slot: string;
   image_url?: string;
+  maps_url?: string;
 }
 
 interface ItineraryDay {
@@ -47,7 +48,7 @@ export default function RoteiroPublico() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('proposals')
-        .select('id, title, itinerary, documents_checklist, share_token, travel_requests!inner(destination, travel_dates, travelers_count)')
+        .select('id, title, itinerary, documents_checklist, share_token, agency_id, partner_agencies(name, logo_url, cover_image_url), travel_requests!inner(destination, travel_dates, travelers_count)')
         .eq('share_token', token!)
         .maybeSingle();
       
@@ -87,6 +88,10 @@ export default function RoteiroPublico() {
   };
 
   const totalCost = itinerary.reduce((sum, day) => sum + day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0), 0);
+  const agency = (proposal as any)?.partner_agencies as { name?: string; logo_url?: string | null; cover_image_url?: string | null } | null;
+  const firstActivityImage = itinerary.flatMap(day => day.activities).find(activity => activity.image_url)?.image_url;
+  const coverImage = agency?.cover_image_url || firstActivityImage;
+  const brandName = agency?.name || 'Guatá Viagens';
 
   if (isLoading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -154,13 +159,32 @@ export default function RoteiroPublico() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+    <div className="min-h-screen bg-muted/20">
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 print:py-0">
         {/* Header */}
-        <div className="flex items-start justify-between print:flex-col print:gap-2">
-          <div>
-            <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Roteiro de Viagem</p>
-            <h1 className="text-3xl font-bold mt-1">{request?.destination || proposal.title}</h1>
+        <div className="overflow-hidden rounded-lg border bg-background shadow-sm print:rounded-none print:border-0 print:shadow-none">
+          {coverImage && (
+            <div className="h-44 w-full overflow-hidden print:h-32">
+              <img src={coverImage} alt={request?.destination || proposal.title} className="h-full w-full object-cover" />
+            </div>
+          )}
+          <div className="flex items-start justify-between gap-4 p-5 print:p-4 print:flex-col print:gap-2">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                {agency?.logo_url ? (
+                  <img src={agency.logo_url} alt={`Logo ${brandName}`} className="h-12 max-w-36 object-contain" />
+                ) : (
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">G</div>
+                )}
+                <div>
+                  <p className="text-xs font-medium uppercase text-muted-foreground">Roteiro preparado por</p>
+                  <p className="font-medium">{brandName}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Roteiro de Viagem</p>
+                <h1 className="font-display text-3xl font-bold mt-1">{request?.destination || proposal.title}</h1>
+              </div>
             <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
               {travelDates?.start && (
                 <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{formatDate(travelDates.start)} — {formatDate(travelDates.end)}</span>
@@ -179,6 +203,7 @@ export default function RoteiroPublico() {
               <Printer className="mr-2 h-4 w-4" />Imprimir
             </Button>
           </div>
+          </div>
         </div>
 
         {/* Timeline */}
@@ -191,29 +216,38 @@ export default function RoteiroPublico() {
               return (
                 <div key={day.day} className="relative pl-16">
                   <div className="absolute left-3 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">{day.day}</div>
-                  <Card>
+                  <Card className="overflow-hidden bg-background">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">Dia {day.day}</CardTitle>
+                        <CardTitle className="font-display text-xl">Dia {day.day}</CardTitle>
                         <span className="text-sm text-muted-foreground">R$ {dayCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-2">
+                    <CardContent className="space-y-4">
                       {sorted.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Sem atividades planejadas</p>}
                       {sorted.map((activity, actIdx) => (
-                        <div key={actIdx} className="rounded-lg border p-3 space-y-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1">
+                        <div key={actIdx} className="overflow-hidden rounded-lg border bg-card">
+                          {activity.image_url && (
+                            <div className="h-48 w-full overflow-hidden sm:h-56">
+                              <img src={activity.image_url} alt={activity.name} className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          <div className="flex items-start justify-between gap-3 p-4">
+                            <div className="flex-1 space-y-3">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-medium text-sm">{activity.name}</span>
+                                <span className="font-display text-lg font-semibold">{activity.name}</span>
                                 <Badge variant="outline" className="text-xs">{activity.time_slot}</Badge>
                                 <Badge className={`text-xs ${categoryColors[activity.category] || 'bg-muted text-muted-foreground'}`}>{activity.category}</Badge>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
-                              {activity.image_url && (
-                                <div className="mt-2 rounded-lg overflow-hidden border h-32 w-full">
-                                  <img src={activity.image_url} alt={activity.name} className="w-full h-full object-cover" />
-                                </div>
+                              {activity.description && (
+                                <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{activity.description}</p>
+                              )}
+                              {activity.maps_url && (
+                                <Button variant="outline" size="sm" asChild className="print:hidden">
+                                  <a href={activity.maps_url} target="_blank" rel="noopener noreferrer">
+                                    <MapPin className="mr-2 h-4 w-4" /> Rota até aqui <ExternalLink className="ml-2 h-3 w-3" />
+                                  </a>
+                                </Button>
                               )}
                             </div>
                             <span className="text-sm font-medium shrink-0">R$ {(activity.estimated_cost || 0).toLocaleString('pt-BR')}</span>
@@ -242,7 +276,8 @@ export default function RoteiroPublico() {
 
         {/* Footer */}
         <div className="text-center text-xs text-muted-foreground pt-8 border-t print:block">
-          <p>Roteiro gerado por <strong>Guata Viagens</strong></p>
+          {agency?.logo_url && <img src={agency.logo_url} alt={`Logo ${brandName}`} className="mx-auto mb-3 h-10 max-w-32 object-contain" />}
+          <p>Roteiro preparado por <strong>{brandName}</strong></p>
         </div>
       </div>
     </div>
