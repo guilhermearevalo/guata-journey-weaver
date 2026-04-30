@@ -13,8 +13,8 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil, ChevronUp, ChevronDown, Save, FolderOpen, MapPin } from 'lucide-react';
 import ActivityFormDialog from './ActivityFormDialog';
-import DocumentsChecklist from './DocumentsChecklist';
 import TemplateDialog from './TemplateDialog';
+import TravelDocumentsVault, { TravelDocument } from './TravelDocumentsVault';
 
 interface Activity {
   name: string;
@@ -30,12 +30,6 @@ interface Activity {
 interface ItineraryDay {
   day: number;
   activities: Activity[];
-}
-
-interface DocumentItem {
-  name: string;
-  checked: boolean;
-  notes?: string;
 }
 
 const categoryColors: Record<string, string> = {
@@ -98,9 +92,19 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     ? (proposal.itinerary as unknown as ItineraryDay[])
     : [];
 
-  const documentsChecklist: DocumentItem[] = Array.isArray((proposal as any)?.documents_checklist)
-    ? ((proposal as any).documents_checklist as DocumentItem[])
-    : [];
+  const { data: travelDocuments = [] } = useQuery({
+    queryKey: ['travel-documents', proposal?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('travel_documents' as any)
+        .select('*')
+        .eq('proposal_id', proposal!.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as unknown as TravelDocument[];
+    },
+    enabled: !!proposal?.id,
+  });
 
   const travelDates = request?.travel_dates;
   const totalDays = travelDates?.start && travelDates?.end
@@ -113,18 +117,6 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
       const { error } = await supabase
         .from('proposals')
         .update({ itinerary: JSON.parse(JSON.stringify(newItinerary)) })
-        .eq('id', proposal.id);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] }),
-  });
-
-  const saveDocuments = useMutation({
-    mutationFn: async (items: DocumentItem[]) => {
-      if (!proposal?.id) throw new Error('Sem proposta');
-      const { error } = await supabase
-        .from('proposals')
-        .update({ documents_checklist: JSON.parse(JSON.stringify(items)) } as any)
         .eq('id', proposal.id);
       if (error) throw error;
     },
@@ -454,10 +446,13 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         </Card>
       )}
 
-      {/* Documents Checklist */}
-      <DocumentsChecklist
-        items={documentsChecklist}
-        onChange={(items) => saveDocuments.mutate(items)}
+      {/* Travel Documents */}
+      <TravelDocumentsVault
+        proposalId={proposal.id}
+        requestId={proposal.request_id}
+        documents={travelDocuments}
+        queryKey={['travel-documents', proposal.id]}
+        mode="manage"
       />
 
       {/* Activity Form Dialog */}

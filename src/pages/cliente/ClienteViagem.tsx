@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Calendar, Users, MapPin, DollarSign, CheckCircle, Clock, FileText, CreditCard, QrCode, Route } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import TravelDocumentsVault, { TravelDocument } from '@/components/itinerary/TravelDocumentsVault';
 
 const statusLabels: Record<string, string> = {
   pending: 'Pendente',
@@ -71,6 +72,22 @@ export default function ClienteViagem() {
       return data;
     },
     enabled: !!id,
+  });
+
+  const approvedProposal = proposals?.find(proposal => proposal.is_approved) || proposals?.[0];
+
+  const { data: travelDocuments = [] } = useQuery({
+    queryKey: ['client-travel-documents', approvedProposal?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('travel_documents' as any)
+        .select('*')
+        .eq('proposal_id', approvedProposal!.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as unknown as TravelDocument[];
+    },
+    enabled: !!approvedProposal?.id,
   });
 
   const approveProposal = useMutation({
@@ -158,6 +175,16 @@ export default function ClienteViagem() {
           <><Separator /><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Pedidos especiais</p><p className="mt-1">{request.special_requests}</p></CardContent></>
         )}
       </Card>
+
+      {approvedProposal && (
+        <TravelDocumentsVault
+          proposalId={approvedProposal.id}
+          requestId={request.id}
+          documents={travelDocuments}
+          queryKey={['client-travel-documents', approvedProposal.id]}
+          mode="client"
+        />
+      )}
 
       {/* Proposals */}
       <Card>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Calendar, DollarSign, Printer, Lock, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import DocumentsChecklist from '@/components/itinerary/DocumentsChecklist';
+import TravelDocumentsVault, { TravelDocument } from '@/components/itinerary/TravelDocumentsVault';
 import { useState } from 'react';
 
 interface Activity {
@@ -48,7 +49,7 @@ export default function RoteiroPublico() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('proposals')
-        .select('id, title, itinerary, documents_checklist, share_token, agency_id, travel_requests!inner(destination, travel_dates, travelers_count)')
+        .select('id, request_id, title, itinerary, documents_checklist, share_token, agency_id, travel_requests!inner(destination, travel_dates, travelers_count)')
         .eq('share_token', token!)
         .maybeSingle();
       
@@ -75,6 +76,21 @@ export default function RoteiroPublico() {
     enabled: !!token,
   });
 
+  const { data: travelDocuments = [] } = useQuery({
+    queryKey: ['public-travel-documents', proposal?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('travel_documents' as any)
+        .select('*')
+        .eq('proposal_id', proposal!.id)
+        .eq('visible_in_public', true)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as unknown as TravelDocument[];
+    },
+    enabled: !!proposal?.id,
+  });
+
   const request = proposal?.travel_requests as unknown as {
     destination: string;
     travel_dates: { start?: string; end?: string } | null;
@@ -85,7 +101,7 @@ export default function RoteiroPublico() {
     ? (proposal.itinerary as unknown as ItineraryDay[])
     : [];
 
-  const documentsChecklist = Array.isArray((proposal as any)?.documents_checklist)
+  const legacyDocumentsChecklist = Array.isArray((proposal as any)?.documents_checklist)
     ? ((proposal as any).documents_checklist as { name: string; checked: boolean; notes?: string }[])
     : [];
 
@@ -214,6 +230,17 @@ export default function RoteiroPublico() {
           </div>
         </div>
 
+        {travelDocuments.length > 0 && (
+          <TravelDocumentsVault
+            proposalId={proposal.id}
+            requestId={proposal.request_id}
+            documents={travelDocuments}
+            queryKey={['public-travel-documents', proposal.id]}
+            mode="public"
+            summaryOnly
+          />
+        )}
+
         {/* Timeline */}
         <div className="relative">
           {itinerary.length > 0 && <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />}
@@ -278,8 +305,18 @@ export default function RoteiroPublico() {
         )}
 
         {/* Documents Checklist */}
-        {documentsChecklist.length > 0 && (
-          <DocumentsChecklist items={documentsChecklist} onChange={() => {}} readOnly />
+        {travelDocuments.length > 0 && (
+          <TravelDocumentsVault
+            proposalId={proposal.id}
+            requestId={proposal.request_id}
+            documents={travelDocuments}
+            queryKey={['public-travel-documents', proposal.id]}
+            mode="public"
+          />
+        )}
+
+        {legacyDocumentsChecklist.length > 0 && travelDocuments.length === 0 && (
+          <DocumentsChecklist items={legacyDocumentsChecklist} onChange={() => {}} readOnly />
         )}
 
         {/* Footer */}

@@ -644,6 +644,57 @@ export type Database = {
         }
         Relationships: []
       }
+      travel_documents: {
+        Row: {
+          category: string
+          created_at: string
+          document_type: string
+          file_path: string | null
+          file_url: string | null
+          id: string
+          notes: string | null
+          proposal_id: string
+          request_id: string
+          status: string
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          visible_in_public: boolean
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          document_type?: string
+          file_path?: string | null
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          proposal_id: string
+          request_id: string
+          status?: string
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          visible_in_public?: boolean
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          document_type?: string
+          file_path?: string | null
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          proposal_id?: string
+          request_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          visible_in_public?: boolean
+        }
+        Relationships: []
+      }
       travel_requests: {
         Row: {
           assigned_agency_id: string | null
