@@ -176,6 +176,16 @@ export default function ClienteViagem() {
         )}
       </Card>
 
+      {approvedProposal && (
+        <TravelDocumentsVault
+          proposalId={approvedProposal.id}
+          requestId={request.id}
+          documents={travelDocuments}
+          queryKey={['client-travel-documents', approvedProposal.id]}
+          mode="client"
+        />
+      )}
+
       {/* Proposals */}
       <Card>
         <CardHeader>
