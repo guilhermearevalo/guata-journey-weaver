@@ -48,7 +48,7 @@ export default function RoteiroPublico() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('proposals')
-        .select('id, title, itinerary, documents_checklist, share_token, agency_id, partner_agencies(name, logo_url, cover_image_url), travel_requests!inner(destination, travel_dates, travelers_count)')
+        .select('id, title, itinerary, documents_checklist, share_token, agency_id, travel_requests!inner(destination, travel_dates, travelers_count)')
         .eq('share_token', token!)
         .maybeSingle();
       
@@ -60,6 +60,14 @@ export default function RoteiroPublico() {
           .eq('id', data.id)
           .maybeSingle();
         (data as any)._has_access_code = !!codeCheck?.access_code;
+        if (data.agency_id) {
+          const { data: branding } = await supabase
+            .from('partner_agency_branding' as any)
+            .select('name, logo_url, cover_image_url')
+            .eq('id', data.agency_id)
+            .maybeSingle();
+          (data as any).agency_branding = branding;
+        }
       }
       if (error) throw error;
       return data;
@@ -88,7 +96,7 @@ export default function RoteiroPublico() {
   };
 
   const totalCost = itinerary.reduce((sum, day) => sum + day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0), 0);
-  const agency = (proposal as any)?.partner_agencies as { name?: string; logo_url?: string | null; cover_image_url?: string | null } | null;
+  const agency = (proposal as any)?.agency_branding as { name?: string; logo_url?: string | null; cover_image_url?: string | null } | null;
   const firstActivityImage = itinerary.flatMap(day => day.activities).find(activity => activity.image_url)?.image_url;
   const coverImage = agency?.cover_image_url || firstActivityImage;
   const brandName = agency?.name || 'Guatá Viagens';
