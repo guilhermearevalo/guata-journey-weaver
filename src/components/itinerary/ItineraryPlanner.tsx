@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil, ChevronUp, ChevronDown, Save, FolderOpen } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil, ChevronUp, ChevronDown, Save, FolderOpen, MapPin } from 'lucide-react';
 import ActivityFormDialog from './ActivityFormDialog';
 import DocumentsChecklist from './DocumentsChecklist';
 import TemplateDialog from './TemplateDialog';
@@ -24,6 +24,7 @@ interface Activity {
   time_slot: string;
   is_suggestion?: boolean;
   image_url?: string;
+  maps_url?: string;
 }
 
 interface ItineraryDay {
@@ -386,6 +387,11 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                                   <div className="mt-2 rounded-md overflow-hidden border h-24 w-40">
                                     <img src={activity.image_url} alt={activity.name} className="w-full h-full object-cover" />
                                   </div>
+                                )}
+                                {activity.maps_url && (
+                                  <a href={activity.maps_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline print:hidden">
+                                    <MapPin className="h-3 w-3" /> Rota no Google Maps
+                                  </a>
                                 )}
                               </div>
                             </div>

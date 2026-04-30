@@ -15,6 +15,7 @@ interface Activity {
   time_slot: string;
   is_suggestion?: boolean;
   image_url?: string;
+  maps_url?: string;
 }
 
 interface ActivityFormDialogProps {
@@ -47,6 +48,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
   const [timeSlot, setTimeSlot] = useState('manhã');
   const [estimatedCost, setEstimatedCost] = useState('0');
   const [imageUrl, setImageUrl] = useState('');
+  const [mapsUrl, setMapsUrl] = useState('');
 
   useEffect(() => {
     if (initialData) {
@@ -56,6 +58,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       setTimeSlot(initialData.time_slot);
       setEstimatedCost(String(initialData.estimated_cost || 0));
       setImageUrl(initialData.image_url || '');
+      setMapsUrl(initialData.maps_url || '');
     } else {
       setName('');
       setDescription('');
@@ -63,6 +66,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       setTimeSlot('manhã');
       setEstimatedCost('0');
       setImageUrl('');
+      setMapsUrl('');
     }
   }, [initialData, open]);
 
@@ -76,6 +80,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       estimated_cost: parseFloat(estimatedCost) || 0,
       is_suggestion: false,
       image_url: imageUrl.trim() || undefined,
+      maps_url: mapsUrl.trim() || undefined,
     });
     onOpenChange(false);
   };
@@ -93,7 +98,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
           </div>
           <div className="space-y-2">
             <Label htmlFor="act-desc">Descrição</Label>
-            <Textarea id="act-desc" value={description} onChange={e => setDescription(e.target.value)} placeholder="Detalhes da atividade..." rows={2} />
+            <Textarea id="act-desc" value={description} onChange={e => setDescription(e.target.value)} placeholder="Detalhes da atividade, recomendações, horários e observações para o cliente..." rows={4} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -118,6 +123,16 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
           <div className="space-y-2">
             <Label htmlFor="act-cost">Custo Estimado (R$)</Label>
             <Input id="act-cost" type="number" min="0" step="0.01" value={estimatedCost} onChange={e => setEstimatedCost(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="act-maps">Rota no Google Maps</Label>
+            <Input
+              id="act-maps"
+              value={mapsUrl}
+              onChange={e => setMapsUrl(e.target.value)}
+              placeholder="https://maps.google.com/..."
+            />
+            <p className="text-xs text-muted-foreground">Cole o link da localização ou rota para aparecer no roteiro do cliente.</p>
           </div>
           {/* Image URL */}
           <div className="space-y-2">
