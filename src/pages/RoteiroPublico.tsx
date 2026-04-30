@@ -230,6 +230,17 @@ export default function RoteiroPublico() {
           </div>
         </div>
 
+        {travelDocuments.length > 0 && (
+          <TravelDocumentsVault
+            proposalId={proposal.id}
+            requestId={proposal.request_id}
+            documents={travelDocuments}
+            queryKey={['public-travel-documents', proposal.id]}
+            mode="public"
+            summaryOnly
+          />
+        )}
+
         {/* Timeline */}
         <div className="relative">
           {itinerary.length > 0 && <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />}
@@ -294,8 +305,18 @@ export default function RoteiroPublico() {
         )}
 
         {/* Documents Checklist */}
-        {documentsChecklist.length > 0 && (
-          <DocumentsChecklist items={documentsChecklist} onChange={() => {}} readOnly />
+        {travelDocuments.length > 0 && (
+          <TravelDocumentsVault
+            proposalId={proposal.id}
+            requestId={proposal.request_id}
+            documents={travelDocuments}
+            queryKey={['public-travel-documents', proposal.id]}
+            mode="public"
+          />
+        )}
+
+        {legacyDocumentsChecklist.length > 0 && travelDocuments.length === 0 && (
+          <DocumentsChecklist items={legacyDocumentsChecklist} onChange={() => {}} readOnly />
         )}
 
         {/* Footer */}
