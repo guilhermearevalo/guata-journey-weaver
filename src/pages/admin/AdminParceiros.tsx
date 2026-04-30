@@ -490,6 +490,55 @@ const AdminParceiros = () => {
                 </div>
               )}
 
+              <div className="rounded-lg border p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-primary" />
+                  <p className="font-medium">Identidade visual</p>
+                </div>
+                <form
+                  className="space-y-3"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const form = event.currentTarget;
+                    const logo = (form.elements.namedItem('logo_url') as HTMLInputElement).value.trim();
+                    const cover = (form.elements.namedItem('cover_image_url') as HTMLInputElement).value.trim();
+                    updateBrandingMutation.mutate({
+                      id: selectedAgency.id,
+                      logo_url: logo || null,
+                      cover_image_url: cover || null,
+                    });
+                  }}
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="agency-logo-url">Logo da agência</Label>
+                    <Input id="agency-logo-url" name="logo_url" defaultValue={selectedAgency.logo_url || ''} placeholder="https://exemplo.com/logo.png" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="agency-cover-url">Imagem de fundo/capa</Label>
+                    <Input id="agency-cover-url" name="cover_image_url" defaultValue={selectedAgency.cover_image_url || ''} placeholder="https://exemplo.com/capa.jpg" />
+                  </div>
+                  {(selectedAgency.logo_url || selectedAgency.cover_image_url) && (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {selectedAgency.logo_url && (
+                        <div className="rounded-md border bg-muted/30 p-3">
+                          <p className="mb-2 text-xs text-muted-foreground">Preview da logo</p>
+                          <img src={selectedAgency.logo_url} alt={`Logo ${selectedAgency.name}`} className="h-14 max-w-full object-contain" />
+                        </div>
+                      )}
+                      {selectedAgency.cover_image_url && (
+                        <div className="overflow-hidden rounded-md border bg-muted/30">
+                          <img src={selectedAgency.cover_image_url} alt={`Capa ${selectedAgency.name}`} className="h-24 w-full object-cover" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <Button type="submit" size="sm" disabled={updateBrandingMutation.isPending}>
+                    {updateBrandingMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Salvar visual
+                  </Button>
+                </form>
+              </div>
+
               {selectedAgency.specialties && selectedAgency.specialties.length > 0 && (
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Especialidades</p>
