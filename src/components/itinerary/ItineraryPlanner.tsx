@@ -446,10 +446,13 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         </Card>
       )}
 
-      {/* Documents Checklist */}
-      <DocumentsChecklist
-        items={documentsChecklist}
-        onChange={(items) => saveDocuments.mutate(items)}
+      {/* Travel Documents */}
+      <TravelDocumentsVault
+        proposalId={proposal.id}
+        requestId={proposal.request_id}
+        documents={travelDocuments}
+        queryKey={['travel-documents', proposal.id]}
+        mode="manage"
       />
 
       {/* Activity Form Dialog */}
