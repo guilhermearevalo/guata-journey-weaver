@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Building2, Mail, Phone, MapPin, Check, X, Eye, MoreHorizontal, UserPlus, Copy, Loader2 } from 'lucide-react';
+import { Search, Building2, Mail, Phone, MapPin, Check, X, Eye, MoreHorizontal, UserPlus, Copy, Loader2, Save, Image as ImageIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +32,8 @@ interface PartnerAgency {
   specialties: string[] | null;
   regions: string[] | null;
   description: string | null;
+  logo_url: string | null;
+  cover_image_url?: string | null;
 }
 
 const AdminParceiros = () => {
@@ -122,6 +124,25 @@ const AdminParceiros = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partner-agencies'] });
       toast({ title: 'Agência atualizada!' });
+    },
+  });
+
+  const updateBrandingMutation = useMutation({
+    mutationFn: async ({ id, logo_url, cover_image_url }: { id: string; logo_url: string | null; cover_image_url: string | null }) => {
+      const { error } = await supabase
+        .from('partner_agencies')
+        .update({ logo_url, cover_image_url } as any)
+        .eq('id', id);
+      if (error) throw error;
+      return { logo_url, cover_image_url };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['partner-agencies'] });
+      setSelectedAgency((agency) => agency ? { ...agency, ...data } : agency);
+      toast({ title: 'Identidade visual salva!' });
+    },
+    onError: () => {
+      toast({ title: 'Erro ao salvar identidade visual', variant: 'destructive' });
     },
   });
 
