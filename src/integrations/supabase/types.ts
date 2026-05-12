@@ -180,6 +180,74 @@ export type Database = {
           },
         ]
       }
+      completed_trips: {
+        Row: {
+          agency_id: string | null
+          client_name: string | null
+          client_photo: string | null
+          client_quote: string | null
+          cover_image: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          destination: string
+          display_order: number
+          gallery: string[] | null
+          id: string
+          is_published: boolean
+          title: string
+          trip_month: number | null
+          trip_year: number | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          client_name?: string | null
+          client_photo?: string | null
+          client_quote?: string | null
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          destination: string
+          display_order?: number
+          gallery?: string[] | null
+          id?: string
+          is_published?: boolean
+          title: string
+          trip_month?: number | null
+          trip_year?: number | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          client_name?: string | null
+          client_photo?: string | null
+          client_quote?: string | null
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          destination?: string
+          display_order?: number
+          gallery?: string[] | null
+          id?: string
+          is_published?: boolean
+          title?: string
+          trip_month?: number | null
+          trip_year?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "completed_trips_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "partner_agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       experiences: {
         Row: {
           cover_image: string | null
