@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, MessageCircle, ArrowRight } from 'lucide-react';
+import { Search, MessageCircle, ArrowRight, Star, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -20,7 +20,7 @@ interface WhatsAppConfig {
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop';
 
-const QUICK_FILTERS = ['All Inclusive', 'Nacional', 'Internacional', 'Aventura', 'Praia'];
+const QUICK_FILTERS = ['Pantanal', 'Bonito', 'Nordeste', 'Europa', 'All Inclusive'];
 
 export function HeroSection() {
   const [destination, setDestination] = useState('');
@@ -87,7 +87,7 @@ export function HeroSection() {
     : null;
 
   return (
-    <section className="relative min-h-[92vh] overflow-hidden">
+    <section className="relative min-h-[94vh] overflow-hidden">
       {/* Background carousel */}
       {hasMultipleSlides ? (
         <div className="absolute inset-0" ref={emblaRef}>
@@ -113,35 +113,40 @@ export function HeroSection() {
         </div>
       )}
 
-      {/* Lighter gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/25 to-background/90" />
+      {/* Editorial gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-black/20" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" style={{ height: '40%', top: 'auto', bottom: 0 }} />
 
       {/* Content */}
-      <div className="container relative mx-auto flex min-h-[92vh] flex-col items-center justify-center px-4 py-20 text-center lg:px-8">
-        <div className="animate-fade-in space-y-5">
+      <div className="container relative mx-auto flex min-h-[94vh] flex-col items-center justify-center px-4 py-24 text-center lg:px-8">
+        {/* Trust badge above title */}
+        <div className="mb-6 inline-flex animate-fade-in items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-medium text-white backdrop-blur-md">
+          <ShieldCheck className="h-3.5 w-3.5 text-amber-300" />
+          <span>Cadastur · Receptivo MS · Atendimento humano</span>
+        </div>
+
+        <div className="animate-fade-in space-y-6">
           {/* Main title */}
-          <h1 className="font-display text-4xl font-extrabold leading-[1.1] text-white md:text-6xl lg:text-7xl xl:text-8xl">
-            Realize sua próxima
-            <span className="block text-amber-300 hero-text-shadow">aventura</span>
-            <span className="block text-3xl font-bold text-white/90 md:text-4xl lg:text-5xl">
-              com a <span className="text-amber-300 hero-text-shadow">Guatá</span>
+          <h1 className="font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-white md:text-7xl lg:text-8xl">
+            Do <span className="italic text-amber-300 hero-text-shadow">Pantanal</span>
+            <br className="hidden md:block" />
+            <span className="block">ao mundo,</span>
+            <span className="block bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 bg-clip-text text-transparent">
+              do seu jeito.
             </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="mx-auto max-w-xl text-lg font-medium text-white/90 md:text-xl">
-            Os melhores destinos com atendimento personalizado
-            <br className="hidden md:block" />
-            <span className="inline-flex items-center gap-1.5">
-              + Suporte no <MessageCircle className="inline h-4 w-4 text-green-400" /> WhatsApp
-            </span>
+          <p className="mx-auto max-w-2xl text-lg font-medium text-white/95 md:text-xl">
+            Receptivo nascido em Mato Grosso do Sul. Organizamos viagens completas pelo Brasil e exterior,
+            com curadoria e parceiros locais credenciados.
           </p>
         </div>
 
-        {/* Simplified search bar */}
+        {/* Search bar */}
         <form
           onSubmit={handleSearch}
-          className="mt-10 w-full max-w-2xl animate-slide-up rounded-2xl bg-card/95 p-3 shadow-2xl backdrop-blur-sm md:p-4"
+          className="mt-10 w-full max-w-2xl animate-slide-up rounded-2xl border border-white/20 bg-card/95 p-3 shadow-2xl backdrop-blur-sm md:p-4"
           style={{ animationDelay: '0.2s' }}
         >
           <div className="flex gap-2">
@@ -149,10 +154,10 @@ export function HeroSection() {
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Para onde você quer ir?"
+                placeholder="Para onde você quer ir? Ex: Bonito, Maldivas, Patagônia..."
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                className="h-12 pl-10 text-base md:text-lg"
+                className="h-12 border-0 pl-10 text-base shadow-none focus-visible:ring-0 md:text-lg"
               />
             </div>
             <Button type="submit" size="lg" className="h-12 px-6 text-base font-semibold">
@@ -177,15 +182,16 @@ export function HeroSection() {
 
         {/* CTA buttons */}
         <div
-          className="mt-6 flex flex-wrap items-center justify-center gap-3 animate-slide-up"
+          className="mt-7 flex flex-wrap items-center justify-center gap-3 animate-slide-up"
           style={{ animationDelay: '0.35s' }}
         >
           <Button
             size="lg"
-            className="h-12 rounded-full px-8 text-base font-semibold shadow-lg"
-            onClick={() => navigate('/experiencias')}
+            className="h-12 rounded-full px-8 text-base font-semibold shadow-xl"
+            onClick={() => navigate('/viagem-personalizada')}
           >
-            Ver Experiências
+            <Sparkles className="mr-2 h-4 w-4" />
+            Quero um roteiro personalizado
             <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
 
@@ -193,7 +199,7 @@ export function HeroSection() {
             <Button
               variant="outline"
               size="lg"
-              className="h-12 rounded-full border-white/40 bg-white/20 px-8 text-base font-semibold text-white backdrop-blur-md hover:bg-white/30 hover:text-white"
+              className="h-12 rounded-full border-white/40 bg-white/15 px-8 text-base font-semibold text-white backdrop-blur-md hover:bg-white/30 hover:text-white"
               asChild
             >
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
@@ -204,6 +210,24 @@ export function HeroSection() {
           )}
         </div>
 
+        {/* Social proof row */}
+        <div
+          className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-white/90 animate-fade-in"
+          style={{ animationDelay: '0.5s' }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex">
+              {Array(5).fill(0).map((_, i) => (
+                <Star key={i} className="h-4 w-4 fill-amber-300 text-amber-300" />
+              ))}
+            </div>
+            <span className="font-medium">4.9/5 dos viajantes</span>
+          </div>
+          <div className="hidden h-4 w-px bg-white/30 md:block" />
+          <div className="font-medium">+500 viagens realizadas</div>
+          <div className="hidden h-4 w-px bg-white/30 md:block" />
+          <div className="font-medium">Suporte 24h</div>
+        </div>
       </div>
     </section>
   );
