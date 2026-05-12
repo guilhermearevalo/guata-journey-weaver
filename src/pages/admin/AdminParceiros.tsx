@@ -268,13 +268,23 @@ const AdminParceiros = () => {
               {agency.is_external ? 'Remover marca externa' : 'Marcar como externa'}
             </DropdownMenuItem>
             {agency.is_active ? (
-              <DropdownMenuItem
-                onClick={() => setConfirmAction({ type: 'deactivate', agency })}
-                className="text-red-600"
-              >
-                <X className="mr-2 h-4 w-4" />
-                Desativar
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem onClick={() => resetPasswordMutation.mutate({ agency_id: agency.id, mode: 'temporary' })}>
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Gerar nova senha temporária
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => resetPasswordMutation.mutate({ agency_id: agency.id, mode: 'email' })}>
+                  <Send className="mr-2 h-4 w-4" />
+                  Enviar link por e-mail
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setConfirmAction({ type: 'deactivate', agency })}
+                  className="text-red-600"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Desativar
+                </DropdownMenuItem>
+              </>
             ) : (
               <DropdownMenuItem
                 onClick={() => handleApproveWithInvite(agency)}
