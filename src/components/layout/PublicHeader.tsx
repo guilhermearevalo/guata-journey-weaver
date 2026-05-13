@@ -119,28 +119,19 @@ export function PublicHeader() {
       {mobileMenuOpen && (
         <div className="border-t bg-background md:hidden">
           <div className="container mx-auto space-y-4 px-4 py-6">
-            {sections?.featured_experiences !== false && (
-              <Link
-                to="/experiencias"
-                className="block text-sm font-medium text-muted-foreground"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Experiências
-              </Link>
-            )}
+            <Link
+              to="/viagens-realizadas"
+              className="block text-sm font-medium text-muted-foreground"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Viagens Realizadas
+            </Link>
             <Link
               to="/excursoes"
               className="block text-sm font-medium text-muted-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
               Excursões
-            </Link>
-            <Link
-              to="/pacotes"
-              className="block text-sm font-medium text-muted-foreground"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Pacotes
             </Link>
             {sections?.custom_travel_cta !== false && (
               <Link
