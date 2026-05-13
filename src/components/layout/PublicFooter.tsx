@@ -135,8 +135,8 @@ export function PublicFooter() {
                 </Link>
               </li>
               <li>
-                <Link to="/pacotes" className="text-secondary-foreground/80 hover:text-primary">
-                  Pacotes
+                <Link to="/viagens-realizadas" className="text-secondary-foreground/80 hover:text-primary">
+                  Viagens Realizadas
                 </Link>
               </li>
               <li>
