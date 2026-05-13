@@ -12,7 +12,7 @@ import RecuperarSenha from "./pages/RecuperarSenha";
 import Experiencias from "./pages/Experiencias";
 import ExperienciaDetalhe from "./pages/ExperienciaDetalhe";
 import Excursoes from "./pages/Excursoes";
-import Pacotes from "./pages/Pacotes";
+import ViagensRealizadas from "./pages/ViagensRealizadas";
 import ViagemPersonalizada from "./pages/ViagemPersonalizada";
 import Sobre from "./pages/Sobre";
 import FAQ from "./pages/FAQ";
