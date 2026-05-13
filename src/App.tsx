@@ -12,7 +12,7 @@ import RecuperarSenha from "./pages/RecuperarSenha";
 import Experiencias from "./pages/Experiencias";
 import ExperienciaDetalhe from "./pages/ExperienciaDetalhe";
 import Excursoes from "./pages/Excursoes";
-import Pacotes from "./pages/Pacotes";
+import ViagensRealizadas from "./pages/ViagensRealizadas";
 import ViagemPersonalizada from "./pages/ViagemPersonalizada";
 import Sobre from "./pages/Sobre";
 import FAQ from "./pages/FAQ";
@@ -80,7 +80,8 @@ const App = () => (
               <Route path="/experiencias" element={<Experiencias />} />
               <Route path="/experiencias/:id" element={<ExperienciaDetalhe />} />
               <Route path="/excursoes" element={<Excursoes />} />
-              <Route path="/pacotes" element={<Pacotes />} />
+              <Route path="/viagens-realizadas" element={<ViagensRealizadas />} />
+              <Route path="/pacotes" element={<ViagensRealizadas />} />
               <Route path="/viagem-personalizada" element={<ViagemPersonalizada />} />
               <Route path="/sobre" element={<Sobre />} />
               <Route path="/faq" element={<FAQ />} />

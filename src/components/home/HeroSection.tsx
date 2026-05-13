@@ -210,24 +210,6 @@ export function HeroSection() {
           )}
         </div>
 
-        {/* Social proof row */}
-        <div
-          className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-white/90 animate-fade-in"
-          style={{ animationDelay: '0.5s' }}
-        >
-          <div className="flex items-center gap-2">
-            <div className="flex">
-              {Array(5).fill(0).map((_, i) => (
-                <Star key={i} className="h-4 w-4 fill-amber-300 text-amber-300" />
-              ))}
-            </div>
-            <span className="font-medium">4.9/5 dos viajantes</span>
-          </div>
-          <div className="hidden h-4 w-px bg-white/30 md:block" />
-          <div className="font-medium">+500 viagens realizadas</div>
-          <div className="hidden h-4 w-px bg-white/30 md:block" />
-          <div className="font-medium">Suporte 24h</div>
-        </div>
       </div>
     </section>
   );
