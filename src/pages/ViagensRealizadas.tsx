@@ -39,27 +39,24 @@ const ViagensRealizadas = () => {
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-display text-4xl font-bold md:text-5xl">Viagens Realizadas</h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-white/85">
-            Inspire-se em experiências reais que organizamos para nossos viajantes — do Pantanal ao mundo.
+            Histórico real de viagens organizadas pela Guatá e agências parceiras — do Pantanal ao mundo.
           </p>
+
+          <div className="mx-auto mt-8 max-w-xl">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar destinos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-12 rounded-full border-0 bg-white pl-12 text-base text-foreground shadow-xl focus-visible:ring-2 focus-visible:ring-primary"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
       <section className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="rounded-xl border border-dashed bg-muted/30 p-3 text-sm text-muted-foreground">
-            <Camera className="mr-1 inline h-4 w-4" />
-            Histórico real de viagens organizadas pela Guatá e agências parceiras.
-          </div>
-          <div className="relative max-w-md flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar destinos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
 
         {isLoading ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

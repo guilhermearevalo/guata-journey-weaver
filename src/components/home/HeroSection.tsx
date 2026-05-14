@@ -125,22 +125,16 @@ export function HeroSection() {
           <span>Cadastur · Receptivo MS · Atendimento humano</span>
         </div>
 
-        <div className="animate-fade-in space-y-6">
+        <div className="animate-fade-in">
           {/* Main title */}
-          <h1 className="font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-white md:text-7xl lg:text-8xl">
+          <h1 className="font-display text-5xl font-extrabold leading-[1.15] tracking-tight text-white pb-3 md:text-7xl lg:text-8xl">
             Do <span className="italic text-amber-300 hero-text-shadow">Pantanal</span>
             <br className="hidden md:block" />
             <span className="block">ao mundo,</span>
-            <span className="block bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 bg-clip-text text-transparent pb-2">
               do seu jeito.
             </span>
           </h1>
-
-          {/* Subtitle */}
-          <p className="mx-auto max-w-2xl text-lg font-medium text-white/95 md:text-xl">
-            Receptivo nascido em Mato Grosso do Sul. Organizamos viagens completas pelo Brasil e exterior,
-            com curadoria e parceiros locais credenciados.
-          </p>
         </div>
 
         {/* Search bar */}
@@ -197,13 +191,12 @@ export function HeroSection() {
 
           {whatsappUrl && (
             <Button
-              variant="outline"
               size="lg"
-              className="h-12 rounded-full border-white/40 bg-white/15 px-8 text-base font-semibold text-white backdrop-blur-md hover:bg-white/30 hover:text-white"
+              className="h-12 rounded-full bg-[#25D366] px-8 text-base font-semibold text-white shadow-xl hover:bg-[#20BA56]"
               asChild
             >
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="mr-2 h-5 w-5 text-green-400" />
+                <MessageCircle className="mr-2 h-5 w-5" />
                 Falar no WhatsApp
               </a>
             </Button>
