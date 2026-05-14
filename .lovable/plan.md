@@ -1,75 +1,32 @@
-## Posicionamento da Guatá
+## Ajustes solicitados
 
-Vou ajustar a comunicação para refletir: **agência receptiva nascida em Mato Grosso do Sul, mas que organiza viagens para o Brasil e o mundo**. Aplicação:
+### 1. Hero (Home)
+- **"J" cortando em "do seu jeito"**: o problema vem do `leading-[1.05]` muito apertado combinado com a fonte serif itálica em tamanho grande (md:7xl/lg:8xl) — descenders são cortados. Vou aumentar o `leading` para ~1.15 nessa linha e adicionar `pb-2` para dar espaço ao descender do "j".
+- **Subtítulo redundante**: removo o parágrafo "Receptivo nascido em Mato Grosso do Sul..." do Hero (ele continua/aparece na página Sobre e implicitamente no badge "Cadastur · Receptivo MS"). O Hero fica mais limpo: badge + título + busca + CTAs.
+- **Botão "Falar no WhatsApp" transparente demais**: troco de `bg-white/15` (com hover white/30) para um verde sólido WhatsApp (`bg-[#25D366] hover:bg-[#20BA56] text-white`), sem `backdrop-blur`, mantendo o ícone. Fica legível e on-brand.
 
-- Hero: subtítulo passa a citar "do Pantanal ao mundo" (ou similar).
-- Página "Sobre": parágrafo de origem em MS + atuação nacional/internacional.
-- Footer / SEO: meta description ajustada.
+### 2. Página Viagens Realizadas
+- **Caixa "Histórico real..." + busca "Buscar destinos"**: o layout atual (caixa pontilhada bege ao lado do input solto) parece improvisado. Vou reorganizar:
+  - Remover a caixinha tracejada.
+  - Mover a frase "Histórico real de viagens organizadas pela Guatá e agências parceiras" para **dentro do header verde** (logo abaixo do subtítulo "Inspire-se em experiências reais...") ou substituir o subtítulo redundante por ela.
+  - Colocar o campo de busca **centralizado, abaixo do header**, em estilo card com sombra suave (mesmo padrão do Hero da home: input grande + ícone + arredondado), em vez de um input cru à direita.
 
-## 1. Home – Hero (com imagem do carro)
+### 3. Revisão SEO
+- O `index.html` ainda está com placeholders Lovable: `<title>Lovable App</title>`, `<meta description>Lovable Generated Project</meta>`, `og:title=Lovable App`, autor "Lovable". Vou:
+  - Atualizar `<title>` para algo como "Guatá Viagens — Receptivo do Pantanal ao mundo" (<60 chars).
+  - `<meta description>` para descrição real da agência (<160 chars).
+  - `og:title`, `og:description`, `twitter:title`, `twitter:description` consistentes.
+  - Adicionar `<link rel="canonical" href="https://guata-journey-weaver.lovable.app/">`.
+  - Adicionar `lang="pt-BR"` no `<html>`.
+  - Adicionar JSON-LD Organization (nome, url, logo, áreas de atuação).
+- Não vou rodar scanner agora (o `seo_chat` retornou vazio); a revisão é pelos critérios padrão (title, description, canonical, lang, JSON-LD, H1 único — já existe na home).
 
-Vou gerar **3 direções de design** via design directions e você escolhe uma. O escopo coberto pelas 3 opções:
+## Arquivos a editar
+- `src/components/home/HeroSection.tsx` — leading do h1, remover parágrafo, estilo do botão WhatsApp.
+- `src/pages/ViagensRealizadas.tsx` — reorganizar header + busca.
+- `index.html` — title, description, canonical, lang, JSON-LD, OG/Twitter.
 
-- Tipografia mais impactante (Playfair display em escala maior).
-- Camadas visuais (gradientes editoriais, glass, badges de confiança Cadastur).
-- Busca + chips rápidos repensados.
-- Prova social inline (ex: "+500 viagens realizadas", estrelas).
-- Botões CTA com hierarquia clara.
-
-A imagem de fundo permanece (você disse que não é a imagem em si).
-
-## 2. Seção "Como funciona"
-
-Hoje só existe em `SejaParceiro.tsx`. Vou:
-
-- **Criar uma nova seção "Como funciona" na home**, entre o Hero e Experiências em Destaque, explicando a jornada do cliente em 4 passos (Conte sua viagem → Receba proposta → Aprove e pague → Viaje com suporte).
-- **Refazer também a versão da página SejaParceiro** com o mesmo padrão visual.
-- Vou gerar **3 direções de design** para essa seção (timeline, cards com mockup, ilustrações) e você escolhe.
-
-## 3. Pacotes vira Pacotes + Viagens Realizadas
-
-Na página `/pacotes`:
-
-- Adicionar **abas (Tabs)** no topo: "Pacotes disponíveis" | "Viagens realizadas".
-- A aba "Viagens realizadas" mostra um portfólio: foto de capa, destino, mês/ano, ag\u00eancia respons\u00e1vel, depoimento curto, sem preço, com CTA "Quero algo parecido" (leva para viagem personalizada).
-- Admin ganha CRUD simples para registrar essas viagens.
-
-Tecnicamente: nova tabela `completed_trips` (id, title, destination, cover_image, gallery, month, year, agency_id, client_quote, client_name, is_published) com RLS (público lê publicadas; staff/parceiro gerencia as próprias).
-
-## 4. Cadastro de agências parceiras + acesso
-
-Já existe a tela `/admin/parceiros` com botão "Convidar parceiro" que cria usuário e mostra senha temporária uma vez. Vou:
-
-- **Documentar/reorganizar** o painel para ficar óbvio onde clicar.
-- Adicionar opção **"Enviar convite por e-mail"** (parceiro define a própria senha) ao lado de "Gerar senha temporária".
-- Histórico: badge "Acesso criado" na linha da ag\u00eancia para você saber quem já tem login.
-- Para **rever a senha depois**: explicar na UI que ela só aparece uma vez; se perder, basta clicar em "Resetar senha" → gera nova senha temporária.
-
-Onde você acessa: **Admin → Parceiros → linha da ag\u00eancia → menu "..." → Convidar parceiro / Resetar senha**.
-
-## 5. Login: adicionar "Criar conta"
-
-A página `/login` hoje só faz signin. Vou adicionar **abas "Entrar" | "Criar conta"** para clientes finais. Parceiros e equipe continuam sendo criados pelo admin (não aparecem botão de auto-cadastro). O link "Criar conta" também aparece abaixo do formulário.
-
-## 6. Scroll no formulário "Compartilhe seu depoimento"
-
-O `DialogContent` do depoimento não tem altura máxima nem scroll. Vou aplicar `max-h-[90vh] overflow-y-auto` (mesmo padrão usado no `ActivityFormDialog`).
-
-## Detalhes técnicos
-
-| Item | Arquivos / mudança |
-|---|---|
-| Hero | `src/components/home/HeroSection.tsx` (após escolha do design) |
-| Como funciona (home) | novo `src/components/home/HowItWorks.tsx` + import em `Index.tsx` |
-| Como funciona (parceiro) | `src/pages/SejaParceiro.tsx` |
-| Pacotes + portfólio | `src/pages/Pacotes.tsx`, novo `src/pages/admin/AdminViagensRealizadas.tsx`, migration tabela `completed_trips` |
-| Convite parceiro | `src/pages/admin/AdminParceiros.tsx` + edge function `invite-partner` (já existe; adicionar modo "email_invite") |
-| Login signup | `src/pages/Login.tsx` (Tabs Entrar/Criar conta) |
-| Scroll depoimento | `src/components/home/TestimonialsSection.tsx` |
-| Posicionamento MS→Brasil | `HeroSection.tsx`, `Sobre.tsx`, `index.html` meta |
-
-## Próximo passo após aprovação
-
-1. Gero **3 direções visuais para o Hero** → você escolhe.
-2. Gero **3 direções visuais para "Como funciona"** → você escolhe.
-3. Implemento tudo (itens 3 a 6 já são objetivos, sem precisar escolher visual).
+## Confirmar antes de implementar
+1. Pode confirmar o **título do Hero permanecer só "Do Pantanal ao mundo, do seu jeito."** sem o parágrafo de apoio?
+2. Para o botão WhatsApp, prefere **verde sólido WhatsApp (#25D366)** ou **outline branco bem mais opaco** mantendo o estilo atual?
+3. Para a página Viagens Realizadas, prefere a frase "Histórico real..." **substituindo** o subtítulo atual ou **abaixo** dele?

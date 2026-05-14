@@ -125,22 +125,16 @@ export function HeroSection() {
           <span>Cadastur · Receptivo MS · Atendimento humano</span>
         </div>
 
-        <div className="animate-fade-in space-y-6">
+        <div className="animate-fade-in">
           {/* Main title */}
-          <h1 className="font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-white md:text-7xl lg:text-8xl">
+          <h1 className="font-display text-5xl font-extrabold leading-[1.15] tracking-tight text-white pb-3 md:text-7xl lg:text-8xl">
             Do <span className="italic text-amber-300 hero-text-shadow">Pantanal</span>
             <br className="hidden md:block" />
             <span className="block">ao mundo,</span>
-            <span className="block bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 bg-clip-text text-transparent pb-2">
               do seu jeito.
             </span>
           </h1>
-
-          {/* Subtitle */}
-          <p className="mx-auto max-w-2xl text-lg font-medium text-white/95 md:text-xl">
-            Receptivo nascido em Mato Grosso do Sul. Organizamos viagens completas pelo Brasil e exterior,
-            com curadoria e parceiros locais credenciados.
-          </p>
         </div>
 
         {/* Search bar */}
