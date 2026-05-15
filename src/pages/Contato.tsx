@@ -57,9 +57,8 @@ const Contato = () => {
     setIsSubmitting(false);
   };
 
-  // Usa dados do CMS ou fallback para conteúdo padrão
   const content = page?.content || defaultContent;
-  const { hero, info } = content;
+  const hero = (content as any).hero;
 
   if (isLoading) {
     return <CmsPageSkeleton />;
