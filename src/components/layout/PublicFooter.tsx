@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
+import { useContactInfo } from '@/hooks/useContactInfo';
 import logo from '@/assets/logo-guata.png';
 
 function NewsletterForm() {
