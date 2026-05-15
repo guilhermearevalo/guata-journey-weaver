@@ -115,12 +115,70 @@ export default function AdminViagensRealizadas() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-completed-trips'] }),
   });
 
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+
+  const uploadFile = async (file: File, prefix: string): Promise<string | null> => {
+    const ext = file.name.split('.').pop();
+    const fileName = `${prefix}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true });
+    if (error) {
+      toast({ title: 'Erro no upload', description: error.message, variant: 'destructive' });
+      return null;
+    }
+    const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+    return data.publicUrl;
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingField('cover');
+    const url = await uploadFile(file, 'trip-cover');
+    if (url) setForm(f => ({ ...f, cover_image: url }));
+    setUploadingField(null);
+    e.target.value = '';
+  };
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingField('gallery');
+    const urls: string[] = [];
+    for (const f of files) {
+      const url = await uploadFile(f, 'trip-gallery');
+      if (url) urls.push(url);
+    }
+    setForm(f => ({ ...f, gallery: [...(f.gallery || []), ...urls] }));
+    setUploadingField(null);
+    e.target.value = '';
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 30 * 1024 * 1024) {
+      toast({ title: 'Vídeo muito grande', description: 'Máximo 30MB', variant: 'destructive' });
+      return;
+    }
+    setUploadingField('video');
+    const url = await uploadFile(file, 'trip-video');
+    if (url) setForm(f => ({ ...f, video_url: url }));
+    setUploadingField(null);
+    e.target.value = '';
+  };
+
+  const removeGalleryImage = (idx: number) => {
+    setForm(f => ({ ...f, gallery: f.gallery.filter((_, i) => i !== idx) }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     upsertMutation.mutate({
       title: form.title,
       destination: form.destination,
       cover_image: form.cover_image || null,
+      gallery: form.gallery,
+      video_url: form.video_url || null,
       trip_month: form.trip_month ? parseInt(form.trip_month) : null,
       trip_year: form.trip_year ? parseInt(form.trip_year) : null,
       agency_id: form.agency_id || null,
@@ -138,6 +196,8 @@ export default function AdminViagensRealizadas() {
       title: trip.title,
       destination: trip.destination,
       cover_image: trip.cover_image || '',
+      gallery: trip.gallery || [],
+      video_url: trip.video_url || '',
       trip_month: trip.trip_month ? String(trip.trip_month) : '',
       trip_year: trip.trip_year ? String(trip.trip_year) : String(new Date().getFullYear()),
       agency_id: trip.agency_id || '',
