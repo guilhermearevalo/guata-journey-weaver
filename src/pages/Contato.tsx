@@ -7,20 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useCmsPage } from '@/hooks/useCmsPage';
+import { useContactInfo, useAgencyLocation, buildMapEmbedUrl } from '@/hooks/useContactInfo';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
 
-// Conteúdo padrão caso o CMS esteja vazio
 const defaultContent = {
   hero: {
     title: 'Entre em Contato',
     subtitle: 'Estamos aqui para ajudar você a planejar sua próxima aventura',
-  },
-  info: {
-    email: 'contato@guata.com.br',
-    phone: '(11) 99999-9999',
-    whatsapp: '5511999999999',
-    address: 'São Paulo, SP - Brasil',
-    hours: 'Segunda a Sexta: 9h às 18h',
   },
 };
 
