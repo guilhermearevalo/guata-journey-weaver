@@ -333,6 +333,39 @@ export function ExperienceForm({ experience, open, onOpenChange, onSubmit, isSub
               />
             </div>
 
+            {watchType === 'excursion' && (
+              <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+                <p className="text-sm font-semibold">🚌 Detalhes da excursão</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField control={form.control} name="transport_type" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de transporte</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="aerea">✈ Aérea</SelectItem>
+                          <SelectItem value="rodoviaria">🚌 Rodoviária</SelectItem>
+                          <SelectItem value="mista">Mista</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="departure_city" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade de embarque</FormLabel>
+                      <FormControl><Input placeholder="Campo Grande, MS" {...field} /></FormControl>
+                    </FormItem>
+                  )} />
+                </div>
+                <FormField control={form.control} name="stops" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Paradas (uma por linha)</FormLabel>
+                    <FormControl><Textarea rows={3} placeholder="Dourados&#10;Bonito" {...field} /></FormControl>
+                  </FormItem>
+                )} />
+              </div>
+            )}
+
             <div className="flex gap-6">
               <FormField
                 control={form.control}
