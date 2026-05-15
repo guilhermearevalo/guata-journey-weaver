@@ -85,8 +85,13 @@ export function ExperienceForm({ experience, open, onOpenChange, onSubmit, isSub
       is_featured: false,
       inclusions: '',
       exclusions: '',
+      transport_type: '',
+      departure_city: '',
+      stops: '',
     },
   });
+
+  const watchType = form.watch('experience_type');
 
   useEffect(() => {
     if (experience) {
