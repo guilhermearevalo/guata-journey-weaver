@@ -183,20 +183,18 @@ export function PublicFooter() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <span className="text-secondary-foreground/80">
-                  São Paulo, SP - Brasil
-                </span>
+                <span className="text-secondary-foreground/80">{contact?.address}</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 shrink-0 text-primary" />
-                <a href="tel:+5511999999999" className="text-secondary-foreground/80 hover:text-primary">
-                  (11) 99999-9999
+                <a href={`tel:+${(contact?.whatsapp || '').replace(/\D/g, '')}`} className="text-secondary-foreground/80 hover:text-primary">
+                  {contact?.phone}
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 shrink-0 text-primary" />
-                <a href="mailto:contato@guata.travel" className="text-secondary-foreground/80 hover:text-primary">
-                  contato@guata.travel
+                <a href={`mailto:${contact?.email}`} className="text-secondary-foreground/80 hover:text-primary">
+                  {contact?.email}
                 </a>
               </li>
             </ul>
