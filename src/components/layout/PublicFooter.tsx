@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
+import { useContactInfo } from '@/hooks/useContactInfo';
 import logo from '@/assets/logo-guata.png';
 
 function NewsletterForm() {
@@ -79,6 +80,7 @@ export function PublicFooter() {
     },
   });
 
+  const { data: contact } = useContactInfo();
   const cadasturNumber = cadasturConfig?.number || '64.677.632/0001-77';
 
   return (
@@ -93,30 +95,21 @@ export function PublicFooter() {
               Descubra o Brasil e o mundo com quem entende de curadoria turística.
             </p>
             <div className="flex gap-4">
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-secondary-foreground/70 transition-colors hover:text-primary"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-secondary-foreground/70 transition-colors hover:text-primary"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-secondary-foreground/70 transition-colors hover:text-primary"
-              >
-                <Youtube className="h-5 w-5" />
-              </a>
+              {contact?.instagram && (
+                <a href={contact.instagram} target="_blank" rel="noopener noreferrer" className="text-secondary-foreground/70 transition-colors hover:text-primary">
+                  <Instagram className="h-5 w-5" />
+                </a>
+              )}
+              {contact?.facebook && (
+                <a href={contact.facebook} target="_blank" rel="noopener noreferrer" className="text-secondary-foreground/70 transition-colors hover:text-primary">
+                  <Facebook className="h-5 w-5" />
+                </a>
+              )}
+              {contact?.youtube && (
+                <a href={contact.youtube} target="_blank" rel="noopener noreferrer" className="text-secondary-foreground/70 transition-colors hover:text-primary">
+                  <Youtube className="h-5 w-5" />
+                </a>
+              )}
             </div>
           </div>
 
@@ -190,20 +183,18 @@ export function PublicFooter() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <span className="text-secondary-foreground/80">
-                  São Paulo, SP - Brasil
-                </span>
+                <span className="text-secondary-foreground/80">{contact?.address}</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 shrink-0 text-primary" />
-                <a href="tel:+5511999999999" className="text-secondary-foreground/80 hover:text-primary">
-                  (11) 99999-9999
+                <a href={`tel:+${(contact?.whatsapp || '').replace(/\D/g, '')}`} className="text-secondary-foreground/80 hover:text-primary">
+                  {contact?.phone}
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 shrink-0 text-primary" />
-                <a href="mailto:contato@guata.travel" className="text-secondary-foreground/80 hover:text-primary">
-                  contato@guata.travel
+                <a href={`mailto:${contact?.email}`} className="text-secondary-foreground/80 hover:text-primary">
+                  {contact?.email}
                 </a>
               </li>
             </ul>

@@ -7,24 +7,19 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useCmsPage } from '@/hooks/useCmsPage';
+import { useContactInfo, useAgencyLocation, buildMapEmbedUrl } from '@/hooks/useContactInfo';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
 
-// Conteúdo padrão caso o CMS esteja vazio
 const defaultContent = {
   hero: {
     title: 'Entre em Contato',
     subtitle: 'Estamos aqui para ajudar você a planejar sua próxima aventura',
   },
-  info: {
-    email: 'contato@guata.com.br',
-    phone: '(11) 99999-9999',
-    whatsapp: '5511999999999',
-    address: 'São Paulo, SP - Brasil',
-    hours: 'Segunda a Sexta: 9h às 18h',
-  },
 };
 
 const Contato = () => {
+  const { data: info } = useContactInfo();
+  const { data: location } = useAgencyLocation();
   const { toast } = useToast();
   const { data: page, isLoading } = useCmsPage('contato');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,9 +57,8 @@ const Contato = () => {
     setIsSubmitting(false);
   };
 
-  // Usa dados do CMS ou fallback para conteúdo padrão
   const content = page?.content || defaultContent;
-  const { hero, info } = content;
+  const hero = (content as any).hero;
 
   if (isLoading) {
     return <CmsPageSkeleton />;
@@ -225,7 +219,7 @@ const Contato = () => {
             {/* Map placeholder */}
             <div className="mt-8 aspect-video overflow-hidden rounded-xl bg-muted">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d467689.9161420024!2d-46.87529453125!3d-23.68199745!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce448183a461d1%3A0x9ba94b08ff335bae!2zU8OjbyBQYXVsbywgU1A!5e0!3m2!1spt-BR!2sbr!4v1706000000000!5m2!1spt-BR!2sbr"
+                src={location ? buildMapEmbedUrl(location) : ''}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Calendar, MapPin, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Calendar, MapPin, Eye, EyeOff, Loader2, Upload, X, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,8 @@ interface Trip {
   title: string;
   destination: string;
   cover_image: string | null;
+  gallery: string[] | null;
+  video_url: string | null;
   trip_month: number | null;
   trip_year: number | null;
   agency_id: string | null;
@@ -30,6 +32,8 @@ const emptyForm = {
   title: '',
   destination: '',
   cover_image: '',
+  gallery: [] as string[],
+  video_url: '',
   trip_month: '',
   trip_year: String(new Date().getFullYear()),
   agency_id: '',
@@ -111,12 +115,70 @@ export default function AdminViagensRealizadas() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-completed-trips'] }),
   });
 
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+
+  const uploadFile = async (file: File, prefix: string): Promise<string | null> => {
+    const ext = file.name.split('.').pop();
+    const fileName = `${prefix}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true });
+    if (error) {
+      toast({ title: 'Erro no upload', description: error.message, variant: 'destructive' });
+      return null;
+    }
+    const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+    return data.publicUrl;
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingField('cover');
+    const url = await uploadFile(file, 'trip-cover');
+    if (url) setForm(f => ({ ...f, cover_image: url }));
+    setUploadingField(null);
+    e.target.value = '';
+  };
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingField('gallery');
+    const urls: string[] = [];
+    for (const f of files) {
+      const url = await uploadFile(f, 'trip-gallery');
+      if (url) urls.push(url);
+    }
+    setForm(f => ({ ...f, gallery: [...(f.gallery || []), ...urls] }));
+    setUploadingField(null);
+    e.target.value = '';
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 30 * 1024 * 1024) {
+      toast({ title: 'Vídeo muito grande', description: 'Máximo 30MB', variant: 'destructive' });
+      return;
+    }
+    setUploadingField('video');
+    const url = await uploadFile(file, 'trip-video');
+    if (url) setForm(f => ({ ...f, video_url: url }));
+    setUploadingField(null);
+    e.target.value = '';
+  };
+
+  const removeGalleryImage = (idx: number) => {
+    setForm(f => ({ ...f, gallery: f.gallery.filter((_, i) => i !== idx) }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     upsertMutation.mutate({
       title: form.title,
       destination: form.destination,
       cover_image: form.cover_image || null,
+      gallery: form.gallery,
+      video_url: form.video_url || null,
       trip_month: form.trip_month ? parseInt(form.trip_month) : null,
       trip_year: form.trip_year ? parseInt(form.trip_year) : null,
       agency_id: form.agency_id || null,
@@ -134,6 +196,8 @@ export default function AdminViagensRealizadas() {
       title: trip.title,
       destination: trip.destination,
       cover_image: trip.cover_image || '',
+      gallery: trip.gallery || [],
+      video_url: trip.video_url || '',
       trip_month: trip.trip_month ? String(trip.trip_month) : '',
       trip_year: trip.trip_year ? String(trip.trip_year) : String(new Date().getFullYear()),
       agency_id: trip.agency_id || '',
@@ -218,9 +282,62 @@ export default function AdminViagensRealizadas() {
               </div>
             </div>
 
-            <div>
-              <Label>Imagem de capa (URL)</Label>
-              <Input value={form.cover_image} onChange={(e) => setForm(f => ({ ...f, cover_image: e.target.value }))} placeholder="https://..." />
+            <div className="space-y-2">
+              <Label>Imagem de capa</Label>
+              {form.cover_image && (
+                <div className="relative inline-block">
+                  <img src={form.cover_image} alt="Capa" className="h-24 w-40 rounded border object-cover" />
+                  <button type="button" onClick={() => setForm(f => ({ ...f, cover_image: '' }))} className="absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-destructive-foreground">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <Label htmlFor="cover-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90">
+                  {uploadingField === 'cover' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  Enviar imagem
+                </Label>
+                <Input id="cover-upload" type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} disabled={uploadingField === 'cover'} />
+                <Input value={form.cover_image} onChange={(e) => setForm(f => ({ ...f, cover_image: e.target.value }))} placeholder="ou cole uma URL" className="flex-1 min-w-[200px]" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Galeria de fotos</Label>
+              {form.gallery.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {form.gallery.map((url, i) => (
+                    <div key={i} className="relative">
+                      <img src={url} alt={`Foto ${i + 1}`} className="h-20 w-full rounded border object-cover" />
+                      <button type="button" onClick={() => removeGalleryImage(i)} className="absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-destructive-foreground">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Label htmlFor="gallery-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted">
+                {uploadingField === 'gallery' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Adicionar fotos
+              </Label>
+              <Input id="gallery-upload" type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} disabled={uploadingField === 'gallery'} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Vídeo (opcional, máx. 30MB)</Label>
+              {form.video_url && (
+                <div className="flex items-center gap-2">
+                  <video src={form.video_url} className="h-24 w-40 rounded border object-cover" muted />
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setForm(f => ({ ...f, video_url: '' }))}>
+                    <X className="h-4 w-4 mr-1" />Remover
+                  </Button>
+                </div>
+              )}
+              <Label htmlFor="video-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted">
+                {uploadingField === 'video' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Film className="h-4 w-4" />}
+                {form.video_url ? 'Trocar vídeo' : 'Enviar vídeo'}
+              </Label>
+              <Input id="video-upload" type="file" accept="video/mp4,video/webm" className="hidden" onChange={handleVideoUpload} disabled={uploadingField === 'video'} />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">

@@ -1,32 +1,50 @@
-## Ajustes solicitados
+# Plano de ajustes
 
-### 1. Hero (Home)
-- **"J" cortando em "do seu jeito"**: o problema vem do `leading-[1.05]` muito apertado combinado com a fonte serif itálica em tamanho grande (md:7xl/lg:8xl) — descenders são cortados. Vou aumentar o `leading` para ~1.15 nessa linha e adicionar `pb-2` para dar espaço ao descender do "j".
-- **Subtítulo redundante**: removo o parágrafo "Receptivo nascido em Mato Grosso do Sul..." do Hero (ele continua/aparece na página Sobre e implicitamente no badge "Cadastur · Receptivo MS"). O Hero fica mais limpo: badge + título + busca + CTAs.
-- **Botão "Falar no WhatsApp" transparente demais**: troco de `bg-white/15` (com hover white/30) para um verde sólido WhatsApp (`bg-[#25D366] hover:bg-[#20BA56] text-white`), sem `backdrop-blur`, mantendo o ícone. Fica legível e on-brand.
+## 1. Upload de mídias em Viagens Realizadas
 
-### 2. Página Viagens Realizadas
-- **Caixa "Histórico real..." + busca "Buscar destinos"**: o layout atual (caixa pontilhada bege ao lado do input solto) parece improvisado. Vou reorganizar:
-  - Remover a caixinha tracejada.
-  - Mover a frase "Histórico real de viagens organizadas pela Guatá e agências parceiras" para **dentro do header verde** (logo abaixo do subtítulo "Inspire-se em experiências reais...") ou substituir o subtítulo redundante por ela.
-  - Colocar o campo de busca **centralizado, abaixo do header**, em estilo card com sombra suave (mesmo padrão do Hero da home: input grande + ícone + arredondado), em vez de um input cru à direita.
+No formulário do admin (`AdminViagensRealizadas.tsx`), trocar os campos só-URL por uploads reais para o bucket `site-assets`:
 
-### 3. Revisão SEO
-- O `index.html` ainda está com placeholders Lovable: `<title>Lovable App</title>`, `<meta description>Lovable Generated Project</meta>`, `og:title=Lovable App`, autor "Lovable". Vou:
-  - Atualizar `<title>` para algo como "Guatá Viagens — Receptivo do Pantanal ao mundo" (<60 chars).
-  - `<meta description>` para descrição real da agência (<160 chars).
-  - `og:title`, `og:description`, `twitter:title`, `twitter:description` consistentes.
-  - Adicionar `<link rel="canonical" href="https://guata-journey-weaver.lovable.app/">`.
-  - Adicionar `lang="pt-BR"` no `<html>`.
-  - Adicionar JSON-LD Organization (nome, url, logo, áreas de atuação).
-- Não vou rodar scanner agora (o `seo_chat` retornou vazio); a revisão é pelos critérios padrão (title, description, canonical, lang, JSON-LD, H1 único — já existe na home).
+- **Imagem de capa**: botão "Enviar imagem" (mantém URL como alternativa).
+- **Galeria de fotos**: múltiplos uploads, miniaturas com remover/reordenar. Salvo na coluna `gallery` (já existe).
+- **Vídeo curto**: upload único (MP4/WEBM, máx. 30MB). Nova coluna `video_url` em `completed_trips`.
+- Na página pública `ViagensRealizadas.tsx`, ao clicar no card abrir um lightbox/modal mostrando galeria + vídeo + descrição completa.
 
-## Arquivos a editar
-- `src/components/home/HeroSection.tsx` — leading do h1, remover parágrafo, estilo do botão WhatsApp.
-- `src/pages/ViagensRealizadas.tsx` — reorganizar header + busca.
-- `index.html` — title, description, canonical, lang, JSON-LD, OG/Twitter.
+## 2. Editor de Contato e Localização (só Guatá)
 
-## Confirmar antes de implementar
-1. Pode confirmar o **título do Hero permanecer só "Do Pantanal ao mundo, do seu jeito."** sem o parágrafo de apoio?
-2. Para o botão WhatsApp, prefere **verde sólido WhatsApp (#25D366)** ou **outline branco bem mais opaco** mantendo o estilo atual?
-3. Para a página Viagens Realizadas, prefere a frase "Histórico real..." **substituindo** o subtítulo atual ou **abaixo** dele?
+Criar dois cards novos em `AdminConfiguracoes.tsx` salvando em `site_settings`:
+
+- **Contato Guatá** (key `contact_info`): endereço, telefone, WhatsApp, email, Instagram, Facebook, YouTube.
+- **Localização no mapa** (key `agency_location`): endereço completo + latitude/longitude (campos de texto). Usaremos um iframe do Google Maps gerado a partir das coordenadas (sem API key).
+
+Consumir esses settings em:
+- `PublicFooter.tsx` (substitui os valores hardcoded de endereço, telefone, email, redes).
+- `Contato.tsx` (mesmos dados + bloco do mapa via iframe).
+
+## 3. Excursões: aérea ou rodoviária
+
+- Adicionar campo `transport_type` em `experiences` quando `experience_type = 'excursion'` — valores: `aerea`, `rodoviaria`, `mista`.
+- No cadastro de excursão: select "Tipo de transporte" + campos extras quando rodoviária (cidade de embarque, paradas, horário de saída).
+- Na página `/excursoes`: badge visível ("✈ Aérea" / "🚌 Rodoviária") + filtro por tipo.
+- Destacar na home/menu o diferencial "Também vendemos passagens rodoviárias" (texto curto na seção de excursões).
+
+## 4. Visibilidade do "Criar conta"
+
+Hoje o cadastro existe em `/cadastro` mas o usuário não percebe. Ajustes:
+
+- No `PublicHeader.tsx`: ao lado do botão "Entrar", adicionar botão secundário "Criar conta".
+- Na página `/login`: adicionar bloco visível abaixo do form: "Ainda não tem conta? Cadastre-se grátis para acompanhar sua viagem" com link.
+- Texto curto explicando o que o cliente ganha ao criar conta (acompanhar pedido, mensagens, documentos).
+
+## Detalhes técnicos
+
+- Migração SQL:
+  - `ALTER TABLE completed_trips ADD COLUMN video_url text;`
+  - `ALTER TABLE experiences ADD COLUMN transport_type text;` + `departure_city text`, `stops jsonb DEFAULT '[]'`.
+- Bucket `site-assets` já é público — reutilizar.
+- `site_settings` já tem RLS correta (staff escreve, todos leem).
+- Sem mudanças em RLS de `experiences` ou `completed_trips`.
+
+## Fora do escopo (não vou mexer)
+
+- Localização individual de cada agência parceira (você pediu só Guatá).
+- Mudanças na área do cliente `/minha-conta` (você disse que está ok).

@@ -46,6 +46,9 @@ const experienceSchema = z.object({
   is_featured: z.boolean(),
   inclusions: z.string().optional(),
   exclusions: z.string().optional(),
+  transport_type: z.enum(['aerea', 'rodoviaria', 'mista', '']).optional(),
+  departure_city: z.string().optional(),
+  stops: z.string().optional(),
 });
 
 type ExperienceFormData = z.infer<typeof experienceSchema>;
@@ -82,8 +85,13 @@ export function ExperienceForm({ experience, open, onOpenChange, onSubmit, isSub
       is_featured: false,
       inclusions: '',
       exclusions: '',
+      transport_type: '',
+      departure_city: '',
+      stops: '',
     },
   });
+
+  const watchType = form.watch('experience_type');
 
   useEffect(() => {
     if (experience) {
@@ -101,22 +109,16 @@ export function ExperienceForm({ experience, open, onOpenChange, onSubmit, isSub
         is_featured: experience.is_featured || false,
         inclusions: experience.inclusions?.join('\n') || '',
         exclusions: experience.exclusions?.join('\n') || '',
+        transport_type: ((experience as any).transport_type || '') as any,
+        departure_city: (experience as any).departure_city || '',
+        stops: Array.isArray((experience as any).stops) ? (experience as any).stops.join('\n') : '',
       });
     } else {
       form.reset({
-        title: '',
-        destination: '',
-        short_description: '',
-        description: '',
-        experience_type: 'package',
-        price: undefined,
-        duration_days: undefined,
-        max_participants: undefined,
-        cover_image: '',
-        is_published: false,
-        is_featured: false,
-        inclusions: '',
-        exclusions: '',
+        title: '', destination: '', short_description: '', description: '',
+        experience_type: 'package', price: undefined, duration_days: undefined,
+        max_participants: undefined, cover_image: '', is_published: false, is_featured: false,
+        inclusions: '', exclusions: '', transport_type: '', departure_city: '', stops: '',
       });
     }
   }, [experience, form]);
@@ -136,7 +138,10 @@ export function ExperienceForm({ experience, open, onOpenChange, onSubmit, isSub
       is_featured: data.is_featured,
       inclusions: data.inclusions?.split('\n').filter(Boolean) || null,
       exclusions: data.exclusions?.split('\n').filter(Boolean) || null,
-    });
+      transport_type: data.transport_type || null,
+      departure_city: data.departure_city || null,
+      stops: data.stops?.split('\n').filter(Boolean) || [],
+    } as any);
   };
 
   return (
@@ -327,6 +332,39 @@ export function ExperienceForm({ experience, open, onOpenChange, onSubmit, isSub
                 )}
               />
             </div>
+
+            {watchType === 'excursion' && (
+              <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+                <p className="text-sm font-semibold">🚌 Detalhes da excursão</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField control={form.control} name="transport_type" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de transporte</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="aerea">✈ Aérea</SelectItem>
+                          <SelectItem value="rodoviaria">🚌 Rodoviária</SelectItem>
+                          <SelectItem value="mista">Mista</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="departure_city" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade de embarque</FormLabel>
+                      <FormControl><Input placeholder="Campo Grande, MS" {...field} /></FormControl>
+                    </FormItem>
+                  )} />
+                </div>
+                <FormField control={form.control} name="stops" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Paradas (uma por linha)</FormLabel>
+                    <FormControl><Textarea rows={3} placeholder="Dourados&#10;Bonito" {...field} /></FormControl>
+                  </FormItem>
+                )} />
+              </div>
+            )}
 
             <div className="flex gap-6">
               <FormField

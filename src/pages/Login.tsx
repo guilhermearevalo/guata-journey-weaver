@@ -172,11 +172,18 @@ export default function Login() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex flex-col gap-3">
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Entrar
                   </Button>
+                  <p className="text-center text-sm text-muted-foreground">
+                    Ainda não tem conta?{' '}
+                    <button type="button" onClick={() => setTab('signup')} className="font-medium text-primary hover:underline">
+                      Cadastre-se grátis
+                    </button>
+                    {' '}para acompanhar sua viagem.
+                  </p>
                 </CardFooter>
               </form>
             </TabsContent>

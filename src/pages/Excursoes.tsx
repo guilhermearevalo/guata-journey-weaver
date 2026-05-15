@@ -88,10 +88,15 @@ const Excursoes = () => {
                   style={{ backgroundImage: `url(${excursao.cover_image || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=400'})` }}
                 />
                 <CardHeader>
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <h3 className="font-display text-xl font-semibold">{excursao.title}</h3>
-                    <Badge variant="secondary">Excursão</Badge>
+                    <Badge variant={(excursao as any).transport_type === 'rodoviaria' ? 'default' : 'secondary'}>
+                      {(excursao as any).transport_type === 'rodoviaria' ? '🚌 Rodoviária' : (excursao as any).transport_type === 'aerea' ? '✈ Aérea' : (excursao as any).transport_type === 'mista' ? 'Mista' : 'Excursão'}
+                    </Badge>
                   </div>
+                  {(excursao as any).departure_city && (
+                    <p className="text-xs text-muted-foreground">Saída de {(excursao as any).departure_city}</p>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <p className="text-sm text-muted-foreground line-clamp-2">
