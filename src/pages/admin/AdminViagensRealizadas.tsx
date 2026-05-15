@@ -16,6 +16,8 @@ interface Trip {
   title: string;
   destination: string;
   cover_image: string | null;
+  gallery: string[] | null;
+  video_url: string | null;
   trip_month: number | null;
   trip_year: number | null;
   agency_id: string | null;
@@ -30,6 +32,8 @@ const emptyForm = {
   title: '',
   destination: '',
   cover_image: '',
+  gallery: [] as string[],
+  video_url: '',
   trip_month: '',
   trip_year: String(new Date().getFullYear()),
   agency_id: '',
