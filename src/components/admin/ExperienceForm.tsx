@@ -109,22 +109,16 @@ export function ExperienceForm({ experience, open, onOpenChange, onSubmit, isSub
         is_featured: experience.is_featured || false,
         inclusions: experience.inclusions?.join('\n') || '',
         exclusions: experience.exclusions?.join('\n') || '',
+        transport_type: ((experience as any).transport_type || '') as any,
+        departure_city: (experience as any).departure_city || '',
+        stops: Array.isArray((experience as any).stops) ? (experience as any).stops.join('\n') : '',
       });
     } else {
       form.reset({
-        title: '',
-        destination: '',
-        short_description: '',
-        description: '',
-        experience_type: 'package',
-        price: undefined,
-        duration_days: undefined,
-        max_participants: undefined,
-        cover_image: '',
-        is_published: false,
-        is_featured: false,
-        inclusions: '',
-        exclusions: '',
+        title: '', destination: '', short_description: '', description: '',
+        experience_type: 'package', price: undefined, duration_days: undefined,
+        max_participants: undefined, cover_image: '', is_published: false, is_featured: false,
+        inclusions: '', exclusions: '', transport_type: '', departure_city: '', stops: '',
       });
     }
   }, [experience, form]);
