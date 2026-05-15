@@ -18,6 +18,8 @@ const defaultContent = {
 };
 
 const Contato = () => {
+  const { data: info } = useContactInfo();
+  const { data: location } = useAgencyLocation();
   const { toast } = useToast();
   const { data: page, isLoading } = useCmsPage('contato');
   const [isSubmitting, setIsSubmitting] = useState(false);
