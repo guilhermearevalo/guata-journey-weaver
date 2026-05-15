@@ -95,30 +95,21 @@ export function PublicFooter() {
               Descubra o Brasil e o mundo com quem entende de curadoria turística.
             </p>
             <div className="flex gap-4">
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-secondary-foreground/70 transition-colors hover:text-primary"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-secondary-foreground/70 transition-colors hover:text-primary"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-secondary-foreground/70 transition-colors hover:text-primary"
-              >
-                <Youtube className="h-5 w-5" />
-              </a>
+              {contact?.instagram && (
+                <a href={contact.instagram} target="_blank" rel="noopener noreferrer" className="text-secondary-foreground/70 transition-colors hover:text-primary">
+                  <Instagram className="h-5 w-5" />
+                </a>
+              )}
+              {contact?.facebook && (
+                <a href={contact.facebook} target="_blank" rel="noopener noreferrer" className="text-secondary-foreground/70 transition-colors hover:text-primary">
+                  <Facebook className="h-5 w-5" />
+                </a>
+              )}
+              {contact?.youtube && (
+                <a href={contact.youtube} target="_blank" rel="noopener noreferrer" className="text-secondary-foreground/70 transition-colors hover:text-primary">
+                  <Youtube className="h-5 w-5" />
+                </a>
+              )}
             </div>
           </div>
 
