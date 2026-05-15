@@ -282,9 +282,62 @@ export default function AdminViagensRealizadas() {
               </div>
             </div>
 
-            <div>
-              <Label>Imagem de capa (URL)</Label>
-              <Input value={form.cover_image} onChange={(e) => setForm(f => ({ ...f, cover_image: e.target.value }))} placeholder="https://..." />
+            <div className="space-y-2">
+              <Label>Imagem de capa</Label>
+              {form.cover_image && (
+                <div className="relative inline-block">
+                  <img src={form.cover_image} alt="Capa" className="h-24 w-40 rounded border object-cover" />
+                  <button type="button" onClick={() => setForm(f => ({ ...f, cover_image: '' }))} className="absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-destructive-foreground">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <Label htmlFor="cover-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90">
+                  {uploadingField === 'cover' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  Enviar imagem
+                </Label>
+                <Input id="cover-upload" type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} disabled={uploadingField === 'cover'} />
+                <Input value={form.cover_image} onChange={(e) => setForm(f => ({ ...f, cover_image: e.target.value }))} placeholder="ou cole uma URL" className="flex-1 min-w-[200px]" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Galeria de fotos</Label>
+              {form.gallery.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {form.gallery.map((url, i) => (
+                    <div key={i} className="relative">
+                      <img src={url} alt={`Foto ${i + 1}`} className="h-20 w-full rounded border object-cover" />
+                      <button type="button" onClick={() => removeGalleryImage(i)} className="absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-destructive-foreground">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Label htmlFor="gallery-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted">
+                {uploadingField === 'gallery' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Adicionar fotos
+              </Label>
+              <Input id="gallery-upload" type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} disabled={uploadingField === 'gallery'} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Vídeo (opcional, máx. 30MB)</Label>
+              {form.video_url && (
+                <div className="flex items-center gap-2">
+                  <video src={form.video_url} className="h-24 w-40 rounded border object-cover" muted />
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setForm(f => ({ ...f, video_url: '' }))}>
+                    <X className="h-4 w-4 mr-1" />Remover
+                  </Button>
+                </div>
+              )}
+              <Label htmlFor="video-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted">
+                {uploadingField === 'video' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Film className="h-4 w-4" />}
+                {form.video_url ? 'Trocar vídeo' : 'Enviar vídeo'}
+              </Label>
+              <Input id="video-upload" type="file" accept="video/mp4,video/webm" className="hidden" onChange={handleVideoUpload} disabled={uploadingField === 'video'} />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
