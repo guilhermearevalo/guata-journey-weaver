@@ -46,6 +46,9 @@ const experienceSchema = z.object({
   is_featured: z.boolean(),
   inclusions: z.string().optional(),
   exclusions: z.string().optional(),
+  transport_type: z.enum(['aerea', 'rodoviaria', 'mista', '']).optional(),
+  departure_city: z.string().optional(),
+  stops: z.string().optional(),
 });
 
 type ExperienceFormData = z.infer<typeof experienceSchema>;
