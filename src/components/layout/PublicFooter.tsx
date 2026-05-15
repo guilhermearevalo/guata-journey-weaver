@@ -80,6 +80,7 @@ export function PublicFooter() {
     },
   });
 
+  const { data: contact } = useContactInfo();
   const cadasturNumber = cadasturConfig?.number || '64.677.632/0001-77';
 
   return (
