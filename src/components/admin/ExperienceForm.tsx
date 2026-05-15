@@ -138,7 +138,10 @@ export function ExperienceForm({ experience, open, onOpenChange, onSubmit, isSub
       is_featured: data.is_featured,
       inclusions: data.inclusions?.split('\n').filter(Boolean) || null,
       exclusions: data.exclusions?.split('\n').filter(Boolean) || null,
-    });
+      transport_type: data.transport_type || null,
+      departure_city: data.departure_city || null,
+      stops: data.stops?.split('\n').filter(Boolean) || [],
+    } as any);
   };
 
   return (
