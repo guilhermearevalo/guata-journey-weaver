@@ -199,6 +199,7 @@ export type Database = {
           trip_month: number | null
           trip_year: number | null
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           agency_id?: string | null
@@ -218,6 +219,7 @@ export type Database = {
           trip_month?: number | null
           trip_year?: number | null
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           agency_id?: string | null
@@ -237,6 +239,7 @@ export type Database = {
           trip_month?: number | null
           trip_year?: number | null
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -253,6 +256,7 @@ export type Database = {
           cover_image: string | null
           created_at: string
           created_by: string | null
+          departure_city: string | null
           departure_dates: Json | null
           description: string | null
           destination: string
@@ -270,14 +274,17 @@ export type Database = {
           price: number | null
           short_description: string | null
           slug: string | null
+          stops: Json | null
           target_audience: string | null
           title: string
+          transport_type: string | null
           updated_at: string
         }
         Insert: {
           cover_image?: string | null
           created_at?: string
           created_by?: string | null
+          departure_city?: string | null
           departure_dates?: Json | null
           description?: string | null
           destination: string
@@ -295,14 +302,17 @@ export type Database = {
           price?: number | null
           short_description?: string | null
           slug?: string | null
+          stops?: Json | null
           target_audience?: string | null
           title: string
+          transport_type?: string | null
           updated_at?: string
         }
         Update: {
           cover_image?: string | null
           created_at?: string
           created_by?: string | null
+          departure_city?: string | null
           departure_dates?: Json | null
           description?: string | null
           destination?: string
@@ -320,8 +330,10 @@ export type Database = {
           price?: number | null
           short_description?: string | null
           slug?: string | null
+          stops?: Json | null
           target_audience?: string | null
           title?: string
+          transport_type?: string | null
           updated_at?: string
         }
         Relationships: [
