@@ -235,6 +235,16 @@ export default function AdminProposta() {
 
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
+              <Label>Link público ativo</Label>
+              <p className="text-xs text-muted-foreground">
+                Desligue para impedir que o cliente acesse o link compartilhado da proposta/roteiro. Religar reativa sem gerar novo link.
+              </p>
+            </div>
+            <Switch checked={shareEnabled} onCheckedChange={setShareEnabled} />
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
               <Label>Habilitar Pagamento</Label>
               <p className="text-xs text-muted-foreground">
                 Quando ativado, o cliente poderá pagar via Stripe na proposta pública.
