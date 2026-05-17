@@ -86,6 +86,7 @@ export default function AdminProposta() {
       setAccessCode((existingProposal as any).access_code || '');
       const pl = existingProposal.payment_links as Record<string, any> | null;
       setManualPaymentLink(pl?.manual_link || '');
+      setShareEnabled((existingProposal as any).share_enabled !== false);
     }
   }, [existingProposal]);
 
