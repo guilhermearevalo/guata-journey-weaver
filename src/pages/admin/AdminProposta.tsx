@@ -35,6 +35,7 @@ export default function AdminProposta() {
   const [manualPaymentLink, setManualPaymentLink] = useState('');
   const [shareLoading, setShareLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [shareEnabled, setShareEnabled] = useState(true);
 
   const { data: request, isLoading: requestLoading } = useQuery({
     queryKey: ['travel-request', requestId],
