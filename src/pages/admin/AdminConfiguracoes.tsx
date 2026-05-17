@@ -197,8 +197,6 @@ const AdminConfiguracoes = () => {
           </p>
         </CardContent>
       </Card>
-      <ContactInfoCard />
-      <AgencyLocationCard />
       <WhatsAppConfigCard />
       <HomepageSectionsCard />
       <CadasturConfigCard />
