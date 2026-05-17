@@ -352,51 +352,12 @@ const AdminCMSEditor = () => {
         </Card>
       )}
 
-      {/* Contact Info */}
+      {/* Contact Info + Location (salvos em site_settings, refletem no rodapé) */}
       {isContactPage && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações de Contato</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>E-mail</Label>
-              <Input
-                value={content.info?.email || ''}
-                onChange={(e) => handleInfoChange('email', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Telefone</Label>
-              <Input
-                value={content.info?.phone || ''}
-                onChange={(e) => handleInfoChange('phone', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>WhatsApp (número completo)</Label>
-              <Input
-                value={content.info?.whatsapp || ''}
-                onChange={(e) => handleInfoChange('whatsapp', e.target.value)}
-                placeholder="5511999999999"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Endereço</Label>
-              <Input
-                value={content.info?.address || ''}
-                onChange={(e) => handleInfoChange('address', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label>Horário de Atendimento</Label>
-              <Input
-                value={content.info?.hours || ''}
-                onChange={(e) => handleInfoChange('hours', e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <>
+          <ContactInfoSettingsCard />
+          <AgencyLocationSettingsCard />
+        </>
       )}
     </div>
   );
