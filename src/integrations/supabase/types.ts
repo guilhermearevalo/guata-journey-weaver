@@ -123,7 +123,10 @@ export type Database = {
       commission_payments: {
         Row: {
           agency_id: string
+          client_name: string | null
           created_at: string
+          created_by: string | null
+          destination: string | null
           gross_amount: number
           guata_commission: number
           id: string
@@ -132,12 +135,18 @@ export type Database = {
           paid_by: string | null
           partner_amount: number
           proposal_id: string | null
+          sale_date: string | null
+          settlement_id: string | null
+          source: string
           status: string
           stripe_fee: number | null
         }
         Insert: {
           agency_id: string
+          client_name?: string | null
           created_at?: string
+          created_by?: string | null
+          destination?: string | null
           gross_amount: number
           guata_commission: number
           id?: string
@@ -146,12 +155,18 @@ export type Database = {
           paid_by?: string | null
           partner_amount: number
           proposal_id?: string | null
+          sale_date?: string | null
+          settlement_id?: string | null
+          source?: string
           status?: string
           stripe_fee?: number | null
         }
         Update: {
           agency_id?: string
+          client_name?: string | null
           created_at?: string
+          created_by?: string | null
+          destination?: string | null
           gross_amount?: number
           guata_commission?: number
           id?: string
@@ -160,6 +175,9 @@ export type Database = {
           paid_by?: string | null
           partner_amount?: number
           proposal_id?: string | null
+          sale_date?: string | null
+          settlement_id?: string | null
+          source?: string
           status?: string
           stripe_fee?: number | null
         }
@@ -431,6 +449,48 @@ export type Database = {
           },
         ]
       }
+      monthly_settlements: {
+        Row: {
+          agency_id: string
+          created_at: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          period_month: number
+          period_year: number
+          status: string
+          total_commission: number
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          period_month: number
+          period_year: number
+          status?: string
+          total_commission?: number
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          period_month?: number
+          period_year?: number
+          status?: string
+          total_commission?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       newsletter_subscribers: {
         Row: {
           created_at: string | null
@@ -601,6 +661,7 @@ export type Database = {
           payment_links: Json | null
           payment_status: string | null
           request_id: string
+          share_enabled: boolean
           share_token: string | null
           title: string
           total_price: number | null
@@ -623,6 +684,7 @@ export type Database = {
           payment_links?: Json | null
           payment_status?: string | null
           request_id: string
+          share_enabled?: boolean
           share_token?: string | null
           title: string
           total_price?: number | null
@@ -645,6 +707,7 @@ export type Database = {
           payment_links?: Json | null
           payment_status?: string | null
           request_id?: string
+          share_enabled?: boolean
           share_token?: string | null
           title?: string
           total_price?: number | null
