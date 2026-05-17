@@ -166,24 +166,31 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
             />
             <p className="text-xs text-muted-foreground">Cole o link da localização ou rota para aparecer no roteiro do cliente.</p>
           </div>
-          {/* Image URL */}
+          {/* Image */}
           <div className="space-y-2">
-            <Label htmlFor="act-image">Imagem (URL)</Label>
+            <Label htmlFor="act-image">Imagem da atividade</Label>
             <div className="flex gap-2">
-              <Input
-                id="act-image"
-                value={imageUrl}
-                onChange={e => setImageUrl(e.target.value)}
-                placeholder="https://exemplo.com/foto.jpg"
-                className="flex-1"
-              />
+              <Label
+                htmlFor="act-image-upload"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm font-medium hover:bg-secondary/80"
+              >
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {uploading ? 'Enviando…' : 'Enviar imagem'}
+              </Label>
+              <Input id="act-image-upload" type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
               {imageUrl && (
                 <Button type="button" variant="ghost" size="icon" onClick={() => setImageUrl('')} className="shrink-0">
                   <X className="h-4 w-4" />
                 </Button>
               )}
             </div>
-            {imageUrl && (
+            <Input
+              id="act-image"
+              value={imageUrl}
+              onChange={e => setImageUrl(e.target.value)}
+              placeholder="ou cole uma URL: https://..."
+            />
+            {imageUrl ? (
               <div className="relative rounded-lg overflow-hidden border bg-muted h-32">
                 <img
                   src={imageUrl}
@@ -192,11 +199,9 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               </div>
-            )}
-            {!imageUrl && (
+            ) : (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <ImagePlus className="h-3 w-3" />
-                Cole a URL de uma imagem para ilustrar a atividade
+                <ImagePlus className="h-3 w-3" /> Envie uma foto ou cole uma URL para ilustrar a atividade
               </p>
             )}
           </div>
