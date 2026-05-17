@@ -49,7 +49,7 @@ export default function RoteiroPublico() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('proposals')
-        .select('id, request_id, title, itinerary, documents_checklist, share_token, agency_id, travel_requests!inner(destination, travel_dates, travelers_count)')
+        .select('id, request_id, title, itinerary, documents_checklist, share_token, share_enabled, agency_id, travel_requests!inner(destination, travel_dates, travelers_count)')
         .eq('share_token', token!)
         .maybeSingle();
       
@@ -135,6 +135,15 @@ export default function RoteiroPublico() {
     </div>
   );
 
+  if ((proposal as any).share_enabled === false) return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center space-y-2 px-4">
+        <h1 className="text-2xl font-bold">Roteiro indisponível</h1>
+        <p className="text-muted-foreground">Este roteiro não está mais disponível para visualização.</p>
+      </div>
+    </div>
+  );
+
   const hasAccessCode = (proposal as any)._has_access_code as boolean;
   const needsCode = hasAccessCode && !isUnlocked;
 
@@ -185,48 +194,29 @@ export default function RoteiroPublico() {
   return (
     <div className="min-h-screen bg-muted/20">
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 print:py-0">
-        {/* Header */}
-        <div className="overflow-hidden rounded-lg border bg-background shadow-sm print:rounded-none print:border-0 print:shadow-none">
+        {/* Header — enxuto */}
+        <div className="overflow-hidden rounded-xl border bg-background shadow-sm print:rounded-none print:border-0 print:shadow-none">
           {coverImage && (
-            <div className="h-44 w-full overflow-hidden print:h-32">
+            <div className="h-40 w-full overflow-hidden print:h-28">
               <img src={coverImage} alt={request?.destination || proposal.title} className="h-full w-full object-cover" />
             </div>
           )}
-          <div className="flex items-start justify-between gap-4 p-5 print:p-4 print:flex-col print:gap-2">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                {agency?.logo_url ? (
-                  <img src={agency.logo_url} alt={`Logo ${brandName}`} className="h-12 max-w-36 object-contain" />
-                ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">G</div>
+          <div className="flex items-start justify-between gap-4 p-5 print:flex-col print:gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Roteiro</p>
+              <h1 className="font-display text-3xl font-bold mt-1 truncate">{request?.destination || proposal.title}</h1>
+              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
+                {travelDates?.start && (
+                  <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{formatDate(travelDates.start)} — {formatDate(travelDates.end)}</span>
                 )}
-                <div>
-                  <p className="text-xs font-medium uppercase text-muted-foreground">Roteiro preparado por</p>
-                  <p className="font-medium">{brandName}</p>
-                </div>
+                {request?.travelers_count && (
+                  <span>{request.travelers_count} viajante(s)</span>
+                )}
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Roteiro de Viagem</p>
-                <h1 className="font-display text-3xl font-bold mt-1">{request?.destination || proposal.title}</h1>
-              </div>
-            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-              {travelDates?.start && (
-                <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{formatDate(travelDates.start)} — {formatDate(travelDates.end)}</span>
-              )}
-              {request?.travelers_count && (
-                <span>{request.travelers_count} viajante(s)</span>
-              )}
             </div>
-          </div>
-          <div className="flex items-center gap-2 print:hidden">
-            <Badge variant="outline" className="text-base px-3 py-1">
-              <DollarSign className="mr-1 h-4 w-4" />
-              R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </Badge>
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Button variant="ghost" size="sm" onClick={() => window.print()} className="print:hidden shrink-0">
               <Printer className="mr-2 h-4 w-4" />Imprimir
             </Button>
-          </div>
           </div>
         </div>
 

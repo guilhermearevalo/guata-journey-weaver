@@ -35,6 +35,7 @@ export default function AdminProposta() {
   const [manualPaymentLink, setManualPaymentLink] = useState('');
   const [shareLoading, setShareLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [shareEnabled, setShareEnabled] = useState(true);
 
   const { data: request, isLoading: requestLoading } = useQuery({
     queryKey: ['travel-request', requestId],
@@ -85,6 +86,7 @@ export default function AdminProposta() {
       setAccessCode((existingProposal as any).access_code || '');
       const pl = existingProposal.payment_links as Record<string, any> | null;
       setManualPaymentLink(pl?.manual_link || '');
+      setShareEnabled((existingProposal as any).share_enabled !== false);
     }
   }, [existingProposal]);
 
@@ -100,6 +102,7 @@ export default function AdminProposta() {
         payment_status: paymentStatus,
         payment_enabled: paymentEnabled,
         access_code: accessCode.trim() || null,
+        share_enabled: shareEnabled,
         payment_links: { ...existingPaymentLinks, manual_link: manualPaymentLink.trim() || null },
         created_by: user?.id,
         agency_id: agencyId === 'none' ? null : agencyId,
@@ -228,6 +231,16 @@ export default function AdminProposta() {
           <div className="space-y-2">
             <Label>Inclusões (uma por linha)</Label>
             <Textarea value={inclusions} onChange={e => setInclusions(e.target.value)} rows={4} placeholder="Hospedagem 4 noites&#10;Transfer aeroporto&#10;Passeio de barco" />
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label>Link público ativo</Label>
+              <p className="text-xs text-muted-foreground">
+                Desligue para impedir que o cliente acesse o link compartilhado da proposta/roteiro. Religar reativa sem gerar novo link.
+              </p>
+            </div>
+            <Switch checked={shareEnabled} onCheckedChange={setShareEnabled} />
           </div>
 
           <div className="flex items-center justify-between rounded-lg border p-4">

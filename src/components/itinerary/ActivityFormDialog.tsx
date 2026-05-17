@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ImagePlus, X } from 'lucide-react';
+import { ImagePlus, X, Upload, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Activity {
   name: string;
@@ -42,6 +44,7 @@ const timeSlots = [
 ];
 
 export default function ActivityFormDialog({ open, onOpenChange, onSave, initialData }: ActivityFormDialogProps) {
+  const { toast } = useToast();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('cultura');
@@ -49,6 +52,35 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
   const [estimatedCost, setEstimatedCost] = useState('0');
   const [imageUrl, setImageUrl] = useState('');
   const [mapsUrl, setMapsUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Selecione uma imagem', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'Imagem muito grande', description: 'Máximo 5MB.', variant: 'destructive' });
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `activity-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+      setImageUrl(data.publicUrl);
+      toast({ title: 'Imagem enviada!' });
+    } catch {
+      toast({ title: 'Erro no upload', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
 
   useEffect(() => {
     if (initialData) {
@@ -134,24 +166,31 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
             />
             <p className="text-xs text-muted-foreground">Cole o link da localização ou rota para aparecer no roteiro do cliente.</p>
           </div>
-          {/* Image URL */}
+          {/* Image */}
           <div className="space-y-2">
-            <Label htmlFor="act-image">Imagem (URL)</Label>
+            <Label htmlFor="act-image">Imagem da atividade</Label>
             <div className="flex gap-2">
-              <Input
-                id="act-image"
-                value={imageUrl}
-                onChange={e => setImageUrl(e.target.value)}
-                placeholder="https://exemplo.com/foto.jpg"
-                className="flex-1"
-              />
+              <Label
+                htmlFor="act-image-upload"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm font-medium hover:bg-secondary/80"
+              >
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {uploading ? 'Enviando…' : 'Enviar imagem'}
+              </Label>
+              <Input id="act-image-upload" type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
               {imageUrl && (
                 <Button type="button" variant="ghost" size="icon" onClick={() => setImageUrl('')} className="shrink-0">
                   <X className="h-4 w-4" />
                 </Button>
               )}
             </div>
-            {imageUrl && (
+            <Input
+              id="act-image"
+              value={imageUrl}
+              onChange={e => setImageUrl(e.target.value)}
+              placeholder="ou cole uma URL: https://..."
+            />
+            {imageUrl ? (
               <div className="relative rounded-lg overflow-hidden border bg-muted h-32">
                 <img
                   src={imageUrl}
@@ -160,11 +199,9 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               </div>
-            )}
-            {!imageUrl && (
+            ) : (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <ImagePlus className="h-3 w-3" />
-                Cole a URL de uma imagem para ilustrar a atividade
+                <ImagePlus className="h-3 w-3" /> Envie uma foto ou cole uma URL para ilustrar a atividade
               </p>
             )}
           </div>

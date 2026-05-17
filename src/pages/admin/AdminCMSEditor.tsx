@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCmsPage, CmsPageContent } from '@/hooks/useCmsPage';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -352,54 +352,143 @@ const AdminCMSEditor = () => {
         </Card>
       )}
 
-      {/* Contact Info */}
+      {/* Contact Info + Location (salvos em site_settings, refletem no rodapé) */}
       {isContactPage && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações de Contato</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>E-mail</Label>
-              <Input
-                value={content.info?.email || ''}
-                onChange={(e) => handleInfoChange('email', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Telefone</Label>
-              <Input
-                value={content.info?.phone || ''}
-                onChange={(e) => handleInfoChange('phone', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>WhatsApp (número completo)</Label>
-              <Input
-                value={content.info?.whatsapp || ''}
-                onChange={(e) => handleInfoChange('whatsapp', e.target.value)}
-                placeholder="5511999999999"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Endereço</Label>
-              <Input
-                value={content.info?.address || ''}
-                onChange={(e) => handleInfoChange('address', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label>Horário de Atendimento</Label>
-              <Input
-                value={content.info?.hours || ''}
-                onChange={(e) => handleInfoChange('hours', e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <>
+          <ContactInfoSettingsCard />
+          <AgencyLocationSettingsCard />
+        </>
       )}
     </div>
   );
 };
 
 export default AdminCMSEditor;
+
+/* ── Contato (site_settings.contact_info) ── */
+function ContactInfoSettingsCard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  const { data: config } = useQuery({
+    queryKey: ['site-setting', 'contact_info'],
+    queryFn: async () => {
+      const { data } = await supabase.from('site_settings').select('value').eq('key', 'contact_info').maybeSingle();
+      const defaults = {
+        address: 'Mato Grosso do Sul, Brasil',
+        phone: '(67) 99999-9999',
+        whatsapp: '5567999999999',
+        email: 'contato@guata.travel',
+        hours: 'Segunda a Sexta: 9h às 18h',
+        instagram: '',
+        facebook: '',
+        youtube: '',
+      };
+      return { ...defaults, ...((data?.value as Partial<typeof defaults>) || {}) };
+    },
+  });
+  const [form, setForm] = useState<any>(null);
+  useEffect(() => { if (config) setForm(config); }, [config]);
+  const handleSave = async () => {
+    if (!form) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('site_settings').upsert({ key: 'contact_info', value: form, updated_at: new Date().toISOString() });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['site-setting', 'contact_info'] });
+      toast({ title: 'Contato atualizado', description: 'O rodapé e a página Contato foram atualizados.' });
+    } catch {
+      toast({ title: 'Erro ao salvar', variant: 'destructive' });
+    } finally { setSaving(false); }
+  };
+  if (!form) return null;
+  const fields: { key: string; label: string; placeholder?: string }[] = [
+    { key: 'address', label: 'Endereço', placeholder: 'Av. Afonso Pena, 1234 - Campo Grande, MS' },
+    { key: 'phone', label: 'Telefone (exibido)', placeholder: '(67) 99999-9999' },
+    { key: 'whatsapp', label: 'WhatsApp (com DDI, só números)', placeholder: '5567999999999' },
+    { key: 'email', label: 'E-mail', placeholder: 'contato@guata.travel' },
+    { key: 'hours', label: 'Horário de atendimento', placeholder: 'Segunda a Sexta: 9h às 18h' },
+    { key: 'instagram', label: 'Instagram (URL)', placeholder: 'https://instagram.com/guata' },
+    { key: 'facebook', label: 'Facebook (URL)', placeholder: 'https://facebook.com/guata' },
+    { key: 'youtube', label: 'YouTube (URL)', placeholder: 'https://youtube.com/@guata' },
+  ];
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Informações de contato</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          {fields.map((f) => (
+            <div key={f.key} className="space-y-2">
+              <Label>{f.label}</Label>
+              <Input value={form[f.key] || ''} placeholder={f.placeholder} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })} />
+            </div>
+          ))}
+        </div>
+        <Button onClick={handleSave} disabled={saving}>
+          <Save className="h-4 w-4 mr-2" />
+          {saving ? 'Salvando…' : 'Salvar contato'}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ── Localização da agência (site_settings.agency_location) ── */
+function AgencyLocationSettingsCard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  const { data: config } = useQuery({
+    queryKey: ['site-setting', 'agency_location'],
+    queryFn: async () => {
+      const { data } = await supabase.from('site_settings').select('value').eq('key', 'agency_location').maybeSingle();
+      const defaults = { address: 'Campo Grande, MS - Brasil', latitude: '-20.4697', longitude: '-54.6201', zoom: '14' };
+      return { ...defaults, ...((data?.value as Partial<typeof defaults>) || {}) };
+    },
+  });
+  const [form, setForm] = useState<any>(null);
+  useEffect(() => { if (config) setForm(config); }, [config]);
+  const handleSave = async () => {
+    if (!form) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('site_settings').upsert({ key: 'agency_location', value: form, updated_at: new Date().toISOString() });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['site-setting', 'agency_location'] });
+      toast({ title: 'Localização atualizada' });
+    } catch {
+      toast({ title: 'Erro ao salvar', variant: 'destructive' });
+    } finally { setSaving(false); }
+  };
+  if (!form) return null;
+  const previewUrl = `https://www.google.com/maps?q=${form.latitude},${form.longitude}&z=${form.zoom || 14}&output=embed`;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Localização no mapa</CardTitle>
+        <p className="text-sm text-muted-foreground">Pegue as coordenadas no Google Maps (clique direito → "O que há aqui?").</p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label>Endereço completo</Label>
+          <Input value={form.address || ''} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-2"><Label>Latitude</Label><Input value={form.latitude || ''} onChange={(e) => setForm({ ...form, latitude: e.target.value })} /></div>
+          <div className="space-y-2"><Label>Longitude</Label><Input value={form.longitude || ''} onChange={(e) => setForm({ ...form, longitude: e.target.value })} /></div>
+          <div className="space-y-2"><Label>Zoom (1-20)</Label><Input value={form.zoom || ''} onChange={(e) => setForm({ ...form, zoom: e.target.value })} /></div>
+        </div>
+        <div className="aspect-video overflow-hidden rounded-lg border">
+          <iframe src={previewUrl} width="100%" height="100%" style={{ border: 0 }} loading="lazy" title="Pré-visualização do mapa" />
+        </div>
+        <Button onClick={handleSave} disabled={saving}>
+          <Save className="h-4 w-4 mr-2" />
+          {saving ? 'Salvando…' : 'Salvar localização'}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
