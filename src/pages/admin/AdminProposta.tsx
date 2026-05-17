@@ -102,6 +102,7 @@ export default function AdminProposta() {
         payment_status: paymentStatus,
         payment_enabled: paymentEnabled,
         access_code: accessCode.trim() || null,
+        share_enabled: shareEnabled,
         payment_links: { ...existingPaymentLinks, manual_link: manualPaymentLink.trim() || null },
         created_by: user?.id,
         agency_id: agencyId === 'none' ? null : agencyId,
