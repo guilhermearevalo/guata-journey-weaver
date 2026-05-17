@@ -93,6 +93,15 @@ export default function PropostaPublica() {
     </div>
   );
 
+  if ((proposal as any).share_enabled === false) return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center space-y-2 px-4">
+        <h1 className="text-2xl font-bold">Proposta indisponível</h1>
+        <p className="text-muted-foreground">Este link não está mais ativo. Entre em contato com a agência.</p>
+      </div>
+    </div>
+  );
+
   const isPaid = proposal.payment_status === 'paid';
   const canPayStripe = proposal.total_price && proposal.total_price > 0 && !isPaid;
 
