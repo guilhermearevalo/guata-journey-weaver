@@ -44,6 +44,7 @@ const timeSlots = [
 ];
 
 export default function ActivityFormDialog({ open, onOpenChange, onSave, initialData }: ActivityFormDialogProps) {
+  const { toast } = useToast();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('cultura');
@@ -51,6 +52,35 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
   const [estimatedCost, setEstimatedCost] = useState('0');
   const [imageUrl, setImageUrl] = useState('');
   const [mapsUrl, setMapsUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Selecione uma imagem', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'Imagem muito grande', description: 'Máximo 5MB.', variant: 'destructive' });
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `activity-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+      setImageUrl(data.publicUrl);
+      toast({ title: 'Imagem enviada!' });
+    } catch {
+      toast({ title: 'Erro no upload', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
 
   useEffect(() => {
     if (initialData) {
