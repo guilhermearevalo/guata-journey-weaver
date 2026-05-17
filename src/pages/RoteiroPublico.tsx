@@ -49,7 +49,7 @@ export default function RoteiroPublico() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('proposals')
-        .select('id, request_id, title, itinerary, documents_checklist, share_token, agency_id, travel_requests!inner(destination, travel_dates, travelers_count)')
+        .select('id, request_id, title, itinerary, documents_checklist, share_token, share_enabled, agency_id, travel_requests!inner(destination, travel_dates, travelers_count)')
         .eq('share_token', token!)
         .maybeSingle();
       
