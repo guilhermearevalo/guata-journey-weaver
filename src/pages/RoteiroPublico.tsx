@@ -135,6 +135,15 @@ export default function RoteiroPublico() {
     </div>
   );
 
+  if ((proposal as any).share_enabled === false) return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center space-y-2 px-4">
+        <h1 className="text-2xl font-bold">Roteiro indisponível</h1>
+        <p className="text-muted-foreground">Este roteiro não está mais disponível para visualização.</p>
+      </div>
+    </div>
+  );
+
   const hasAccessCode = (proposal as any)._has_access_code as boolean;
   const needsCode = hasAccessCode && !isUnlocked;
 
