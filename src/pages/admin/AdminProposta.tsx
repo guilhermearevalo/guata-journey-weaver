@@ -245,23 +245,23 @@ export default function AdminProposta() {
 
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
-              <Label>Habilitar Pagamento</Label>
+              <Label>Exibir link de pagamento</Label>
               <p className="text-xs text-muted-foreground">
-                Quando ativado, o cliente poderá pagar via Stripe na proposta pública.
+                Quando ativado, o cliente verá o link de pagamento (PIX / outro) na proposta pública.
               </p>
             </div>
             <Switch checked={paymentEnabled} onCheckedChange={setPaymentEnabled} />
           </div>
 
           <div className="space-y-2">
-            <Label>Link de Pagamento Manual (PIX, PagSeguro, etc.)</Label>
+            <Label>Link de pagamento (PIX, PagSeguro, etc.)</Label>
             <Input
               value={manualPaymentLink}
               onChange={(e) => setManualPaymentLink(e.target.value)}
-              placeholder="https://pag.ae/exemplo ou chave PIX"
+              placeholder="https://pag.ae/exemplo ou link PIX"
             />
             <p className="text-xs text-muted-foreground">
-              Link alternativo ao Stripe. Será exibido na proposta pública para o cliente.
+              Obrigatório para exibir pagamento na proposta pública. Marque como Pago após confirmar o recebimento.
             </p>
           </div>
 

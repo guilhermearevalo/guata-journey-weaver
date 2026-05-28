@@ -1,28 +1,14 @@
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Calendar, Users, CreditCard, CheckCircle, Route, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { MapPin, Calendar, Users, CreditCard, CheckCircle, Route } from 'lucide-react';
 
 export default function PropostaPublica() {
   const { token } = useParams<{ token: string }>();
-  const [searchParams] = useSearchParams();
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-
-  // Show toast on payment result
-  useEffect(() => {
-    const payment = searchParams.get('payment');
-    if (payment === 'success') {
-      toast.success('Pagamento realizado com sucesso!');
-    } else if (payment === 'cancelled') {
-      toast.info('Pagamento cancelado.');
-    }
-  }, [searchParams]);
 
   const { data: proposal, isLoading, error } = useQuery({
     queryKey: ['public-proposal', token],
@@ -45,33 +31,13 @@ export default function PropostaPublica() {
     client_name: string;
   } | null;
 
-  const paymentLinks = proposal?.payment_links as { stripe_session_id?: string; paid_at?: string; manual_link?: string } | null;
+  const paymentLinks = proposal?.payment_links as { manual_link?: string } | null;
   const inclusions = proposal?.inclusions as string[] | null;
   const itinerary = Array.isArray(proposal?.itinerary) ? proposal.itinerary : [];
 
   const formatDate = (d?: string) => {
     if (!d) return '';
     try { return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }); } catch { return ''; }
-  };
-
-  const handleStripeCheckout = async () => {
-    setIsCheckingOut(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { share_token: token },
-      });
-      if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL returned');
-      }
-    } catch (err: unknown) {
-      console.error('Checkout error:', err);
-      toast.error('Erro ao iniciar pagamento. Tente novamente.');
-    } finally {
-      setIsCheckingOut(false);
-    }
   };
 
   if (isLoading) return (
@@ -103,12 +69,16 @@ export default function PropostaPublica() {
   );
 
   const isPaid = proposal.payment_status === 'paid';
-  const canPayStripe = proposal.total_price && proposal.total_price > 0 && !isPaid;
+  const showPaymentLink =
+    !isPaid &&
+    (proposal as any).payment_enabled &&
+    paymentLinks?.manual_link &&
+    proposal.total_price &&
+    proposal.total_price > 0;
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-        {/* Header */}
         <div>
           <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Proposta de Viagem</p>
           <h1 className="text-3xl font-bold mt-1">{proposal.title}</h1>
@@ -125,7 +95,6 @@ export default function PropostaPublica() {
           </div>
         </div>
 
-        {/* Price */}
         {proposal.total_price && (
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="flex items-center justify-between py-6">
@@ -144,7 +113,6 @@ export default function PropostaPublica() {
           </Card>
         )}
 
-        {/* Description */}
         {proposal.description && (
           <Card>
             <CardHeader><CardTitle className="text-lg">Detalhes</CardTitle></CardHeader>
@@ -154,7 +122,6 @@ export default function PropostaPublica() {
           </Card>
         )}
 
-        {/* Inclusions */}
         {inclusions && inclusions.length > 0 && (
           <Card>
             <CardHeader><CardTitle className="text-lg">O que está incluso</CardTitle></CardHeader>
@@ -171,7 +138,6 @@ export default function PropostaPublica() {
           </Card>
         )}
 
-        {/* Itinerary link */}
         {itinerary.length > 0 && (
           <Card>
             <CardContent className="flex items-center justify-between py-4">
@@ -186,63 +152,22 @@ export default function PropostaPublica() {
           </Card>
         )}
 
-        {/* Payment section */}
-        {!isPaid && canPayStripe && (proposal as any).payment_enabled && (
-          <Card>
-            <CardHeader><CardTitle className="text-lg">Pagamento</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              {/* Manual payment link */}
-              {paymentLinks?.manual_link && (
-                <div className="space-y-2">
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    variant="outline"
-                    asChild
-                  >
-                    <a href={paymentLinks.manual_link} target="_blank" rel="noopener noreferrer">
-                      <CreditCard className="mr-2 h-4 w-4" />Pagar via Link Externo (PIX / Outro)
-                    </a>
-                  </Button>
-                </div>
-              )}
-              {/* Stripe checkout */}
-              <div className="space-y-2">
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={handleStripeCheckout}
-                  disabled={isCheckingOut}
-                >
-                  {isCheckingOut ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Redirecionando...</>
-                  ) : (
-                    <><CreditCard className="mr-2 h-4 w-4" />Pagar Online (Cartão via Stripe)</>
-                  )}
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">
-                  Pagamento seguro via Stripe. Confirmação automática.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Manual payment link only (when Stripe not enabled but manual link exists) */}
-        {!isPaid && !(canPayStripe && (proposal as any).payment_enabled) && paymentLinks?.manual_link && (
+        {showPaymentLink && (
           <Card>
             <CardHeader><CardTitle className="text-lg">Pagamento</CardTitle></CardHeader>
             <CardContent>
               <Button className="w-full" size="lg" variant="outline" asChild>
-                <a href={paymentLinks.manual_link} target="_blank" rel="noopener noreferrer">
-                  <CreditCard className="mr-2 h-4 w-4" />Pagar via Link Externo (PIX / Outro)
+                <a href={paymentLinks!.manual_link} target="_blank" rel="noopener noreferrer">
+                  <CreditCard className="mr-2 h-4 w-4" />Pagar via Link (PIX / Outro)
                 </a>
               </Button>
+              <p className="text-xs text-center text-muted-foreground mt-3">
+                Após o pagamento, a agência confirmará o recebimento.
+              </p>
             </CardContent>
           </Card>
         )}
 
-        {/* Footer */}
         <div className="text-center text-xs text-muted-foreground pt-8 border-t">
           <p>Proposta gerada por <strong>Guata Viagens</strong></p>
         </div>

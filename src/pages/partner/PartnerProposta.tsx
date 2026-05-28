@@ -269,9 +269,9 @@ export default function PartnerProposta() {
                 <div className="space-y-4 border-t pt-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>Habilitar Pagamento</Label>
+                      <Label>Exibir link de pagamento</Label>
                       <p className="text-xs text-muted-foreground">
-                        Quando ativado, o cliente poderá pagar via Stripe na proposta pública.
+                        Quando ativado, o cliente verá o link de pagamento na proposta pública.
                       </p>
                     </div>
                     <Switch checked={paymentEnabled} onCheckedChange={setPaymentEnabled} />

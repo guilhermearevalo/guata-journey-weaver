@@ -2,12 +2,3 @@ project_id = "xddzshslltdxstqpwvzr"
 
 [functions.itinerary-ai]
 verify_jwt = false
-
-[functions.create-checkout]
-verify_jwt = false
-
-[functions.stripe-webhook]
-verify_jwt = false
-
-[functions.invite-partner]
-verify_jwt = false

@@ -935,6 +935,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_partner_access: {
+        Args: { p_agency_id: string; p_email: string; p_full_name: string }
+        Returns: Json
+      }
       get_user_agency: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {

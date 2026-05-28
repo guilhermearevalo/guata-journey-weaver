@@ -26,8 +26,8 @@ const steps = [
     items: [
       'Dentro da demanda, clique em "Criar Proposta".',
       'Preencha o título, descrição, preço total e o que está incluso.',
-      'O Switch "Habilitar Pagamento" começa desligado — envie a proposta para o cliente revisar primeiro.',
-      'Quando o cliente aprovar a viagem, ligue o Switch para liberar o pagamento via Stripe (cartão ou PIX).',
+      'O switch "Exibir link de pagamento" começa desligado — envie a proposta para o cliente revisar primeiro.',
+      'Quando o cliente aprovar, ligue o switch para exibir o link de pagamento (PIX ou outro).',
       'No campo "Código de Acesso", defina uma senha (ex: NORONHA2026) para proteger o roteiro público. Deixe em branco para acesso livre.',
       'A proposta será visível para a Guatá e poderá ser compartilhada com o cliente.',
     ],
@@ -74,9 +74,9 @@ const steps = [
     items: [
       'Acesse "Financeiro" no menu lateral.',
       'Veja os cards: Total vendido (bruto), Recebido e A receber.',
-      'Na tabela, acompanhe cada proposta: valor bruto, taxa Stripe, comissão Guatá e seu valor líquido.',
+      'Na tabela, acompanhe cada proposta: valor bruto, comissão Guatá e seu valor líquido.',
       'O status do repasse (Pendente / Pago) é atualizado quando a Guatá fizer o PIX/TED.',
-      'Confira a taxa de comissão e quem absorve a taxa Stripe nas informações acima da tabela.',
+      'Confira a taxa de comissão nas informações acima da tabela.',
     ],
   },
 ];

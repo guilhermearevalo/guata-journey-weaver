@@ -8,17 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DollarSign, CheckCircle2, AlertCircle, Banknote, Loader2, Filter } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-
-const STRIPE_RATE = 0.0349;
-const STRIPE_FIXED = 0.39;
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -47,7 +41,7 @@ const AdminFinanceiro = () => {
   const { data: agencies } = useQuery({
     queryKey: ['agencies-map'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('partner_agencies').select('id, name, commission_rate, stripe_fee_bearer');
+      const { data, error } = await supabase.from('partner_agencies').select('id, name, commission_rate');
       if (error) throw error;
       return data;
     },
@@ -78,24 +72,11 @@ const AdminFinanceiro = () => {
   const calculateBreakdown = (totalPrice: number, agencyId: string | null) => {
     const agency = agencyId ? agencyMap.get(agencyId) : null;
     const rate = agency?.commission_rate ?? 10;
-    const feeBearer = (agency as any)?.stripe_fee_bearer || 'guata';
-    const stripeFee = totalPrice * STRIPE_RATE + STRIPE_FIXED;
     const guataCommission = totalPrice * (rate / 100);
-    
-    let partnerAmount: number;
-    if (feeBearer === 'partner') {
-      partnerAmount = totalPrice - guataCommission - stripeFee;
-    } else if (feeBearer === 'split') {
-      partnerAmount = totalPrice - guataCommission - (stripeFee / 2);
-    } else {
-      // guata absorbs
-      partnerAmount = totalPrice - guataCommission;
-    }
-    
-    return { stripeFee, guataCommission, partnerAmount, feeBearer };
+    const partnerAmount = totalPrice - guataCommission;
+    return { guataCommission, partnerAmount };
   };
 
-  // Filter proposals
   const filteredProposals = (proposals || []).filter(p => {
     if (agencyFilter !== 'all' && p.agency_id !== agencyFilter) return false;
     if (transferFilter === 'transferred') {
@@ -124,12 +105,12 @@ const AdminFinanceiro = () => {
 
   const registerMutation = useMutation({
     mutationFn: async (proposal: any) => {
-      const { stripeFee, guataCommission, partnerAmount } = calculateBreakdown(proposal.total_price, proposal.agency_id);
+      const { guataCommission, partnerAmount } = calculateBreakdown(proposal.total_price, proposal.agency_id);
       const { error } = await supabase.from('commission_payments').insert({
         proposal_id: proposal.id,
         agency_id: proposal.agency_id,
         gross_amount: proposal.total_price,
-        stripe_fee: parseFloat(stripeFee.toFixed(2)),
+        stripe_fee: 0,
         guata_commission: parseFloat(guataCommission.toFixed(2)),
         partner_amount: parseFloat(partnerAmount.toFixed(2)),
         status: 'paid',
@@ -174,7 +155,6 @@ const AdminFinanceiro = () => {
         <p className="text-muted-foreground">Receita, comissões e repasses</p>
       </div>
 
-      {/* Summary */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -199,7 +179,6 @@ const AdminFinanceiro = () => {
         </Card>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
         <Filter className="h-4 w-4 text-muted-foreground" />
         <Select value={agencyFilter} onValueChange={setAgencyFilter}>
@@ -221,7 +200,6 @@ const AdminFinanceiro = () => {
         </Select>
       </div>
 
-      {/* Table */}
       <Card>
         <CardHeader>
           <CardTitle>Propostas Aprovadas</CardTitle>
@@ -234,7 +212,6 @@ const AdminFinanceiro = () => {
                 <TableHead>Cliente</TableHead>
                 <TableHead>Agência</TableHead>
                 <TableHead className="text-right">Bruto</TableHead>
-                <TableHead className="text-right">Taxa Stripe</TableHead>
                 <TableHead className="text-right">Comissão</TableHead>
                 <TableHead className="text-right">A Repassar</TableHead>
                 <TableHead className="text-center">Pgto</TableHead>
@@ -245,13 +222,13 @@ const AdminFinanceiro = () => {
             <TableBody>
               {filteredProposals.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     Nenhuma proposta encontrada
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredProposals.map((p) => {
-                  const { stripeFee, guataCommission, partnerAmount } = calculateBreakdown(p.total_price || 0, p.agency_id);
+                  const { guataCommission, partnerAmount } = calculateBreakdown(p.total_price || 0, p.agency_id);
                   const clientName = requestMap.get(p.request_id) || '—';
                   const agencyName = p.agency_id ? agencyMap.get(p.agency_id)?.name || '—' : 'Guatá (direto)';
                   const commission = commissionByProposal.get(p.id);
@@ -264,7 +241,6 @@ const AdminFinanceiro = () => {
                       <TableCell>{clientName}</TableCell>
                       <TableCell>{agencyName}</TableCell>
                       <TableCell className="text-right">{fmt(p.total_price || 0)}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">{isPaid ? fmt(stripeFee) : '—'}</TableCell>
                       <TableCell className="text-right text-muted-foreground">{isPaid ? fmt(guataCommission) : '—'}</TableCell>
                       <TableCell className="text-right font-semibold">
                         {isPaid && p.agency_id ? fmt(partnerAmount) : '—'}
@@ -299,14 +275,13 @@ const AdminFinanceiro = () => {
         </CardContent>
       </Card>
 
-      {/* Register Transfer Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Registrar Repasse</DialogTitle>
           </DialogHeader>
           {selectedProposal && (() => {
-            const { stripeFee, guataCommission, partnerAmount } = calculateBreakdown(
+            const { guataCommission, partnerAmount } = calculateBreakdown(
               selectedProposal.total_price || 0, selectedProposal.agency_id
             );
             const agencyName = selectedProposal.agency_id
@@ -319,7 +294,6 @@ const AdminFinanceiro = () => {
                   <div className="flex justify-between"><span>Agência:</span><span className="font-medium">{agencyName}</span></div>
                   <div className="border-t pt-2 space-y-1">
                     <div className="flex justify-between"><span>Valor bruto:</span><span>{fmt(selectedProposal.total_price)}</span></div>
-                    <div className="flex justify-between text-muted-foreground"><span>Taxa Stripe:</span><span>-{fmt(stripeFee)}</span></div>
                     <div className="flex justify-between text-muted-foreground"><span>Comissão Guatá:</span><span>-{fmt(guataCommission)}</span></div>
                     <div className="flex justify-between font-bold text-base border-t pt-1">
                       <span>Valor a repassar:</span><span className="text-green-600">{fmt(partnerAmount)}</span>

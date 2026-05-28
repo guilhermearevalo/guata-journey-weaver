@@ -33,7 +33,7 @@ export default function PartnerFinanceiro() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('partner_agencies')
-        .select('name, commission_rate, stripe_fee_bearer')
+        .select('name, commission_rate')
         .eq('id', agencyData!.agency_id)
         .maybeSingle();
       if (error) throw error;
@@ -94,7 +94,6 @@ export default function PartnerFinanceiro() {
         </p>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -119,25 +118,19 @@ export default function PartnerFinanceiro() {
         </Card>
       </div>
 
-      {/* Info about commission rate */}
       {agency && (
         <Card>
           <CardContent className="py-4">
             <div className="flex items-center gap-4 text-sm">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
               <span>
-                Comissão Guatá: <strong>{agency.commission_rate ?? 10}%</strong> · 
-                Taxa Stripe absorvida por: <strong>
-                  {(agency as any).stripe_fee_bearer === 'partner' ? 'Agência' : 
-                   (agency as any).stripe_fee_bearer === 'split' ? 'Dividido' : 'Guatá'}
-                </strong>
+                Comissão Guatá: <strong>{agency.commission_rate ?? 10}%</strong>
               </span>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Commissions Table */}
       <Card>
         <CardHeader>
           <CardTitle>Histórico de Repasses</CardTitle>
@@ -148,7 +141,6 @@ export default function PartnerFinanceiro() {
               <TableRow>
                 <TableHead>Proposta</TableHead>
                 <TableHead className="text-right">Valor Bruto</TableHead>
-                <TableHead className="text-right">Taxa Stripe</TableHead>
                 <TableHead className="text-right">Comissão Guatá</TableHead>
                 <TableHead className="text-right">Seu Valor</TableHead>
                 <TableHead className="text-center">Status</TableHead>
@@ -158,7 +150,7 @@ export default function PartnerFinanceiro() {
             <TableBody>
               {(!commissions || commissions.length === 0) ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     Nenhum repasse registrado ainda
                   </TableCell>
                 </TableRow>
@@ -169,7 +161,6 @@ export default function PartnerFinanceiro() {
                       {proposalMap.get(c.proposal_id || '') || 'Proposta'}
                     </TableCell>
                     <TableCell className="text-right">{fmt(c.gross_amount)}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{fmt(c.stripe_fee)}</TableCell>
                     <TableCell className="text-right text-muted-foreground">{fmt(c.guata_commission)}</TableCell>
                     <TableCell className="text-right font-semibold">{fmt(c.partner_amount)}</TableCell>
                     <TableCell className="text-center">

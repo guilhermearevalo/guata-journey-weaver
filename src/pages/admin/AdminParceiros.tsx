@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Building2, Mail, Phone, MapPin, Check, X, Eye, MoreHorizontal, UserPlus, Copy, Loader2, Save, Image as ImageIcon, KeyRound, Send } from 'lucide-react';
+import { Search, Building2, Mail, Phone, MapPin, Check, X, Eye, MoreHorizontal, UserPlus, Copy, Loader2, Save, Image as ImageIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -88,17 +88,22 @@ const AdminParceiros = () => {
 
   const inviteMutation = useMutation({
     mutationFn: async ({ agency_id, email, full_name }: { agency_id: string; email: string; full_name: string }) => {
-      const { data, error } = await supabase.functions.invoke('invite-partner', {
-        body: { agency_id, email, full_name },
+      const { data, error } = await supabase.rpc('create_partner_access', {
+        p_agency_id: agency_id,
+        p_email: email,
+        p_full_name: full_name,
       });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data;
+      const result = data as { email?: string; temporary_password?: string; error?: string } | null;
+      if (!result?.email || !result?.temporary_password) {
+        throw new Error('Resposta inválida ao criar conta');
+      }
+      return result;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['partner-agencies'] });
-      setInviteResult({ email: data.email, temporary_password: data.temporary_password });
+      setInviteResult({ email: data.email!, temporary_password: data.temporary_password! });
       toast({
         title: 'Conta criada com sucesso!',
         description: 'A agência foi aprovada e o login do parceiro foi criado.',
@@ -111,24 +116,6 @@ const AdminParceiros = () => {
         variant: 'destructive',
       });
     },
-  });
-
-  const resetPasswordMutation = useMutation({
-    mutationFn: async ({ agency_id, mode }: { agency_id: string; mode: 'temporary' | 'email' }) => {
-      const { data, error } = await supabase.functions.invoke('reset-partner-password', { body: { agency_id, mode } });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data;
-    },
-    onSuccess: (data) => {
-      if (data.mode === 'temporary') {
-        setInviteResult({ email: data.email, temporary_password: data.temporary_password });
-        toast({ title: 'Nova senha gerada', description: 'Copie e envie para o parceiro.' });
-      } else {
-        toast({ title: 'E-mail de recuperação enviado', description: `Link enviado para ${data.email}` });
-      }
-    },
-    onError: (error: Error) => toast({ title: 'Erro', description: error.message, variant: 'destructive' }),
   });
 
   const toggleExternalMutation = useMutation({
@@ -268,23 +255,13 @@ const AdminParceiros = () => {
               {agency.is_external ? 'Remover marca externa' : 'Marcar como externa'}
             </DropdownMenuItem>
             {agency.is_active ? (
-              <>
-                <DropdownMenuItem onClick={() => resetPasswordMutation.mutate({ agency_id: agency.id, mode: 'temporary' })}>
-                  <KeyRound className="mr-2 h-4 w-4" />
-                  Gerar nova senha temporária
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => resetPasswordMutation.mutate({ agency_id: agency.id, mode: 'email' })}>
-                  <Send className="mr-2 h-4 w-4" />
-                  Enviar link por e-mail
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setConfirmAction({ type: 'deactivate', agency })}
-                  className="text-red-600"
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Desativar
-                </DropdownMenuItem>
-              </>
+              <DropdownMenuItem
+                onClick={() => setConfirmAction({ type: 'deactivate', agency })}
+                className="text-red-600"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Desativar
+              </DropdownMenuItem>
             ) : (
               <DropdownMenuItem
                 onClick={() => handleApproveWithInvite(agency)}
