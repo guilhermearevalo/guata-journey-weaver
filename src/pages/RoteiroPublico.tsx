@@ -302,6 +302,58 @@ export default function RoteiroPublico() {
           </div>
         )}
 
+        {/* Seções do dossiê (opcionais) */}
+        {hasAnyFlight(dossier) && (
+          <Card className="overflow-hidden bg-background">
+            <CardHeader className="pb-3">
+              <CardTitle className="font-display text-xl flex items-center gap-2"><Plane className="h-5 w-5 text-primary" />Aéreo</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {dossier.flight_outbound && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Voo de ida</p>
+                  <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{dossier.flight_outbound}</p>
+                </div>
+              )}
+              {dossier.flight_internal && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Voo interno</p>
+                  <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{dossier.flight_internal}</p>
+                </div>
+              )}
+              {dossier.flight_inbound && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Voo de volta</p>
+                  <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{dossier.flight_inbound}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {([
+          { key: 'accommodation', label: 'Hospedagem', Icon: Hotel },
+          { key: 'transfer', label: 'Transfer', Icon: Car },
+          { key: 'documentation', label: 'Documentações', Icon: FileText },
+          { key: 'baggage', label: 'Bagagem', Icon: Luggage },
+          { key: 'insurance', label: 'Seguro viagem', Icon: ShieldCheck },
+          { key: 'exchange', label: 'Comunicação e câmbio', Icon: Banknote },
+        ] as const).map(({ key, label, Icon }) => {
+          const value = dossier[key] as string | undefined;
+          if (!value) return null;
+          return (
+            <Card key={key} className="overflow-hidden bg-background">
+              <CardHeader className="pb-3">
+                <CardTitle className="font-display text-xl flex items-center gap-2"><Icon className="h-5 w-5 text-primary" />{label}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{value}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
+
+
         {/* Documents Checklist */}
         {travelDocuments.length > 0 && (
           <TravelDocumentsVault
