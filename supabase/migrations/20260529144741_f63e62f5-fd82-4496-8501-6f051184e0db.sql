@@ -1,0 +1,1 @@
+ALTER TABLE public.proposals ADD COLUMN IF NOT EXISTS dossier jsonb NOT NULL DEFAULT '{}'::jsonb;
