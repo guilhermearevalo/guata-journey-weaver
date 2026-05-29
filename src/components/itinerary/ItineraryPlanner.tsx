@@ -127,6 +127,25 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] }),
   });
 
+  const saveDossier = useMutation({
+    mutationFn: async (next: Dossier) => {
+      if (!proposal?.id) throw new Error('Sem proposta');
+      const { error } = await supabase
+        .from('proposals')
+        .update({ dossier: JSON.parse(JSON.stringify(next)) } as any)
+        .eq('id', proposal.id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] }),
+  });
+
+  const setDayTitle = (dayNum: number, title: string) => {
+    const titles = { ...(dossier.day_titles || {}) };
+    if (title.trim()) titles[String(dayNum)] = title;
+    else delete titles[String(dayNum)];
+    saveDossier.mutate({ ...dossier, day_titles: titles });
+  };
+
   const generateFullItinerary = async () => {
     setGenerating(true);
     try {
