@@ -94,6 +94,8 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     ? (proposal.itinerary as unknown as ItineraryDay[])
     : [];
 
+  const dossier: Dossier = parseDossier((proposal as any)?.dossier);
+
   const { data: travelDocuments = [] } = useQuery({
     queryKey: ['travel-documents', proposal?.id],
     queryFn: async () => {
