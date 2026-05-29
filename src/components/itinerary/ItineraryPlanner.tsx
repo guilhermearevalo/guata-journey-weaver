@@ -475,6 +475,9 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         </Card>
       )}
 
+      {/* Seções do dossiê (opcionais) */}
+      <DossierEditor dossier={dossier} onChange={(next) => saveDossier.mutate(next)} />
+
       {/* Travel Documents */}
       <TravelDocumentsVault
         proposalId={proposal.id}
