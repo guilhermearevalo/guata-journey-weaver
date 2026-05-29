@@ -102,6 +102,8 @@ export default function RoteiroPublico() {
     ? (proposal.itinerary as unknown as ItineraryDay[])
     : [];
 
+  const dossier: Dossier = parseDossier((proposal as any)?.dossier);
+
   const legacyDocumentsChecklist = Array.isArray((proposal as any)?.documents_checklist)
     ? ((proposal as any).documents_checklist as { name: string; checked: boolean; notes?: string }[])
     : [];
@@ -115,7 +117,7 @@ export default function RoteiroPublico() {
   const totalCost = itinerary.reduce((sum, day) => sum + day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0), 0);
   const agency = (proposal as any)?.agency_branding as { name?: string; logo_url?: string | null; cover_image_url?: string | null } | null;
   const firstActivityImage = itinerary.flatMap(day => day.activities).find(activity => activity.image_url)?.image_url;
-  const coverImage = agency?.cover_image_url || firstActivityImage;
+  const coverImage = dossier.cover_image || agency?.cover_image_url || firstActivityImage;
   const brandName = agency?.name || 'Guatá Viagens';
 
   if (isLoading) return (
