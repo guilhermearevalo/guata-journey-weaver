@@ -6,6 +6,7 @@ import { Search, MessageCircle, ArrowRight, Star, ShieldCheck, Sparkles } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import useEmblaCarousel from 'embla-carousel-react';
+import { buildExperienciasSearchUrl, isOnerTravelQuery } from '@/lib/onerTravel';
 
 interface Slide {
   type: 'image' | 'video';
@@ -21,6 +22,11 @@ interface WhatsAppConfig {
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop';
 
 const QUICK_FILTERS = ['Pantanal', 'Bonito', 'Nordeste', 'Europa', 'All Inclusive'];
+
+const ONER_CHIPS = [
+  { label: 'Passagens', path: '/passagens' },
+  { label: 'Hotéis', path: '/passagens' },
+] as const;
 
 export function HeroSection() {
   const [destination, setDestination] = useState('');
@@ -77,9 +83,16 @@ export function HeroSection() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (destination.trim()) params.set('destino', destination);
-    navigate(`/experiencias?${params.toString()}`);
+    const query = destination.trim();
+    if (!query) {
+      navigate('/experiencias');
+      return;
+    }
+    if (isOnerTravelQuery(query)) {
+      navigate('/passagens');
+      return;
+    }
+    navigate(buildExperienciasSearchUrl(query));
   };
 
   const whatsappUrl = whatsappConfig?.enabled && whatsappConfig.number
@@ -148,7 +161,7 @@ export function HeroSection() {
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Para onde você quer ir? Ex: Bonito, Maldivas, Patagônia..."
+                placeholder="Destino, passagem, hotel, seguro... Ex: Bonito, passagem SP"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
                 className="h-12 border-0 pl-10 text-base shadow-none focus-visible:ring-0 md:text-lg"
@@ -161,6 +174,16 @@ export function HeroSection() {
 
           {/* Quick filter chips */}
           <div className="mt-3 flex flex-wrap justify-center gap-2">
+            {ONER_CHIPS.map((chip) => (
+              <button
+                key={chip.label}
+                type="button"
+                onClick={() => navigate(chip.path)}
+                className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                {chip.label}
+              </button>
+            ))}
             {QUICK_FILTERS.map((filter) => (
               <button
                 key={filter}

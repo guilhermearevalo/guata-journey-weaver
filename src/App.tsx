@@ -20,6 +20,7 @@ import Termos from "./pages/Termos";
 import Privacidade from "./pages/Privacidade";
 import Contato from "./pages/Contato";
 import SejaParceiro from "./pages/SejaParceiro";
+import Passagens from "./pages/Passagens";
 import NotFound from "./pages/NotFound";
 import RoteiroPublico from "./pages/RoteiroPublico";
 import PropostaPublica from "./pages/PropostaPublica";
@@ -83,6 +84,7 @@ const App = () => (
               <Route path="/viagens-realizadas" element={<ViagensRealizadas />} />
               <Route path="/pacotes" element={<ViagensRealizadas />} />
               <Route path="/viagem-personalizada" element={<ViagemPersonalizada />} />
+              <Route path="/passagens" element={<Passagens />} />
               <Route path="/sobre" element={<Sobre />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/termos" element={<Termos />} />

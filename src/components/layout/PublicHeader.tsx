@@ -61,6 +61,12 @@ export function PublicHeader() {
             </Link>
           )}
           <Link
+            to="/passagens"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Passagens e hotéis
+          </Link>
+          <Link
             to="/sobre"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
@@ -142,6 +148,13 @@ export function PublicHeader() {
                 Viagem Personalizada
               </Link>
             )}
+            <Link
+              to="/passagens"
+              className="block text-sm font-medium text-muted-foreground"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Passagens e hotéis
+            </Link>
             <Link
               to="/sobre"
               className="block text-sm font-medium text-muted-foreground"

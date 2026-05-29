@@ -133,6 +133,11 @@ export function PublicFooter() {
                 </Link>
               </li>
               <li>
+                <Link to="/passagens" className="text-secondary-foreground/80 hover:text-primary">
+                  Passagens e hotéis
+                </Link>
+              </li>
+              <li>
                 <Link to="/viagem-personalizada" className="text-secondary-foreground/80 hover:text-primary">
                   Viagem Personalizada
                 </Link>
