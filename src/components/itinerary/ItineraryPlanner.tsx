@@ -360,6 +360,12 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                         </Button>
                       </div>
                     </div>
+                    <Input
+                      className="mt-2 print:hidden"
+                      defaultValue={dossier.day_titles?.[String(day.day)] || ''}
+                      placeholder={`Título do dia (ex: Chegada em Roma)`}
+                      onBlur={(e) => setDayTitle(day.day, e.target.value)}
+                    />
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {displayActivities.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma atividade. Clique em "Adicionar" ou "Sugerir mais".</p>}
