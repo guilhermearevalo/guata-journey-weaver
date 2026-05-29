@@ -653,6 +653,7 @@ export type Database = {
           description: string | null
           documents: string[] | null
           documents_checklist: Json | null
+          dossier: Json
           id: string
           inclusions: string[] | null
           is_approved: boolean | null
@@ -676,6 +677,7 @@ export type Database = {
           description?: string | null
           documents?: string[] | null
           documents_checklist?: Json | null
+          dossier?: Json
           id?: string
           inclusions?: string[] | null
           is_approved?: boolean | null
@@ -699,6 +701,7 @@ export type Database = {
           description?: string | null
           documents?: string[] | null
           documents_checklist?: Json | null
+          dossier?: Json
           id?: string
           inclusions?: string[] | null
           is_approved?: boolean | null

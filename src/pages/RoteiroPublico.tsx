@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { MapPin, Calendar, DollarSign, Printer, Lock, ExternalLink } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, Printer, Lock, ExternalLink, Plane, Hotel, Car, FileText, Luggage, ShieldCheck, Banknote } from 'lucide-react';
+import { parseDossier, hasAnyFlight, type Dossier } from '@/lib/dossier';
 import { Input } from '@/components/ui/input';
 import DocumentsChecklist from '@/components/itinerary/DocumentsChecklist';
 import TravelDocumentsVault, { TravelDocument } from '@/components/itinerary/TravelDocumentsVault';
@@ -49,7 +50,7 @@ export default function RoteiroPublico() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('proposals')
-        .select('id, request_id, title, itinerary, documents_checklist, share_token, share_enabled, agency_id, travel_requests!inner(destination, travel_dates, travelers_count)')
+        .select('id, request_id, title, itinerary, dossier, documents_checklist, share_token, share_enabled, agency_id, travel_requests!inner(destination, travel_dates, travelers_count)')
         .eq('share_token', token!)
         .maybeSingle();
       
@@ -101,6 +102,8 @@ export default function RoteiroPublico() {
     ? (proposal.itinerary as unknown as ItineraryDay[])
     : [];
 
+  const dossier: Dossier = parseDossier((proposal as any)?.dossier);
+
   const legacyDocumentsChecklist = Array.isArray((proposal as any)?.documents_checklist)
     ? ((proposal as any).documents_checklist as { name: string; checked: boolean; notes?: string }[])
     : [];
@@ -114,7 +117,7 @@ export default function RoteiroPublico() {
   const totalCost = itinerary.reduce((sum, day) => sum + day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0), 0);
   const agency = (proposal as any)?.agency_branding as { name?: string; logo_url?: string | null; cover_image_url?: string | null } | null;
   const firstActivityImage = itinerary.flatMap(day => day.activities).find(activity => activity.image_url)?.image_url;
-  const coverImage = agency?.cover_image_url || firstActivityImage;
+  const coverImage = dossier.cover_image || agency?.cover_image_url || firstActivityImage;
   const brandName = agency?.name || 'Guatá Viagens';
 
   if (isLoading) return (
@@ -243,9 +246,14 @@ export default function RoteiroPublico() {
                   <div className="absolute left-3 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">{day.day}</div>
                   <Card className="overflow-hidden bg-background">
                     <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="font-display text-xl">Dia {day.day}</CardTitle>
-                        <span className="text-sm text-muted-foreground">R$ {dayCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-medium uppercase tracking-wider text-primary">Dia {day.day}</p>
+                          {dossier.day_titles?.[String(day.day)] && (
+                            <CardTitle className="font-display text-xl mt-0.5">{dossier.day_titles[String(day.day)]}</CardTitle>
+                          )}
+                        </div>
+                        <span className="text-sm text-muted-foreground shrink-0">R$ {dayCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -293,6 +301,58 @@ export default function RoteiroPublico() {
             <p className="text-sm mt-1">As atividades serão adicionadas em breve.</p>
           </div>
         )}
+
+        {/* Seções do dossiê (opcionais) */}
+        {hasAnyFlight(dossier) && (
+          <Card className="overflow-hidden bg-background">
+            <CardHeader className="pb-3">
+              <CardTitle className="font-display text-xl flex items-center gap-2"><Plane className="h-5 w-5 text-primary" />Aéreo</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {dossier.flight_outbound && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Voo de ida</p>
+                  <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{dossier.flight_outbound}</p>
+                </div>
+              )}
+              {dossier.flight_internal && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Voo interno</p>
+                  <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{dossier.flight_internal}</p>
+                </div>
+              )}
+              {dossier.flight_inbound && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Voo de volta</p>
+                  <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{dossier.flight_inbound}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {([
+          { key: 'accommodation', label: 'Hospedagem', Icon: Hotel },
+          { key: 'transfer', label: 'Transfer', Icon: Car },
+          { key: 'documentation', label: 'Documentações', Icon: FileText },
+          { key: 'baggage', label: 'Bagagem', Icon: Luggage },
+          { key: 'insurance', label: 'Seguro viagem', Icon: ShieldCheck },
+          { key: 'exchange', label: 'Comunicação e câmbio', Icon: Banknote },
+        ] as const).map(({ key, label, Icon }) => {
+          const value = dossier[key] as string | undefined;
+          if (!value) return null;
+          return (
+            <Card key={key} className="overflow-hidden bg-background">
+              <CardHeader className="pb-3">
+                <CardTitle className="font-display text-xl flex items-center gap-2"><Icon className="h-5 w-5 text-primary" />{label}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{value}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
+
 
         {/* Documents Checklist */}
         {travelDocuments.length > 0 && (

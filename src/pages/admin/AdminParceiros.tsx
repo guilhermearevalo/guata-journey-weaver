@@ -88,14 +88,14 @@ const AdminParceiros = () => {
 
   const inviteMutation = useMutation({
     mutationFn: async ({ agency_id, email, full_name }: { agency_id: string; email: string; full_name: string }) => {
-      const { data, error } = await supabase.rpc('create_partner_access', {
+      const { data, error } = await (supabase.rpc as any)('create_partner_access', {
         p_agency_id: agency_id,
         p_email: email,
         p_full_name: full_name,
       });
 
       if (error) throw error;
-      const result = data as { email?: string; temporary_password?: string; error?: string } | null;
+      const result = data as unknown as { email?: string; temporary_password?: string; error?: string } | null;
       if (!result?.email || !result?.temporary_password) {
         throw new Error('Resposta inválida ao criar conta');
       }

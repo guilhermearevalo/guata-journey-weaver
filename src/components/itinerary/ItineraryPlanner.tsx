@@ -15,6 +15,8 @@ import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2
 import ActivityFormDialog from './ActivityFormDialog';
 import TemplateDialog from './TemplateDialog';
 import TravelDocumentsVault, { TravelDocument } from './TravelDocumentsVault';
+import DossierEditor from './DossierEditor';
+import { parseDossier, type Dossier } from '@/lib/dossier';
 
 interface Activity {
   name: string;
@@ -92,6 +94,8 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     ? (proposal.itinerary as unknown as ItineraryDay[])
     : [];
 
+  const dossier: Dossier = parseDossier((proposal as any)?.dossier);
+
   const { data: travelDocuments = [] } = useQuery({
     queryKey: ['travel-documents', proposal?.id],
     queryFn: async () => {
@@ -122,6 +126,25 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] }),
   });
+
+  const saveDossier = useMutation({
+    mutationFn: async (next: Dossier) => {
+      if (!proposal?.id) throw new Error('Sem proposta');
+      const { error } = await supabase
+        .from('proposals')
+        .update({ dossier: JSON.parse(JSON.stringify(next)) } as any)
+        .eq('id', proposal.id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] }),
+  });
+
+  const setDayTitle = (dayNum: number, title: string) => {
+    const titles = { ...(dossier.day_titles || {}) };
+    if (title.trim()) titles[String(dayNum)] = title;
+    else delete titles[String(dayNum)];
+    saveDossier.mutate({ ...dossier, day_titles: titles });
+  };
 
   const generateFullItinerary = async () => {
     setGenerating(true);
@@ -337,6 +360,12 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                         </Button>
                       </div>
                     </div>
+                    <Input
+                      className="mt-2 print:hidden"
+                      defaultValue={dossier.day_titles?.[String(day.day)] || ''}
+                      placeholder={`Título do dia (ex: Chegada em Roma)`}
+                      onBlur={(e) => setDayTitle(day.day, e.target.value)}
+                    />
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {displayActivities.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma atividade. Clique em "Adicionar" ou "Sugerir mais".</p>}
@@ -445,6 +474,9 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
           </CardContent>
         </Card>
       )}
+
+      {/* Seções do dossiê (opcionais) */}
+      <DossierEditor dossier={dossier} onChange={(next) => saveDossier.mutate(next)} />
 
       {/* Travel Documents */}
       <TravelDocumentsVault
