@@ -246,9 +246,14 @@ export default function RoteiroPublico() {
                   <div className="absolute left-3 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">{day.day}</div>
                   <Card className="overflow-hidden bg-background">
                     <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="font-display text-xl">Dia {day.day}</CardTitle>
-                        <span className="text-sm text-muted-foreground">R$ {dayCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-medium uppercase tracking-wider text-primary">Dia {day.day}</p>
+                          {dossier.day_titles?.[String(day.day)] && (
+                            <CardTitle className="font-display text-xl mt-0.5">{dossier.day_titles[String(day.day)]}</CardTitle>
+                          )}
+                        </div>
+                        <span className="text-sm text-muted-foreground shrink-0">R$ {dayCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
