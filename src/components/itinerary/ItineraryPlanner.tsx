@@ -15,6 +15,8 @@ import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2
 import ActivityFormDialog from './ActivityFormDialog';
 import TemplateDialog from './TemplateDialog';
 import TravelDocumentsVault, { TravelDocument } from './TravelDocumentsVault';
+import DossierEditor from './DossierEditor';
+import { parseDossier, type Dossier } from '@/lib/dossier';
 
 interface Activity {
   name: string;
