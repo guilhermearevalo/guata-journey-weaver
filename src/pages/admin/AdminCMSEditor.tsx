@@ -286,6 +286,39 @@ const AdminCMSEditor = () => {
         </CardContent>
       </Card>
 
+      {/* PDF embutido (Termos / Privacidade) */}
+      {isTextPage && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Documento PDF (opcional)</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Envie um PDF para exibi-lo embutido no topo da página. Quando houver PDF, ele aparece pronto para leitura ao abrir.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="pdf-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80">
+                {uploadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
+                {uploadingPdf ? 'Enviando…' : 'Enviar PDF'}
+              </Label>
+              <Input id="pdf-upload" type="file" accept="application/pdf" className="hidden" onChange={handlePdfUpload} disabled={uploadingPdf} />
+              {content.pdf_url && (
+                <Button type="button" variant="ghost" size="icon" onClick={() => setContent((prev) => ({ ...prev, pdf_url: undefined }))}>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            {content.pdf_url && (
+              <a href={content.pdf_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary underline">
+                <FileTextIcon className="h-4 w-4" /> Ver PDF atual
+              </a>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+
+
       {/* FAQ Items */}
       {isFaqPage && (
         <Card>
