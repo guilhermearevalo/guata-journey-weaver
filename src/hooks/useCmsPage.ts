@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface CmsPageContent {
+  pdf_url?: string;
   hero?: {
     title: string;
     subtitle?: string;
