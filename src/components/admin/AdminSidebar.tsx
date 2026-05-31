@@ -163,8 +163,8 @@ const AdminSidebar = () => {
                       className={({ isActive }) =>
                         cn(
                           "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                          "hover:bg-accent hover:text-accent-foreground",
-                          isActive && "bg-accent text-accent-foreground font-medium"
+                          "text-foreground/80 hover:bg-primary/5 hover:text-primary",
+                          isActive && "bg-primary/10 text-primary font-semibold border-l-2 border-primary"
                         )
                       }
                     >

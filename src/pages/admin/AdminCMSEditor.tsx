@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Save, Plus, Trash2, GripVertical, Eye } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, GripVertical, Eye, FileUp, Loader2, X, FileText as FileTextIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AdminCMSEditor = () => {
@@ -31,6 +31,34 @@ const AdminCMSEditor = () => {
   const [metaDescription, setMetaDescription] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'hidden'>('draft');
   const [content, setContent] = useState<CmsPageContent>({});
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      toast({ title: 'Selecione um arquivo PDF', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      toast({ title: 'Arquivo muito grande', description: 'Máximo 15MB.', variant: 'destructive' });
+      return;
+    }
+    setUploadingPdf(true);
+    try {
+      const fileName = `${slug}-${Date.now()}.pdf`;
+      const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true, contentType: 'application/pdf' });
+      if (error) throw error;
+      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+      setContent((prev) => ({ ...prev, pdf_url: data.publicUrl }));
+      toast({ title: 'PDF enviado!', description: 'Lembre-se de salvar a página.' });
+    } catch {
+      toast({ title: 'Erro no upload do PDF', variant: 'destructive' });
+    } finally {
+      setUploadingPdf(false);
+      e.target.value = '';
+    }
+  };
 
   useEffect(() => {
     if (page) {
@@ -257,6 +285,39 @@ const AdminCMSEditor = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* PDF embutido (Termos / Privacidade) */}
+      {isTextPage && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Documento PDF (opcional)</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Envie um PDF para exibi-lo embutido no topo da página. Quando houver PDF, ele aparece pronto para leitura ao abrir.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="pdf-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80">
+                {uploadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
+                {uploadingPdf ? 'Enviando…' : 'Enviar PDF'}
+              </Label>
+              <Input id="pdf-upload" type="file" accept="application/pdf" className="hidden" onChange={handlePdfUpload} disabled={uploadingPdf} />
+              {content.pdf_url && (
+                <Button type="button" variant="ghost" size="icon" onClick={() => setContent((prev) => ({ ...prev, pdf_url: undefined }))}>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            {content.pdf_url && (
+              <a href={content.pdf_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary underline">
+                <FileTextIcon className="h-4 w-4" /> Ver PDF atual
+              </a>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+
 
       {/* FAQ Items */}
       {isFaqPage && (

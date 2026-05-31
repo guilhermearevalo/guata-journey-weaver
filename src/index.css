@@ -59,15 +59,15 @@
     /* Radius */
     --radius: 0.75rem;
     
-    /* Sidebar */
-    --sidebar-background: 4 28% 18%;
-    --sidebar-foreground: 45 30% 96%;
-    --sidebar-primary: 174 82% 45%;
+    /* Sidebar - light & legible with teal accent */
+    --sidebar-background: 40 25% 99%;
+    --sidebar-foreground: 4 28% 20%;
+    --sidebar-primary: 174 82% 20%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 4 25% 25%;
-    --sidebar-accent-foreground: 45 30% 96%;
-    --sidebar-border: 4 20% 25%;
-    --sidebar-ring: 174 82% 45%;
+    --sidebar-accent: 174 50% 92%;
+    --sidebar-accent-foreground: 174 82% 20%;
+    --sidebar-border: 35 25% 88%;
+    --sidebar-ring: 174 82% 30%;
 
     /* Custom Guatá colors */
     --guata-teal: 174 82% 20%;

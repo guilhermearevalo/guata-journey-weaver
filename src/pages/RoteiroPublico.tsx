@@ -196,31 +196,48 @@ export default function RoteiroPublico() {
 
   return (
     <div className="min-h-screen bg-muted/20">
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 print:py-0">
-        {/* Header — enxuto */}
-        <div className="overflow-hidden rounded-xl border bg-background shadow-sm print:rounded-none print:border-0 print:shadow-none">
-          {coverImage && (
-            <div className="h-40 w-full overflow-hidden print:h-28">
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-8 print:py-0">
+        {/* Capa — estilo revista de viagem */}
+        <div className="animate-fade-in relative overflow-hidden rounded-2xl border bg-background shadow-lg print:rounded-none print:border-0 print:shadow-none">
+          {coverImage ? (
+            <div className="relative h-72 w-full overflow-hidden sm:h-80 print:h-40">
               <img src={coverImage} alt={request?.destination || proposal.title} className="h-full w-full object-cover" />
-            </div>
-          )}
-          <div className="flex items-start justify-between gap-4 p-5 print:flex-col print:gap-2">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Roteiro</p>
-              <h1 className="font-display text-3xl font-bold mt-1 truncate">{request?.destination || proposal.title}</h1>
-              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
-                {travelDates?.start && (
-                  <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{formatDate(travelDates.start)} — {formatDate(travelDates.end)}</span>
-                )}
-                {request?.travelers_count && (
-                  <span>{request.travelers_count} viajante(s)</span>
-                )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              <Button variant="secondary" size="sm" onClick={() => window.print()} className="absolute right-4 top-4 print:hidden">
+                <Printer className="mr-2 h-4 w-4" />Imprimir
+              </Button>
+              <div className="absolute inset-x-0 bottom-0 p-6 text-white print:text-foreground">
+                <p className="text-xs font-medium uppercase tracking-[0.2em] opacity-90">Roteiro de Viagem</p>
+                <h1 className="font-display text-4xl font-bold mt-2 drop-shadow-md sm:text-5xl">{request?.destination || proposal.title}</h1>
+                <div className="flex items-center gap-5 mt-3 text-sm flex-wrap opacity-95">
+                  {travelDates?.start && (
+                    <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />{formatDate(travelDates.start)} — {formatDate(travelDates.end)}</span>
+                  )}
+                  {request?.travelers_count && (
+                    <span className="flex items-center gap-1.5">{request.travelers_count} viajante(s)</span>
+                  )}
+                </div>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => window.print()} className="print:hidden shrink-0">
-              <Printer className="mr-2 h-4 w-4" />Imprimir
-            </Button>
-          </div>
+          ) : (
+            <div className="flex items-start justify-between gap-4 bg-gradient-hero p-8 text-primary-foreground">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium uppercase tracking-[0.2em] opacity-90">Roteiro de Viagem</p>
+                <h1 className="font-display text-4xl font-bold mt-2">{request?.destination || proposal.title}</h1>
+                <div className="flex items-center gap-5 mt-3 text-sm flex-wrap opacity-95">
+                  {travelDates?.start && (
+                    <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />{formatDate(travelDates.start)} — {formatDate(travelDates.end)}</span>
+                  )}
+                  {request?.travelers_count && (
+                    <span>{request.travelers_count} viajante(s)</span>
+                  )}
+                </div>
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => window.print()} className="print:hidden shrink-0">
+                <Printer className="mr-2 h-4 w-4" />Imprimir
+              </Button>
+            </div>
+          )}
         </div>
 
         {travelDocuments.length > 0 && (
@@ -304,11 +321,16 @@ export default function RoteiroPublico() {
 
         {/* Seções do dossiê (opcionais) */}
         {hasAnyFlight(dossier) && (
-          <Card className="overflow-hidden bg-background">
-            <CardHeader className="pb-3">
+          <Card className="overflow-hidden bg-background shadow-sm">
+            {dossier.flight_image && (
+              <div className="h-48 w-full overflow-hidden">
+                <img src={dossier.flight_image} alt="Aéreo" className="h-full w-full object-cover" />
+              </div>
+            )}
+            <CardHeader className="pb-3 border-b">
               <CardTitle className="font-display text-xl flex items-center gap-2"><Plane className="h-5 w-5 text-primary" />Aéreo</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-4">
               {dossier.flight_outbound && (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Voo de ida</p>
@@ -332,26 +354,35 @@ export default function RoteiroPublico() {
         )}
 
         {([
-          { key: 'accommodation', label: 'Hospedagem', Icon: Hotel },
-          { key: 'transfer', label: 'Transfer', Icon: Car },
-          { key: 'documentation', label: 'Documentações', Icon: FileText },
-          { key: 'baggage', label: 'Bagagem', Icon: Luggage },
-          { key: 'insurance', label: 'Seguro viagem', Icon: ShieldCheck },
-          { key: 'exchange', label: 'Comunicação e câmbio', Icon: Banknote },
-        ] as const).map(({ key, label, Icon }) => {
+          { key: 'accommodation', imageKey: 'accommodation_image', label: 'Hospedagem', Icon: Hotel },
+          { key: 'transfer', imageKey: 'transfer_image', label: 'Transfer', Icon: Car },
+          { key: 'documentation', imageKey: 'documentation_image', label: 'Documentações', Icon: FileText },
+          { key: 'baggage', imageKey: 'baggage_image', label: 'Bagagem', Icon: Luggage },
+          { key: 'insurance', imageKey: 'insurance_image', label: 'Seguro viagem', Icon: ShieldCheck },
+          { key: 'exchange', imageKey: 'exchange_image', label: 'Comunicação e câmbio', Icon: Banknote },
+        ] as const).map(({ key, imageKey, label, Icon }) => {
           const value = dossier[key] as string | undefined;
-          if (!value) return null;
+          const image = dossier[imageKey] as string | undefined;
+          if (!value && !image) return null;
           return (
-            <Card key={key} className="overflow-hidden bg-background">
-              <CardHeader className="pb-3">
+            <Card key={key} className="overflow-hidden bg-background shadow-sm">
+              {image && (
+                <div className="h-48 w-full overflow-hidden">
+                  <img src={image} alt={label} className="h-full w-full object-cover" />
+                </div>
+              )}
+              <CardHeader className="pb-3 border-b">
                 <CardTitle className="font-display text-xl flex items-center gap-2"><Icon className="h-5 w-5 text-primary" />{label}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{value}</p>
-              </CardContent>
+              {value && (
+                <CardContent className="pt-4">
+                  <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{value}</p>
+                </CardContent>
+              )}
             </Card>
           );
         })}
+
 
 
         {/* Documents Checklist */}

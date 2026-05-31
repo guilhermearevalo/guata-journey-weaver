@@ -7,13 +7,20 @@ export interface Dossier {
   flight_outbound?: string;
   flight_internal?: string;
   flight_inbound?: string;
+  flight_image?: string;
   // Demais seções (texto livre)
   accommodation?: string;
+  accommodation_image?: string;
   transfer?: string;
+  transfer_image?: string;
   documentation?: string;
+  documentation_image?: string;
   baggage?: string;
+  baggage_image?: string;
   insurance?: string;
+  insurance_image?: string;
   exchange?: string;
+  exchange_image?: string;
   // Títulos dos dias, indexados pelo número do dia
   day_titles?: Record<string, string>;
 }
