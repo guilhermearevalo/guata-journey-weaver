@@ -20,9 +20,31 @@ const Privacidade = () => {
   // Usa dados do CMS ou fallback para conteúdo padrão
   const content = page?.content || defaultContent;
   const { hero, sections } = content;
+  const pdfUrl = (content as { pdf_url?: string }).pdf_url;
 
   if (isLoading) {
     return <CmsPageSkeleton />;
+  }
+
+  // Quando há PDF, exibe embutido em tela cheia, pronto para leitura
+  if (pdfUrl) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <div className="border-b bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-6">
+          <div className="container mx-auto flex items-center justify-between gap-4 px-4">
+            <h1 className="font-display text-2xl font-bold md:text-3xl">
+              {hero?.title || 'Política de Privacidade'}
+            </h1>
+            <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline shrink-0">
+              Abrir em nova aba
+            </a>
+          </div>
+        </div>
+        <object data={pdfUrl} type="application/pdf" className="w-full flex-1 min-h-[80vh]">
+          <iframe src={pdfUrl} title="Política de Privacidade" className="w-full min-h-[80vh]" />
+        </object>
+      </div>
+    );
   }
 
   return (
