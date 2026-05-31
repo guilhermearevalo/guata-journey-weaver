@@ -321,11 +321,16 @@ export default function RoteiroPublico() {
 
         {/* Seções do dossiê (opcionais) */}
         {hasAnyFlight(dossier) && (
-          <Card className="overflow-hidden bg-background">
-            <CardHeader className="pb-3">
+          <Card className="overflow-hidden bg-background shadow-sm">
+            {dossier.flight_image && (
+              <div className="h-48 w-full overflow-hidden">
+                <img src={dossier.flight_image} alt="Aéreo" className="h-full w-full object-cover" />
+              </div>
+            )}
+            <CardHeader className="pb-3 border-b">
               <CardTitle className="font-display text-xl flex items-center gap-2"><Plane className="h-5 w-5 text-primary" />Aéreo</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-4">
               {dossier.flight_outbound && (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Voo de ida</p>
@@ -349,26 +354,35 @@ export default function RoteiroPublico() {
         )}
 
         {([
-          { key: 'accommodation', label: 'Hospedagem', Icon: Hotel },
-          { key: 'transfer', label: 'Transfer', Icon: Car },
-          { key: 'documentation', label: 'Documentações', Icon: FileText },
-          { key: 'baggage', label: 'Bagagem', Icon: Luggage },
-          { key: 'insurance', label: 'Seguro viagem', Icon: ShieldCheck },
-          { key: 'exchange', label: 'Comunicação e câmbio', Icon: Banknote },
-        ] as const).map(({ key, label, Icon }) => {
+          { key: 'accommodation', imageKey: 'accommodation_image', label: 'Hospedagem', Icon: Hotel },
+          { key: 'transfer', imageKey: 'transfer_image', label: 'Transfer', Icon: Car },
+          { key: 'documentation', imageKey: 'documentation_image', label: 'Documentações', Icon: FileText },
+          { key: 'baggage', imageKey: 'baggage_image', label: 'Bagagem', Icon: Luggage },
+          { key: 'insurance', imageKey: 'insurance_image', label: 'Seguro viagem', Icon: ShieldCheck },
+          { key: 'exchange', imageKey: 'exchange_image', label: 'Comunicação e câmbio', Icon: Banknote },
+        ] as const).map(({ key, imageKey, label, Icon }) => {
           const value = dossier[key] as string | undefined;
-          if (!value) return null;
+          const image = dossier[imageKey] as string | undefined;
+          if (!value && !image) return null;
           return (
-            <Card key={key} className="overflow-hidden bg-background">
-              <CardHeader className="pb-3">
+            <Card key={key} className="overflow-hidden bg-background shadow-sm">
+              {image && (
+                <div className="h-48 w-full overflow-hidden">
+                  <img src={image} alt={label} className="h-full w-full object-cover" />
+                </div>
+              )}
+              <CardHeader className="pb-3 border-b">
                 <CardTitle className="font-display text-xl flex items-center gap-2"><Icon className="h-5 w-5 text-primary" />{label}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{value}</p>
-              </CardContent>
+              {value && (
+                <CardContent className="pt-4">
+                  <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{value}</p>
+                </CardContent>
+              )}
             </Card>
           );
         })}
+
 
 
         {/* Documents Checklist */}
