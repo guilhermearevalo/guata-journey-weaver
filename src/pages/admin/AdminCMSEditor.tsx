@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Save, Plus, Trash2, GripVertical, Eye } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, GripVertical, Eye, FileUp, Loader2, X, FileText as FileTextIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AdminCMSEditor = () => {
