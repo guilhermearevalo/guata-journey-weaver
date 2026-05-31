@@ -31,6 +31,34 @@ const AdminCMSEditor = () => {
   const [metaDescription, setMetaDescription] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'hidden'>('draft');
   const [content, setContent] = useState<CmsPageContent>({});
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      toast({ title: 'Selecione um arquivo PDF', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      toast({ title: 'Arquivo muito grande', description: 'Máximo 15MB.', variant: 'destructive' });
+      return;
+    }
+    setUploadingPdf(true);
+    try {
+      const fileName = `${slug}-${Date.now()}.pdf`;
+      const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true, contentType: 'application/pdf' });
+      if (error) throw error;
+      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+      setContent((prev) => ({ ...prev, pdf_url: data.publicUrl }));
+      toast({ title: 'PDF enviado!', description: 'Lembre-se de salvar a página.' });
+    } catch {
+      toast({ title: 'Erro no upload do PDF', variant: 'destructive' });
+    } finally {
+      setUploadingPdf(false);
+      e.target.value = '';
+    }
+  };
 
   useEffect(() => {
     if (page) {
