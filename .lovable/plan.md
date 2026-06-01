@@ -1,52 +1,59 @@
-# Plano: roteiro mais impactante, link corrigido, admin mais legível e PDF em Política/Termos
+## Objetivo
 
-## 1. Corrigir link do roteiro/proposta ("não encontrado")
+Resolver 4 pontos: (1) erro/travamento ao criar demanda, (2) erro no upload do PDF nas páginas legais, (3) cor do menu lateral do admin muito branca, (4) redesenhar Termos de Uso (referente ao site) e Política de Privacidade (referente à agência) com layout bonito.
 
-**Causa raiz:** a página pública (`RoteiroPublico` e `PropostaPublica`) busca a proposta com um join obrigatório à tabela `travel_requests` (`travel_requests!inner(...)`). A proposta tem permissão de leitura pública (via `share_token`), mas a `travel_requests` **não** tem nenhuma regra que permita visitante anônimo ler. Resultado: o join é bloqueado e a linha inteira some → "Roteiro não encontrado".
+---
 
-**Correção:** adicionar uma política de leitura na `travel_requests` que libere apenas as solicitações ligadas a uma proposta com link compartilhável ativo. Nada além disso fica exposto.
+## 1. Erro ao criar demanda (admin + formulário público)
 
-```text
-Política nova (SELECT, anon + authenticated):
-  permitir ler travel_requests quando existir uma proposal
-  com mesmo request_id, share_token preenchido e share_enabled = true
-```
+**Diagnóstico já feito:** As permissões (GRANTs) e políticas de acesso (RLS) das tabelas estão corretas. Staff pode inserir, anônimo pode criar solicitação. Como o botão "fica carregando e não retorna" (em vez de mostrar erro de permissão), a causa provável é de runtime, não de banco.
 
-## 2. Roteiro mais bonito e "com vida" + imagem por seção
+**O que farei:**
+- Reproduzir em execução e inspecionar console/rede para ver se a requisição falha, trava ou retorna erro silencioso.
+- Garantir que o formulário de Nova Demanda (admin) e o formulário público de Viagem Personalizada sempre mostrem mensagem de erro/sucesso (nada de spinner infinito): tratar corretamente o estado de erro da mutação e adicionar log do erro real.
+- Confirmar que o usuário de teste tem o papel correto (staff). Se o travamento vier de papel ausente, exibir mensagem clara em vez de travar.
+- Como reforço defensivo, adicionar política explícita de INSERT com `WITH CHECK` para staff em `travel_requests` (hoje só existe a política `ALL`), evitando qualquer ambiguidade em inserções.
 
-### 2a. Imagem por seção (Bagagem, Seguro, Hospedagem, etc.)
-- Ampliar o tipo `Dossier` (`src/lib/dossier.ts`) com campos de imagem por seção (ex.: `accommodation_image`, `transfer_image`, `documentation_image`, `baggage_image`, `insurance_image`, `exchange_image`, e imagem do bloco Aéreo).
-- No `DossierEditor.tsx`: dentro de cada seção do acordeão, adicionar botão "Enviar imagem" (mesmo padrão do upload de capa, salvando no bucket público `site-assets`), com preview e botão de remover.
-- Como já é JSONB, **não precisa de migração** para isso.
+## 2. Upload de PDF nas páginas legais (Termos/Privacidade)
 
-### 2b. Redesign visual do roteiro público (`RoteiroPublico.tsx`)
-Transformar o layout atual (genérico) em um documento estilo "revista de viagem", usando os tokens da marca (Teal/Brown, Playfair/Inter):
-- **Capa**: imagem maior com sobreposição em gradiente, título em Playfair, destino/datas/viajantes em destaque sobre a foto.
-- **Timeline dos dias**: marcadores e linha em teal, cartões com mais respiro, foto da atividade com cantos arredondados e leve sombra, categorias com as cores já existentes.
-- **Seções do dossiê**: cada seção (Aéreo, Hospedagem, Transfer, Documentações, Bagagem, Seguro, Câmbio) vira um bloco com faixa de título colorida + ícone + a imagem enviada exibida de forma elegante ao lado/acima do texto.
-- Animações suaves de entrada (fade/slide já existentes no CSS).
-- Mantém tudo opcional: seção sem conteúdo continua não aparecendo.
+**Diagnóstico:** bucket `site-assets` é público, sem limite de tamanho; a política de upload exige staff. O erro provavelmente ocorre por papel/sessão ou por resposta de erro não exibida claramente.
 
-## 3. Cor do painel admin (mais legível)
+**O que farei:**
+- Testar o upload em execução e capturar o erro exato retornado pelo storage.
+- Tornar o handler de upload mais robusto: exibir a mensagem real do erro (não um toast genérico), validar sessão/staff antes de enviar e usar caminho de arquivo seguro.
+- Confirmar limite de tamanho coerente com o bucket.
 
-Hoje a sidebar usa tons marrons escuros (`--sidebar-*`), o que dificulta a leitura. Vou trocar para um esquema claro e neutro com destaque em **teal** (a cor mais "navegável" da marca), mantendo o marrom como cor secundária pontual:
-- Ajustar as variáveis `--sidebar-*` em `src/index.css` para fundo claro, texto escuro e item ativo em teal suave.
-- Item ativo/hover com contraste claro, ícones e textos bem legíveis.
-- Sem mudar a identidade do site público — só o ambiente administrativo.
+## 3. Cor do menu lateral do admin
 
-## 4. Política de Privacidade e Termos com PDF embutido
+Hoje o sidebar usa fundo quase branco (`--sidebar-background` creme), ficando "lavado".
 
-Objetivo: o admin envia um PDF e ele aparece **embutido** na página, pronto para leitura ao abrir (sem precisar rolar/baixar).
+**O que farei (você decide → escolho o melhor):**
+- Ajustar os tokens `--sidebar-*` em `src/index.css` para um **fundo teal escuro da marca** com texto claro e item ativo destacado (contraste forte e legível), mantendo a identidade Guatá. Item ativo com leve realce e borda lateral.
+- Ajustar o `AdminSidebar.tsx` apenas no necessário para o novo contraste (estados hover/ativo) usando tokens semânticos.
 
-- **Upload no CMS** (`AdminCMSEditor.tsx`): para as páginas `privacidade` e `termos`, adicionar um campo "PDF da página" (upload para bucket público `site-assets`), salvando a URL dentro do `content` (ex.: `content.pdf_url`).
-- **Exibição** (`Privacidade.tsx` e `Termos.tsx`): se houver `pdf_url`, renderizar o PDF embutido (visualizador em tela cheia via `<object>`/`<iframe>`) logo no topo, já visível ao abrir. Se não houver PDF, mantém o conteúdo de texto atual (fallback).
-- Como `content` é JSONB, **não precisa de migração**.
+## 4. Redesenho de Termos de Uso e Política de Privacidade
+
+**Conteúdo:**
+- **Termos de Uso** → referente ao **site/plataforma** (uso do site, contas, reservas, responsabilidades).
+- **Política de Privacidade** → referente à **agência** (tratamento de dados pelos parceiros/agência, LGPD).
+- Preencher um texto-base adequado para cada um (editável depois via CMS).
+
+**Layout (ambos):**
+- Cabeçalho com gradiente da marca, título em Playfair, subtítulo e data de atualização.
+- Conteúdo em coluna central legível, com seções numeradas em cards/divisores, tipografia Inter, bom espaçamento, sumário/índice no topo opcional, ícones discretos por seção.
+- Manter o modo PDF embutido já existente quando houver PDF enviado; quando não houver, exibir o layout redesenhado.
+
+---
 
 ## Detalhes técnicos
-- **Migração necessária:** apenas a política de RLS da `travel_requests` (item 1).
-- **Storage:** reutiliza o bucket público existente `site-assets` para imagens de seção e PDFs.
-- **Sem mudanças** em pagamentos, comissões ou fluxos existentes.
-- Arquivos afetados: `src/lib/dossier.ts`, `src/components/itinerary/DossierEditor.tsx`, `src/pages/RoteiroPublico.tsx`, `src/index.css`, `src/pages/admin/AdminCMSEditor.tsx`, `src/pages/Privacidade.tsx`, `src/pages/Termos.tsx`, e uma migração de RLS.
 
-## Observação
-Para as imagens de exemplo (mala, seguro, etc.), você poderá enviá-las pelo editor de cada seção — assim cada agência usa as próprias fotos. Se preferir, posso também já incluir imagens ilustrativas padrão como ponto de partida.
+- **Banco (migração):** política adicional `FOR INSERT ... WITH CHECK (is_staff(auth.uid()))` em `public.travel_requests` (reforço). Sem outras mudanças de schema.
+- **Arquivos a alterar:**
+  - `src/index.css` — tokens `--sidebar-*` (tema teal escuro).
+  - `src/components/admin/AdminSidebar.tsx` — ajustes de contraste (hover/ativo).
+  - `src/components/admin/NewRequestDialog.tsx` — tratamento de erro/sucesso robusto + log.
+  - `src/pages/ViagemPersonalizada.tsx` — mesmo tratamento de erro no envio público (verificar).
+  - `src/pages/admin/AdminCMSEditor.tsx` — upload de PDF com erro detalhado e validação de sessão.
+  - `src/pages/Privacidade.tsx` e `src/pages/Termos.tsx` — novo layout + texto-base.
+  - Conteúdo padrão (fallback) atualizado para Termos=site e Privacidade=agência.
+- **Verificação:** testar em execução criação de demanda (admin e público), upload de PDF, e revisar visualmente sidebar e páginas legais (claro/escuro).
