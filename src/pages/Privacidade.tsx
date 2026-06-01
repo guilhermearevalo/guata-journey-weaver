@@ -1,23 +1,60 @@
 import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
+import LegalPageLayout from '@/components/cms/LegalPageLayout';
 
-// Conteúdo padrão caso o CMS esteja vazio
+// Conteúdo padrão (Política de Privacidade = referente à AGÊNCIA / tratamento de dados)
 const defaultContent = {
   hero: {
     title: 'Política de Privacidade',
-    subtitle: 'Como tratamos e protegemos seus dados pessoais',
+    subtitle: 'Como a agência coleta, utiliza e protege os seus dados pessoais.',
   },
   sections: [
-    { title: '1. Dados Coletados', content: 'Coletamos informações que você nos fornece diretamente, como nome, e-mail, telefone e preferências de viagem.' },
-    { title: '2. Uso das Informações', content: 'Utilizamos seus dados para processar suas solicitações, personalizar sua experiência e melhorar nossos serviços.' },
-    { title: '3. Segurança', content: 'Implementamos medidas de segurança técnicas e organizacionais para proteger seus dados contra acesso não autorizado.' },
+    {
+      title: '1. Quem somos',
+      content:
+        'A Guatá Travel Experience, juntamente com suas agências parceiras, é responsável pelo tratamento dos dados pessoais coletados durante o atendimento e a operação das viagens, em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018).',
+    },
+    {
+      title: '2. Dados que coletamos',
+      content:
+        'Coletamos informações fornecidas diretamente por você, como nome, e-mail, telefone, documentos necessários para reservas e preferências de viagem, além de dados de navegação para melhorar a sua experiência no site.',
+    },
+    {
+      title: '3. Como utilizamos seus dados',
+      content:
+        'Utilizamos seus dados para elaborar roteiros e propostas, processar reservas e pagamentos, manter contato durante o planejamento da viagem, cumprir obrigações legais e aprimorar nossos serviços.',
+    },
+    {
+      title: '4. Compartilhamento com parceiros',
+      content:
+        'Para operar a sua viagem, podemos compartilhar dados necessários com agências e fornecedores parceiros (hospedagem, transporte, passeios). O compartilhamento ocorre apenas na medida necessária para a prestação do serviço contratado.',
+    },
+    {
+      title: '5. Armazenamento e segurança',
+      content:
+        'Adotamos medidas técnicas e organizacionais para proteger seus dados contra acesso não autorizado, perda ou uso indevido. Os dados são mantidos apenas pelo tempo necessário às finalidades informadas ou conforme exigido por lei.',
+    },
+    {
+      title: '6. Seus direitos',
+      content:
+        'Você pode, a qualquer momento, solicitar acesso, correção, portabilidade ou exclusão dos seus dados, bem como revogar consentimentos. Para exercer seus direitos, entre em contato com nossa equipe pelos canais de atendimento.',
+    },
+    {
+      title: '7. Cookies',
+      content:
+        'Utilizamos cookies para garantir o funcionamento do site, lembrar preferências e analisar o uso da plataforma. Você pode gerenciar os cookies nas configurações do seu navegador.',
+    },
+    {
+      title: '8. Contato e atualizações',
+      content:
+        'Em caso de dúvidas sobre esta Política ou sobre o tratamento dos seus dados, fale com a nossa equipe. Esta Política pode ser atualizada periodicamente, e a versão vigente estará sempre disponível nesta página.',
+    },
   ],
 };
 
 const Privacidade = () => {
   const { data: page, isLoading } = useCmsPage('privacidade');
 
-  // Usa dados do CMS ou fallback para conteúdo padrão
   const content = page?.content || defaultContent;
   const { hero, sections } = content;
   const pdfUrl = (content as { pdf_url?: string }).pdf_url;
@@ -26,53 +63,15 @@ const Privacidade = () => {
     return <CmsPageSkeleton />;
   }
 
-  // Quando há PDF, exibe embutido em tela cheia, pronto para leitura
-  if (pdfUrl) {
-    return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <div className="border-b bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-6">
-          <div className="container mx-auto flex items-center justify-between gap-4 px-4">
-            <h1 className="font-display text-2xl font-bold md:text-3xl">
-              {hero?.title || 'Política de Privacidade'}
-            </h1>
-            <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline shrink-0">
-              Abrir em nova aba
-            </a>
-          </div>
-        </div>
-        <object data={pdfUrl} type="application/pdf" className="w-full flex-1 min-h-[80vh]">
-          <iframe src={pdfUrl} title="Política de Privacidade" className="w-full min-h-[80vh]" />
-        </object>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-display text-4xl font-bold md:text-5xl">
-            {hero?.title || 'Política de Privacidade'}
-          </h1>
-          <p className="mx-auto mt-4 text-muted-foreground">
-            {hero?.subtitle || 'Como tratamos seus dados pessoais'}
-          </p>
-        </div>
-      </section>
-
-      {/* Content */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="prose prose-lg mx-auto max-w-3xl dark:prose-invert">
-          {sections?.map((section, index) => (
-            <div key={index}>
-              <h2>{section.title}</h2>
-              <p className="whitespace-pre-line">{section.content}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
+    <LegalPageLayout
+      title={hero?.title || 'Política de Privacidade'}
+      subtitle={hero?.subtitle || 'Como a agência coleta, utiliza e protege os seus dados pessoais.'}
+      badge="Privacidade da agência"
+      updatedAt="Junho de 2026"
+      sections={sections || defaultContent.sections}
+      pdfUrl={pdfUrl}
+    />
   );
 };
 
