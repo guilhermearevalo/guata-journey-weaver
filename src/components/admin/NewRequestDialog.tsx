@@ -47,8 +47,10 @@ export function NewRequestDialog() {
       resetForm();
       setOpen(false);
     },
-    onError: () => {
-      toast({ title: 'Erro ao criar demanda', variant: 'destructive' });
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Tente novamente.';
+      console.error('Erro ao criar demanda:', error);
+      toast({ title: 'Erro ao criar demanda', description: message, variant: 'destructive' });
     },
   });
 
