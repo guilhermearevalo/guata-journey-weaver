@@ -136,7 +136,7 @@ const AdminSidebar = () => {
             src={logo} 
             alt="Guatá" 
             className={cn(
-              "h-10 w-auto rounded-md bg-sidebar-foreground/95 p-1 transition-all",
+              "h-10 w-auto transition-all",
               collapsed && "h-8"
             )}
           />

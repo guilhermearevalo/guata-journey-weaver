@@ -48,7 +48,12 @@ export function NewRequestDialog() {
       setOpen(false);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : 'Tente novamente.';
+      const supa = error as { message?: string; code?: string };
+      let message = supa.message || 'Tente novamente.';
+      if (supa.code === '42501' || message.includes('row-level security')) {
+        message =
+          'Sem permissão para criar demandas. Verifique se sua conta é staff/admin e se as migrações do Supabase foram aplicadas.';
+      }
       console.error('Erro ao criar demanda:', error);
       toast({ title: 'Erro ao criar demanda', description: message, variant: 'destructive' });
     },

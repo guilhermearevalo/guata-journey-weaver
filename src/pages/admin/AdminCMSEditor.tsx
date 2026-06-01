@@ -36,7 +36,10 @@ const AdminCMSEditor = () => {
   const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.type !== 'application/pdf') {
+    const isPdf =
+      file.type === 'application/pdf' ||
+      file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
       toast({ title: 'Selecione um arquivo PDF', variant: 'destructive' });
       return;
     }
@@ -58,7 +61,13 @@ const AdminCMSEditor = () => {
       setContent((prev) => ({ ...prev, pdf_url: data.publicUrl }));
       toast({ title: 'PDF enviado!', description: 'Lembre-se de salvar a página.' });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro desconhecido.';
+      const supa = err as { message?: string; statusCode?: string; error?: string };
+      let message = supa.message || 'Erro desconhecido.';
+      if (message.includes('row-level security') || message.includes('Unauthorized') || supa.statusCode === '403') {
+        message = 'Sem permissão para enviar arquivos. Faça login como administrador ou consultor.';
+      } else if (message.includes('Bucket not found')) {
+        message = 'Bucket de arquivos não configurado no Supabase (site-assets).';
+      }
       console.error('Erro no upload do PDF:', err);
       toast({ title: 'Erro no upload do PDF', description: message, variant: 'destructive' });
     } finally {
@@ -196,7 +205,8 @@ const AdminCMSEditor = () => {
 
   const isFaqPage = slug === 'faq';
   const isContactPage = slug === 'contato';
-  const isTextPage = ['sobre', 'termos', 'privacidade'].includes(slug || '');
+  const isTextPage = ['sobre', 'termos', 'politica-servicos'].includes(slug || '');
+  const isPdfPrimaryPage = slug === 'politica-servicos';
 
   return (
     <div className="space-y-6">
@@ -293,13 +303,15 @@ const AdminCMSEditor = () => {
         </CardContent>
       </Card>
 
-      {/* PDF embutido (Termos / Privacidade) */}
+      {/* PDF embutido (Termos / Política de Serviços) */}
       {isTextPage && (
         <Card>
           <CardHeader>
-            <CardTitle>Documento PDF (opcional)</CardTitle>
+            <CardTitle>{isPdfPrimaryPage ? 'Documento PDF' : 'Documento PDF (opcional)'}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Envie um PDF para exibi-lo embutido no topo da página. Quando houver PDF, ele aparece pronto para leitura ao abrir.
+              {isPdfPrimaryPage
+                ? 'Envie o PDF oficial da Política de Prestação de Serviços. Ele será exibido em destaque na página pública.'
+                : 'Envie um PDF para exibi-lo embutido no topo da página (termos + privacidade). Quando houver PDF, ele aparece pronto para leitura ao abrir.'}
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -308,7 +320,7 @@ const AdminCMSEditor = () => {
                 {uploadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
                 {uploadingPdf ? 'Enviando…' : 'Enviar PDF'}
               </Label>
-              <Input id="pdf-upload" type="file" accept="application/pdf" className="hidden" onChange={handlePdfUpload} disabled={uploadingPdf} />
+              <Input id="pdf-upload" type="file" accept="application/pdf,.pdf" className="hidden" onChange={handlePdfUpload} disabled={uploadingPdf} />
               {content.pdf_url && (
                 <Button type="button" variant="ghost" size="icon" onClick={() => setContent((prev) => ({ ...prev, pdf_url: undefined }))}>
                   <X className="h-4 w-4" />

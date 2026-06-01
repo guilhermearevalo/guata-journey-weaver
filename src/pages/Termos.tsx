@@ -2,17 +2,17 @@ import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
 import LegalPageLayout from '@/components/cms/LegalPageLayout';
 
-// Conteúdo padrão (Termos de Uso = referente ao SITE / plataforma)
 const defaultContent = {
   hero: {
-    title: 'Termos de Uso',
-    subtitle: 'Condições para utilização do site e da plataforma Guatá.',
+    title: 'Termos de Uso e Política de Privacidade',
+    subtitle:
+      'Condições para utilização do site e como a agência trata os seus dados pessoais.',
   },
   sections: [
     {
       title: '1. Aceitação dos Termos',
       content:
-        'Ao acessar e utilizar o site da Guatá Travel Experience, você concorda integralmente com estes Termos de Uso. Caso não concorde, recomendamos que não utilize a plataforma.',
+        'Ao acessar e utilizar o site da Guatá Travel Experience, você concorda integralmente com estes Termos de Uso e com a Política de Privacidade abaixo. Caso não concorde, recomendamos que não utilize a plataforma.',
     },
     {
       title: '2. Sobre a Plataforma',
@@ -49,6 +49,51 @@ const defaultContent = {
       content:
         'Estes Termos podem ser atualizados a qualquer momento. A versão vigente estará sempre disponível nesta página, e o uso contínuo do site após alterações implica concordância com as novas condições.',
     },
+    {
+      title: 'Política de Privacidade',
+      content:
+        'A partir desta seção, descrevemos como a Guatá Travel Experience e suas agências parceiras coletam, utilizam e protegem os seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).',
+    },
+    {
+      title: '1. Quem somos',
+      content:
+        'A Guatá Travel Experience, juntamente com suas agências parceiras, é responsável pelo tratamento dos dados pessoais coletados durante o atendimento e a operação das viagens.',
+    },
+    {
+      title: '2. Dados que coletamos',
+      content:
+        'Coletamos informações fornecidas diretamente por você, como nome, e-mail, telefone, documentos necessários para reservas e preferências de viagem, além de dados de navegação para melhorar a sua experiência no site.',
+    },
+    {
+      title: '3. Como utilizamos seus dados',
+      content:
+        'Utilizamos seus dados para elaborar roteiros e propostas, processar reservas e pagamentos, manter contato durante o planejamento da viagem, cumprir obrigações legais e aprimorar nossos serviços.',
+    },
+    {
+      title: '4. Compartilhamento com parceiros',
+      content:
+        'Para operar a sua viagem, podemos compartilhar dados necessários com agências e fornecedores parceiros (hospedagem, transporte, passeios). O compartilhamento ocorre apenas na medida necessária para a prestação do serviço contratado.',
+    },
+    {
+      title: '5. Armazenamento e segurança',
+      content:
+        'Adotamos medidas técnicas e organizacionais para proteger seus dados contra acesso não autorizado, perda ou uso indevido. Os dados são mantidos apenas pelo tempo necessário às finalidades informadas ou conforme exigido por lei.',
+    },
+    {
+      title: '6. Seus direitos',
+      content:
+        'Você pode, a qualquer momento, solicitar acesso, correção, portabilidade ou exclusão dos seus dados, bem como revogar consentimentos. Para exercer seus direitos, entre em contato com nossa equipe pelos canais de atendimento.',
+    },
+    {
+      title: '7. Cookies',
+      content:
+        'Utilizamos cookies para garantir o funcionamento do site, lembrar preferências e analisar o uso da plataforma. Você pode gerenciar os cookies nas configurações do seu navegador.',
+    },
+    {
+      title: '8. Contato e atualizações',
+      content:
+        'Em caso de dúvidas sobre esta Política ou sobre o tratamento dos seus dados, fale com a nossa equipe. Esta Política pode ser atualizada periodicamente, e a versão vigente estará sempre disponível nesta página.',
+    },
   ],
 };
 
@@ -65,8 +110,11 @@ const Termos = () => {
 
   return (
     <LegalPageLayout
-      title={hero?.title || 'Termos de Uso'}
-      subtitle={hero?.subtitle || 'Condições para utilização do site e da plataforma Guatá.'}
+      title={hero?.title || 'Termos de Uso e Política de Privacidade'}
+      subtitle={
+        hero?.subtitle ||
+        'Condições para utilização do site e como a agência trata os seus dados pessoais.'
+      }
       badge="Termos do site"
       updatedAt="Junho de 2026"
       sections={sections || defaultContent.sections}

@@ -165,8 +165,8 @@ export function PublicFooter() {
                 </Link>
               </li>
               <li>
-                <Link to="/privacidade" className="text-secondary-foreground/80 hover:text-primary">
-                  Política de Privacidade
+                <Link to="/politica-servicos" className="text-secondary-foreground/80 hover:text-primary">
+                  Política de Serviços
                 </Link>
               </li>
               <li>

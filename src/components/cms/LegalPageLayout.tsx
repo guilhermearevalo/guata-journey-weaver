@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { ShieldCheck } from 'lucide-react';
 
 interface LegalSection {
@@ -34,6 +34,16 @@ export default function LegalPageLayout({
     () => sections.map((s) => ({ ...s, id: slugify(s.title) })),
     [sections],
   );
+
+  useEffect(() => {
+    if (pdfUrl) return;
+    const hash = window.location.hash.replace(/^#/, '');
+    if (!hash) return;
+    const timer = window.setTimeout(() => {
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, [pdfUrl, items]);
 
   // Modo PDF: exibe documento embutido, pronto para leitura ao abrir
   if (pdfUrl) {

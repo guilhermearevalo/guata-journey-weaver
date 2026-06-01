@@ -17,7 +17,8 @@ import ViagemPersonalizada from "./pages/ViagemPersonalizada";
 import Sobre from "./pages/Sobre";
 import FAQ from "./pages/FAQ";
 import Termos from "./pages/Termos";
-import Privacidade from "./pages/Privacidade";
+import PoliticaServicos from "./pages/PoliticaServicos";
+import PrivacidadeRedirect from "./pages/PrivacidadeRedirect";
 import Contato from "./pages/Contato";
 import SejaParceiro from "./pages/SejaParceiro";
 import Passagens from "./pages/Passagens";
@@ -88,7 +89,8 @@ const App = () => (
               <Route path="/sobre" element={<Sobre />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/termos" element={<Termos />} />
-              <Route path="/privacidade" element={<Privacidade />} />
+              <Route path="/privacidade" element={<PrivacidadeRedirect />} />
+              <Route path="/politica-servicos" element={<PoliticaServicos />} />
               <Route path="/contato" element={<Contato />} />
               <Route path="/seja-parceiro" element={<SejaParceiro />} />
             </Route>

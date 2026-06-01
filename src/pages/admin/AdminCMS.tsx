@@ -45,7 +45,7 @@ const AdminCMS = () => {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {pages?.map((page) => {
+          {pages?.filter((page) => page.slug !== 'privacidade').map((page) => {
             const status = statusConfig[page.status];
             const StatusIcon = status.icon;
 
