@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Plane, Sparkles } from 'lucide-react';
+import { ExternalLink, Loader2, Plane, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ONER_STORE_URL, ONER_WIDGET_SCRIPT } from '@/lib/onerTravel';
-import { isOnerWidgetProductionHost } from '@/lib/site';
+import { ONER_STORE_URL } from '@/lib/onerTravel';
+import { isOnerWidgetProductionHost, PASSAGENS_URL } from '@/lib/site';
 
-const WIDGET_CHECK_MS = 5000;
+const WIDGET_CHECK_MS = 6000;
 
 function widgetHasContent(wrapper: HTMLElement | null): boolean {
   const widget = wrapper?.querySelector('befly-widget');
@@ -23,29 +23,26 @@ export default function Passagens() {
   const onProductionHost = isOnerWidgetProductionHost();
   const [showFallback, setShowFallback] = useState(!onProductionHost);
   const [widgetReady, setWidgetReady] = useState(false);
+  const [widgetLoading, setWidgetLoading] = useState(onProductionHost);
 
   useEffect(() => {
     if (!onProductionHost) return;
 
-    const existing = document.querySelector(`script[src="${ONER_WIDGET_SCRIPT}"]`);
-    if (!existing) {
-      const script = document.createElement('script');
-      script.src = ONER_WIDGET_SCRIPT;
-      script.type = 'text/javascript';
-      script.async = true;
-      document.body.appendChild(script);
-    }
+    setWidgetLoading(true);
+    setShowFallback(false);
 
     const check = () => {
       const ready = widgetHasContent(widgetRef.current);
       if (ready) {
         setWidgetReady(true);
+        setWidgetLoading(false);
         setShowFallback(false);
       }
       return ready;
     };
 
     const timer = window.setTimeout(() => {
+      setWidgetLoading(false);
       if (!check()) setShowFallback(true);
     }, WIDGET_CHECK_MS);
 
@@ -59,8 +56,13 @@ export default function Passagens() {
       observer.observe(wrapper, { childList: true, subtree: true, attributes: true });
     }
 
+    const poll = window.setInterval(() => {
+      if (check()) window.clearInterval(poll);
+    }, 500);
+
     return () => {
       window.clearTimeout(timer);
+      window.clearInterval(poll);
       observer?.disconnect();
     };
   }, [onProductionHost]);
@@ -92,8 +94,14 @@ export default function Passagens() {
         <div
           ref={widgetRef}
           id="oner-widget-wrapper"
-          className={widgetReady ? 'min-h-[200px]' : 'min-h-[120px]'}
+          className={widgetReady ? 'min-h-[200px]' : 'min-h-[140px]'}
         >
+          {widgetLoading && !widgetReady && (
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Carregando buscador…
+            </div>
+          )}
           <div id="wrapper">
             <befly-widget language="pt-br" new-tab="true" />
           </div>
@@ -103,16 +111,38 @@ export default function Passagens() {
           <Card className="border-dashed">
             <CardContent className="space-y-4 py-8 text-center">
               <p className="text-sm text-muted-foreground">
-                {!onProductionHost
-                  ? 'O buscador de passagens e hotéis está disponível em www.agenciaguata.com. Enquanto o site oficial estiver no ar, você já pode reservar pelo link abaixo.'
-                  : 'Não foi possível carregar o buscador agora. Você pode continuar sua reserva pelo link abaixo.'}
+                {!onProductionHost ? (
+                  <>
+                    Esta é a versão de pré-visualização. O buscador completo está em{' '}
+                    <a
+                      href={PASSAGENS_URL}
+                      className="font-medium text-primary hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      www.agenciaguata.com/passagens
+                    </a>
+                    . Você também pode reservar pelo link abaixo.
+                  </>
+                ) : (
+                  'Não foi possível carregar o buscador agora. Você pode continuar sua reserva pelo link abaixo.'
+                )}
               </p>
-              <Button asChild size="lg">
-                <a href={ONER_STORE_URL} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Buscar passagens e hotéis
-                </a>
-              </Button>
+              <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+                {!onProductionHost && (
+                  <Button asChild size="lg" variant="default">
+                    <a href={PASSAGENS_URL} target="_blank" rel="noopener noreferrer">
+                      Abrir agenciaguata.com
+                    </a>
+                  </Button>
+                )}
+                <Button asChild size="lg" variant={onProductionHost ? 'default' : 'outline'}>
+                  <a href={ONER_STORE_URL} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Buscar passagens e hotéis
+                  </a>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}

@@ -2,6 +2,8 @@
 export const SITE_URL =
   import.meta.env.VITE_SITE_URL ?? 'https://www.agenciaguata.com';
 
+export const PASSAGENS_URL = `${SITE_URL.replace(/\/$/, '')}/passagens`;
+
 /** Domínios em que a Ōner libera o widget BeFly. */
 const ONER_WIDGET_HOSTS = new Set(['agenciaguata.com', 'www.agenciaguata.com']);
 
