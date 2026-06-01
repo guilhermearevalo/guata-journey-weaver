@@ -67,6 +67,9 @@ const AdminCMSEditor = () => {
         message = 'Sem permissão para enviar arquivos. Faça login como administrador ou consultor.';
       } else if (message.includes('Bucket not found')) {
         message = 'Bucket de arquivos não configurado no Supabase (site-assets).';
+      } else if (message.includes('database schema is invalid') || message.includes('schema is out of sync')) {
+        message =
+          'Storage do Supabase desatualizado neste projeto. Envie o PDF pelo painel Storage do Supabase e cole a URL abaixo, ou abra um ticket no suporte Supabase.';
       }
       console.error('Erro no upload do PDF:', err);
       toast({ title: 'Erro no upload do PDF', description: message, variant: 'destructive' });
@@ -326,6 +329,24 @@ const AdminCMSEditor = () => {
                   <X className="h-4 w-4" />
                 </Button>
               )}
+            </div>
+            <div className="space-y-2 border-t pt-3">
+              <Label htmlFor="pdf-url-manual">Ou cole a URL pública do PDF</Label>
+              <Input
+                id="pdf-url-manual"
+                type="url"
+                placeholder="https://xddzshslltdxstqpwvzr.supabase.co/storage/v1/object/public/site-assets/legal/..."
+                value={content.pdf_url || ''}
+                onChange={(e) =>
+                  setContent((prev) => ({
+                    ...prev,
+                    pdf_url: e.target.value.trim() || undefined,
+                  }))
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Se o envio falhar, faça upload em Supabase → Storage → site-assets → pasta legal e cole o link público aqui. Depois clique em Salvar.
+              </p>
             </div>
             {content.pdf_url && (
               <a href={content.pdf_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary underline">
