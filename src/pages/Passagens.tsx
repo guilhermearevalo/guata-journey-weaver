@@ -4,14 +4,29 @@ import { ExternalLink, Plane, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ONER_STORE_URL, ONER_WIDGET_SCRIPT } from '@/lib/onerTravel';
+import { isOnerWidgetProductionHost } from '@/lib/site';
 
-const WIDGET_CHECK_MS = 4000;
+const WIDGET_CHECK_MS = 5000;
+
+function widgetHasContent(wrapper: HTMLElement | null): boolean {
+  const widget = wrapper?.querySelector('befly-widget');
+  if (!widget) return false;
+  return (
+    widget.childElementCount > 0 ||
+    (widget as HTMLElement).innerHTML.trim().length > 0 ||
+    widget.shadowRoot != null
+  );
+}
 
 export default function Passagens() {
   const widgetRef = useRef<HTMLDivElement>(null);
-  const [showFallback, setShowFallback] = useState(false);
+  const onProductionHost = isOnerWidgetProductionHost();
+  const [showFallback, setShowFallback] = useState(!onProductionHost);
+  const [widgetReady, setWidgetReady] = useState(false);
 
   useEffect(() => {
+    if (!onProductionHost) return;
+
     const existing = document.querySelector(`script[src="${ONER_WIDGET_SCRIPT}"]`);
     if (!existing) {
       const script = document.createElement('script');
@@ -21,25 +36,24 @@ export default function Passagens() {
       document.body.appendChild(script);
     }
 
-    const checkWidget = () => {
-      const widget = widgetRef.current?.querySelector('befly-widget');
-      if (!widget) return false;
-      return (
-        widget.childElementCount > 0 ||
-        (widget as HTMLElement).innerHTML.trim().length > 0 ||
-        widget.shadowRoot != null
-      );
+    const check = () => {
+      const ready = widgetHasContent(widgetRef.current);
+      if (ready) {
+        setWidgetReady(true);
+        setShowFallback(false);
+      }
+      return ready;
     };
 
     const timer = window.setTimeout(() => {
-      if (!checkWidget()) setShowFallback(true);
+      if (!check()) setShowFallback(true);
     }, WIDGET_CHECK_MS);
 
     const wrapper = widgetRef.current;
     const observer =
       wrapper &&
       new MutationObserver(() => {
-        if (checkWidget()) setShowFallback(false);
+        if (check()) observer.disconnect();
       });
     if (observer && wrapper) {
       observer.observe(wrapper, { childList: true, subtree: true, attributes: true });
@@ -49,7 +63,7 @@ export default function Passagens() {
       window.clearTimeout(timer);
       observer?.disconnect();
     };
-  }, []);
+  }, [onProductionHost]);
 
   return (
     <div className="container mx-auto px-4 py-10 lg:px-8 lg:py-14">
@@ -75,7 +89,11 @@ export default function Passagens() {
           </p>
         </div>
 
-        <div ref={widgetRef} id="oner-widget-wrapper" className="min-h-[120px]">
+        <div
+          ref={widgetRef}
+          id="oner-widget-wrapper"
+          className={widgetReady ? 'min-h-[200px]' : 'min-h-[120px]'}
+        >
           <div id="wrapper">
             <befly-widget language="pt-br" new-tab="true" />
           </div>
@@ -85,8 +103,9 @@ export default function Passagens() {
           <Card className="border-dashed">
             <CardContent className="space-y-4 py-8 text-center">
               <p className="text-sm text-muted-foreground">
-                Estamos preparando esta área no site. Enquanto isso, você já pode buscar passagens,
-                hotéis e pacotes com a Guatá.
+                {!onProductionHost
+                  ? 'O buscador de passagens e hotéis está disponível em www.agenciaguata.com. Enquanto o site oficial estiver no ar, você já pode reservar pelo link abaixo.'
+                  : 'Não foi possível carregar o buscador agora. Você pode continuar sua reserva pelo link abaixo.'}
               </p>
               <Button asChild size="lg">
                 <a href={ONER_STORE_URL} target="_blank" rel="noopener noreferrer">
