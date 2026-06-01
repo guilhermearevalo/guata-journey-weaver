@@ -46,14 +46,21 @@ const AdminCMSEditor = () => {
     }
     setUploadingPdf(true);
     try {
-      const fileName = `${slug}-${Date.now()}.pdf`;
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast({ title: 'Sessão expirada', description: 'Faça login novamente para enviar arquivos.', variant: 'destructive' });
+        return;
+      }
+      const fileName = `legal/${slug}-${Date.now()}.pdf`;
       const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true, contentType: 'application/pdf' });
       if (error) throw error;
       const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
       setContent((prev) => ({ ...prev, pdf_url: data.publicUrl }));
       toast({ title: 'PDF enviado!', description: 'Lembre-se de salvar a página.' });
-    } catch {
-      toast({ title: 'Erro no upload do PDF', variant: 'destructive' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido.';
+      console.error('Erro no upload do PDF:', err);
+      toast({ title: 'Erro no upload do PDF', description: message, variant: 'destructive' });
     } finally {
       setUploadingPdf(false);
       e.target.value = '';

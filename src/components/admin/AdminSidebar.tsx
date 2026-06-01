@@ -129,21 +129,21 @@ const AdminSidebar = () => {
   });
 
   return (
-    <Sidebar collapsible="icon" className="border-r bg-card">
-      <SidebarHeader className="border-b p-4">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+      <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <img 
             src={logo} 
             alt="Guatá" 
             className={cn(
-              "h-10 w-auto transition-all",
+              "h-10 w-auto rounded-md bg-sidebar-foreground/95 p-1 transition-all",
               collapsed && "h-8"
             )}
           />
           {!collapsed && (
             <div>
-              <p className="font-display font-semibold text-sm">Guatá Admin</p>
-              <p className="text-xs text-muted-foreground capitalize">{userRole?.role}</p>
+              <p className="font-display font-semibold text-sm text-sidebar-foreground">Guatá Admin</p>
+              <p className="text-xs text-sidebar-foreground/70 capitalize">{userRole?.role}</p>
             </div>
           )}
         </div>
@@ -151,7 +151,7 @@ const AdminSidebar = () => {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/60">Menu Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -163,8 +163,8 @@ const AdminSidebar = () => {
                       className={({ isActive }) =>
                         cn(
                           "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                          "text-foreground/80 hover:bg-primary/5 hover:text-primary",
-                          isActive && "bg-primary/10 text-primary font-semibold border-l-2 border-primary"
+                          "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                          isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-semibold border-l-2 border-sidebar-primary"
                         )
                       }
                     >
@@ -179,14 +179,14 @@ const AdminSidebar = () => {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-2">
-          <SidebarTrigger />
+          <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={handleLogout}
-            className={cn("gap-2", collapsed && "w-full justify-center")}
+            className={cn("gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground", collapsed && "w-full justify-center")}
           >
             <LogOut className="h-4 w-4" />
             {!collapsed && <span>Sair</span>}

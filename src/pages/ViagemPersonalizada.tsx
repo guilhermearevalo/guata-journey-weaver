@@ -86,9 +86,10 @@ export default function ViagemPersonalizada() {
       });
     } catch (error) {
       console.error('Error submitting request:', error);
+      const message = error instanceof Error ? error.message : 'Ocorreu um erro. Tente novamente.';
       toast({
         title: 'Erro ao enviar',
-        description: 'Ocorreu um erro. Tente novamente.',
+        description: message,
         variant: 'destructive',
       });
     } finally {
