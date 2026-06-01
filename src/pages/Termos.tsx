@@ -1,23 +1,60 @@
 import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
+import LegalPageLayout from '@/components/cms/LegalPageLayout';
 
-// Conteúdo padrão caso o CMS esteja vazio
+// Conteúdo padrão (Termos de Uso = referente ao SITE / plataforma)
 const defaultContent = {
   hero: {
     title: 'Termos de Uso',
-    subtitle: 'Última atualização: Janeiro de 2026',
+    subtitle: 'Condições para utilização do site e da plataforma Guatá.',
   },
   sections: [
-    { title: '1. Aceitação dos Termos', content: 'Ao acessar e utilizar os serviços da Guatá Travel Experience, você concorda com estes Termos de Uso.' },
-    { title: '2. Descrição dos Serviços', content: 'A Guatá oferece serviços de intermediação e consultoria em viagens, incluindo pacotes turísticos, excursões, hospedagem e experiências personalizadas.' },
-    { title: '3. Reservas e Pagamentos', content: 'Todas as reservas estão sujeitas à disponibilidade e confirmação dos fornecedores.' },
+    {
+      title: '1. Aceitação dos Termos',
+      content:
+        'Ao acessar e utilizar o site da Guatá Travel Experience, você concorda integralmente com estes Termos de Uso. Caso não concorde, recomendamos que não utilize a plataforma.',
+    },
+    {
+      title: '2. Sobre a Plataforma',
+      content:
+        'A Guatá é uma plataforma que conecta viajantes a agências e operadores parceiros. Atuamos como intermediadores: as experiências, pacotes e roteiros são operados pelas agências parceiras, enquanto a Guatá facilita a descoberta, a comunicação e o acompanhamento das solicitações.',
+    },
+    {
+      title: '3. Cadastro e Conta de Usuário',
+      content:
+        'Para utilizar determinados recursos, é necessário criar uma conta com informações verídicas e atualizadas. Você é responsável por manter a confidencialidade das suas credenciais e por todas as atividades realizadas na sua conta.',
+    },
+    {
+      title: '4. Solicitações e Roteiros',
+      content:
+        'O envio de uma solicitação de viagem não constitui contrato ou reserva confirmada. As propostas e roteiros enviados estão sujeitos à disponibilidade e à confirmação das agências parceiras responsáveis pela operação.',
+    },
+    {
+      title: '5. Reservas e Pagamentos',
+      content:
+        'Quando aplicável, pagamentos podem ser processados por meios seguros disponibilizados na plataforma. Os valores, condições de cancelamento e políticas de reembolso são definidos pela agência operadora de cada experiência.',
+    },
+    {
+      title: '6. Responsabilidades',
+      content:
+        'A Guatá empenha-se para apresentar informações corretas e parceiros confiáveis, mas não se responsabiliza por falhas na operação realizada por terceiros. Eventuais divergências sobre serviços prestados devem ser tratadas com a agência responsável, com o nosso apoio na mediação.',
+    },
+    {
+      title: '7. Propriedade Intelectual',
+      content:
+        'Todo o conteúdo do site — marca, textos, imagens e layout — pertence à Guatá ou aos seus parceiros, sendo vedada a reprodução sem autorização prévia.',
+    },
+    {
+      title: '8. Alterações dos Termos',
+      content:
+        'Estes Termos podem ser atualizados a qualquer momento. A versão vigente estará sempre disponível nesta página, e o uso contínuo do site após alterações implica concordância com as novas condições.',
+    },
   ],
 };
 
 const Termos = () => {
   const { data: page, isLoading } = useCmsPage('termos');
 
-  // Usa dados do CMS ou fallback para conteúdo padrão
   const content = page?.content || defaultContent;
   const { hero, sections } = content;
   const pdfUrl = (content as { pdf_url?: string }).pdf_url;
@@ -26,53 +63,15 @@ const Termos = () => {
     return <CmsPageSkeleton />;
   }
 
-  // Quando há PDF, exibe embutido em tela cheia, pronto para leitura
-  if (pdfUrl) {
-    return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <div className="border-b bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-6">
-          <div className="container mx-auto flex items-center justify-between gap-4 px-4">
-            <h1 className="font-display text-2xl font-bold md:text-3xl">
-              {hero?.title || 'Termos de Uso'}
-            </h1>
-            <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline shrink-0">
-              Abrir em nova aba
-            </a>
-          </div>
-        </div>
-        <object data={pdfUrl} type="application/pdf" className="w-full flex-1 min-h-[80vh]">
-          <iframe src={pdfUrl} title="Termos de Uso" className="w-full min-h-[80vh]" />
-        </object>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-display text-4xl font-bold md:text-5xl">
-            {hero?.title || 'Termos de Uso'}
-          </h1>
-          <p className="mx-auto mt-4 text-muted-foreground">
-            {hero?.subtitle || 'Última atualização: Janeiro de 2026'}
-          </p>
-        </div>
-      </section>
-
-      {/* Content */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="prose prose-lg mx-auto max-w-3xl dark:prose-invert">
-          {sections?.map((section, index) => (
-            <div key={index}>
-              <h2>{section.title}</h2>
-              <p className="whitespace-pre-line">{section.content}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
+    <LegalPageLayout
+      title={hero?.title || 'Termos de Uso'}
+      subtitle={hero?.subtitle || 'Condições para utilização do site e da plataforma Guatá.'}
+      badge="Termos do site"
+      updatedAt="Junho de 2026"
+      sections={sections || defaultContent.sections}
+      pdfUrl={pdfUrl}
+    />
   );
 };
 
