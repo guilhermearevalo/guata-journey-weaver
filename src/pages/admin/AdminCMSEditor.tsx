@@ -335,7 +335,7 @@ const AdminCMSEditor = () => {
               <Input
                 id="pdf-url-manual"
                 type="url"
-                placeholder="https://xddzshslltdxstqpwvzr.supabase.co/storage/v1/object/public/site-assets/legal/..."
+                placeholder="https://SEU_PROJETO.supabase.co/storage/v1/object/public/site-assets/legal/arquivo.pdf"
                 value={content.pdf_url || ''}
                 onChange={(e) =>
                   setContent((prev) => ({
