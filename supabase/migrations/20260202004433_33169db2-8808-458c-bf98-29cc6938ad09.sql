@@ -21,7 +21,7 @@ BEGIN
     -- Garantir roles com valores default
     INSERT INTO public.user_roles (user_id, role)
     SELECT id, 'client' FROM auth.users WHERE email LIKE '%@guata.test'
-    ON CONFLICT (user_id) DO NOTHING;
+    ON CONFLICT (user_id, role) DO NOTHING;
 
     -- Atualizar para roles corretos
     UPDATE public.user_roles SET role = 'admin' 
