@@ -1,41 +1,47 @@
-# Configuração Supabase (projeto Guatá)
+# Self-hosting do Guatá com Supabase próprio
 
-Projeto Supabase em uso:
+Este guia explica como rodar o app **fora do Lovable**, apontando para o seu
+projeto Supabase próprio.
 
 - **Project ref:** `ojpgobftvomqxyvrqxma`
 - **URL:** `https://ojpgobftvomqxyvrqxma.supabase.co`
 - **Dashboard:** https://supabase.com/dashboard/project/ojpgobftvomqxyvrqxma
 
-## O que o Lovable deve fazer
+> ⚠️ Importante: dentro do editor Lovable o backend é **fixo** no projeto
+> gerenciado. O `.env` e o `src/integrations/supabase/client.ts` são gerados
+> automaticamente e qualquer edição manual é sobrescrita. Por isso, para usar o
+> Supabase próprio é necessário **exportar o código e hospedar você mesmo**
+> (Vercel, Netlify, etc.). O preview dentro do Lovable continua usando o backend
+> gerenciado — isso é esperado.
+>
+> Boa notícia: o `client.ts` já lê as variáveis `VITE_SUPABASE_URL` e
+> `VITE_SUPABASE_PUBLISHABLE_KEY` do ambiente. Então a troca de backend é
+> **100% por variáveis de ambiente** na sua hospedagem — não precisa alterar código.
 
-### 1. Variáveis de ambiente (obrigatório)
+---
 
-Em **Settings → Environment / Secrets**, definir:
+## 1. Exportar o código
 
+Escolha uma opção:
+
+- **GitHub** (recomendado): menu **+ → GitHub → Connect project**, depois
+  `git clone` do repositório.
+- **Download direto**: Code Editor → **Download codebase** (rodapé da árvore de arquivos).
+
+## 2. Configurar o Supabase externo (`ojpgobftvomqxyvrqxma`)
+
+### 2.1 Aplicar as migrações
+
+Com a [Supabase CLI](https://supabase.com/docs/guides/cli) instalada, na raiz do projeto:
+
+```bash
+supabase link --project-ref ojpgobftvomqxyvrqxma
+supabase db push
 ```
-VITE_SUPABASE_URL=https://ojpgobftvomqxyvrqxma.supabase.co
-VITE_SUPABASE_PROJECT_ID=ojpgobftvomqxyvrqxma
-VITE_SUPABASE_PUBLISHABLE_KEY=<anon public key do dashboard Settings → API>
-VITE_SITE_URL=https://www.agenciaguata.com
-VITE_ONER_STORE_URL=https://www.comprarviagem.com.br/guataviagenseturismo/home
-```
 
-Depois **redeploy** do site.
+Isso aplica **todos** os arquivos de `supabase/migrations/` na ordem do nome.
 
-### 2. Conector Supabase
-
-- **Settings → Connectors → Supabase**
-- Conectar a organização onde está o projeto `ojpgobftvomqxyvrqxma`
-- Garantir que este repositório GitHub está ligado ao mesmo projeto (migrações automáticas)
-
-### 3. Aplicar migrações do banco
-
-Se **Database → Migrations** no Supabase estiver vazio, aplicar todas as migrações em `supabase/migrations/` na ordem do nome do arquivo (30 arquivos), via:
-
-- Integração GitHub → Supabase (push em `main`), ou
-- `supabase db push` com project ref `ojpgobftvomqxyvrqxma`
-
-### 4. Verificar banco
+### 2.2 Verificar o banco
 
 No SQL Editor:
 
@@ -47,30 +53,65 @@ WHERE table_schema = 'public'
 
 Deve retornar 3 linhas.
 
-### 5. Usuário admin (manual no dashboard)
+### 2.3 Verificar o Storage
 
-1. **Authentication → Users → Add user** (e-mail + senha, Auto Confirm)
-2. SQL Editor:
+Confirme o bucket **`site-assets`** (público). Ele é criado pela migração
+`20260601130000_ensure_site_assets_bucket.sql`.
 
-```sql
-INSERT INTO public.user_roles (user_id, role)
-SELECT id, 'admin'::public.app_role
-FROM auth.users
-WHERE email = 'EMAIL_DO_ADMIN@exemplo.com'
-ON CONFLICT (user_id, role) DO NOTHING;
+### 2.4 Criar o usuário admin
+
+1. **Authentication → Users → Add user**
+   - E-mail: `guilhermearevalo27@gmail.com`
+   - Marque **Auto Confirm User** e defina uma senha.
+2. No **SQL Editor**, rode o script [`docs/bootstrap_admin.sql`](./bootstrap_admin.sql).
+   Ele cria o profile, define o papel `admin` e mantém o **Login de Demonstração**
+   funcionando.
+
+### 2.5 Edge Functions e secrets
+
+As edge functions (`supabase/functions/`) precisam ser deployadas no projeto externo:
+
+```bash
+supabase functions deploy itinerary-ai
 ```
 
-### 6. Storage
+E os secrets reconfigurados no projeto externo (Dashboard → Edge Functions → Secrets,
+ou via CLI `supabase secrets set`):
 
-Confirmar bucket **`site-assets`** (público). Migração: `20260601130000_ensure_site_assets_bucket.sql`.
+```
+LOVABLE_API_KEY=...
+STRIPE_SECRET_KEY=...
+```
 
-### 7. Testes pós-deploy
+> O `LOVABLE_API_KEY` é fornecido pelo Lovable Cloud. Fora do Lovable você precisará
+> de uma chave própria do provedor de IA equivalente para a função `itinerary-ai`.
 
-- Login em `/login`
+## 3. Configurar a hospedagem (Vercel / Netlify)
+
+Defina as variáveis de ambiente do build:
+
+```
+VITE_SUPABASE_URL=https://ojpgobftvomqxyvrqxma.supabase.co
+VITE_SUPABASE_PROJECT_ID=ojpgobftvomqxyvrqxma
+VITE_SUPABASE_PUBLISHABLE_KEY=<anon public key — Settings → API>
+VITE_SITE_URL=https://www.agenciaguata.com
+VITE_ONER_STORE_URL=https://www.comprarviagem.com.br/guataviagenseturismo/home
+```
+
+Comando de build: `npm run build` — diretório de saída: `dist`.
+
+Faça o deploy / redeploy.
+
+## 4. Testes pós-deploy
+
+- Login em `/login` com `guilhermearevalo27@gmail.com`
+- Login de Demonstração (botões Admin/Consultor/Parceiro/Cliente)
 - Admin → Nova Demanda
-- Admin → CMS → `politica-servicos` → upload PDF ou URL
+- Admin → CMS → upload de PDF/URL
 - Páginas `/termos` e `/politica-servicos`
+
+---
 
 ## Projeto antigo (não usar)
 
-`xddzshslltdxstqpwvzr` — descontinuado.
+`xddzshslltdxstqpwvzr` — backend gerenciado do Lovable (usado apenas no preview do editor).
