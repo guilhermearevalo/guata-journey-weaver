@@ -1,59 +1,59 @@
-## Objetivo
+# Caminho A — Self-hosting com Supabase externo
 
-Resolver 4 pontos: (1) erro/travamento ao criar demanda, (2) erro no upload do PDF nas páginas legais, (3) cor do menu lateral do admin muito branca, (4) redesenhar Termos de Uso (referente ao site) e Política de Privacidade (referente à agência) com layout bonito.
+## Contexto importante (ler primeiro)
 
----
+Dentro do editor Lovable, o backend é **fixo** no projeto gerenciado (`xddzshslltdxstqpwvzr`). Os arquivos `.env` e `src/integrations/supabase/client.ts` são **gerados automaticamente** e qualquer edição manual é sobrescrita. Por isso, para usar o seu Supabase próprio (`ojpgobftvomqxyvrqxma`) é necessário **exportar o código e hospedar fora do Lovable** (Vercel, Netlify, etc.). O preview dentro do Lovable continuará usando o backend gerenciado — isso é esperado.
 
-## 1. Erro ao criar demanda (admin + formulário público)
+O que este plano faz: deixar o **código pronto** para rodar contra o Supabase externo quando hospedado por você, sem quebrar o preview do Lovable, e te entregar um passo-a-passo claro do que precisa ser feito manualmente no dashboard do Supabase e na hospedagem.
 
-**Diagnóstico já feito:** As permissões (GRANTs) e políticas de acesso (RLS) das tabelas estão corretas. Staff pode inserir, anônimo pode criar solicitação. Como o botão "fica carregando e não retorna" (em vez de mostrar erro de permissão), a causa provável é de runtime, não de banco.
+## O que será feito no código (dentro do Lovable)
 
-**O que farei:**
-- Reproduzir em execução e inspecionar console/rede para ver se a requisição falha, trava ou retorna erro silencioso.
-- Garantir que o formulário de Nova Demanda (admin) e o formulário público de Viagem Personalizada sempre mostrem mensagem de erro/sucesso (nada de spinner infinito): tratar corretamente o estado de erro da mutação e adicionar log do erro real.
-- Confirmar que o usuário de teste tem o papel correto (staff). Se o travamento vier de papel ausente, exibir mensagem clara em vez de travar.
-- Como reforço defensivo, adicionar política explícita de INSERT com `WITH CHECK` para staff em `travel_requests` (hoje só existe a política `ALL`), evitando qualquer ambiguidade em inserções.
+1. **Documentação de deploy atualizada** (`docs/LOVABLE_SUPABASE_SETUP.md`)
+   - Passo-a-passo de export → configurar env → deploy em Vercel/Netlify.
+   - Lista das variáveis necessárias e onde colá-las.
+   - Ordem de aplicação das migrações no projeto externo.
 
-## 2. Upload de PDF nas páginas legais (Termos/Privacidade)
+2. **Conferência das migrações** em `supabase/migrations/`
+   - Garantir que existe a migração do bucket `site-assets` (público) e que a ordem dos arquivos recria todo o schema (`cms_pages`, `travel_requests`, `user_roles`, etc.).
+   - Se faltar algo (ex.: bucket), criar a migração correspondente para você aplicar no projeto externo.
 
-**Diagnóstico:** bucket `site-assets` é público, sem limite de tamanho; a política de upload exige staff. O erro provavelmente ocorre por papel/sessão ou por resposta de erro não exibida claramente.
+3. **Script/SQL de bootstrap de admin** (arquivo em `docs/` ou `supabase/`)
+   - SQL pronto para criar o role admin de `guilhermearevalo27@gmail.com` no projeto externo, mantendo o fluxo de Login de Demonstração (`update_demo_roles`) intacto.
 
-**O que farei:**
-- Testar o upload em execução e capturar o erro exato retornado pelo storage.
-- Tornar o handler de upload mais robusto: exibir a mensagem real do erro (não um toast genérico), validar sessão/staff antes de enviar e usar caminho de arquivo seguro.
-- Confirmar limite de tamanho coerente com o bucket.
+> Observação: não vou editar `.env` nem `client.ts` (são auto-gerados). O `client.ts` já lê `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` do ambiente, então na sua hospedagem basta definir essas variáveis apontando para o projeto externo.
 
-## 3. Cor do menu lateral do admin
+## O que você fará manualmente (fora do Lovable)
 
-Hoje o sidebar usa fundo quase branco (`--sidebar-background` creme), ficando "lavado".
+```text
+1. Exportar o código
+   - GitHub: conectar projeto (menu + → GitHub) e clonar o repo
+   - ou Code Editor → Download codebase
 
-**O que farei (você decide → escolho o melhor):**
-- Ajustar os tokens `--sidebar-*` em `src/index.css` para um **fundo teal escuro da marca** com texto claro e item ativo destacado (contraste forte e legível), mantendo a identidade Guatá. Item ativo com leve realce e borda lateral.
-- Ajustar o `AdminSidebar.tsx` apenas no necessário para o novo contraste (estados hover/ativo) usando tokens semânticos.
+2. No Supabase externo (ojpgobftvomqxyvrqxma)
+   - Aplicar TODAS as migrações de supabase/migrations/ (db push)
+   - Confirmar tabelas: cms_pages, travel_requests, user_roles
+   - Confirmar bucket site-assets (público)
+   - Authentication → Add user: guilhermearevalo27@gmail.com (Auto Confirm)
+   - Rodar o SQL de admin (entregue no passo 3 acima)
 
-## 4. Redesenho de Termos de Uso e Política de Privacidade
-
-**Conteúdo:**
-- **Termos de Uso** → referente ao **site/plataforma** (uso do site, contas, reservas, responsabilidades).
-- **Política de Privacidade** → referente à **agência** (tratamento de dados pelos parceiros/agência, LGPD).
-- Preencher um texto-base adequado para cada um (editável depois via CMS).
-
-**Layout (ambos):**
-- Cabeçalho com gradiente da marca, título em Playfair, subtítulo e data de atualização.
-- Conteúdo em coluna central legível, com seções numeradas em cards/divisores, tipografia Inter, bom espaçamento, sumário/índice no topo opcional, ícones discretos por seção.
-- Manter o modo PDF embutido já existente quando houver PDF enviado; quando não houver, exibir o layout redesenhado.
-
----
+3. Na hospedagem (Vercel/Netlify)
+   - Definir variáveis:
+     VITE_SUPABASE_URL=https://ojpgobftvomqxyvrqxma.supabase.co
+     VITE_SUPABASE_PROJECT_ID=ojpgobftvomqxyvrqxma
+     VITE_SUPABASE_PUBLISHABLE_KEY=<anon key do dashboard>
+     VITE_SITE_URL=https://www.agenciaguata.com
+     VITE_ONER_STORE_URL=...
+   - Deploy / redeploy
+```
 
 ## Detalhes técnicos
 
-- **Banco (migração):** política adicional `FOR INSERT ... WITH CHECK (is_staff(auth.uid()))` em `public.travel_requests` (reforço). Sem outras mudanças de schema.
-- **Arquivos a alterar:**
-  - `src/index.css` — tokens `--sidebar-*` (tema teal escuro).
-  - `src/components/admin/AdminSidebar.tsx` — ajustes de contraste (hover/ativo).
-  - `src/components/admin/NewRequestDialog.tsx` — tratamento de erro/sucesso robusto + log.
-  - `src/pages/ViagemPersonalizada.tsx` — mesmo tratamento de erro no envio público (verificar).
-  - `src/pages/admin/AdminCMSEditor.tsx` — upload de PDF com erro detalhado e validação de sessão.
-  - `src/pages/Privacidade.tsx` e `src/pages/Termos.tsx` — novo layout + texto-base.
-  - Conteúdo padrão (fallback) atualizado para Termos=site e Privacidade=agência.
-- **Verificação:** testar em execução criação de demanda (admin e público), upload de PDF, e revisar visualmente sidebar e páginas legais (claro/escuro).
+- `client.ts` usa `import.meta.env.VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` — portanto a troca de backend acontece 100% por variáveis de ambiente na hospedagem, sem alterar código.
+- Edge functions (`supabase/functions/itinerary-ai`) precisam ser deployadas no projeto externo via `supabase functions deploy`, e os secrets (`LOVABLE_API_KEY`, `STRIPE_SECRET_KEY`, etc.) reconfigurados lá.
+- O Login de Demonstração depende da função `update_demo_roles` e das contas `*@guata.test` — incluído nas migrações, então continuará funcionando no projeto externo após o push.
+
+## Entregáveis
+
+- `docs/LOVABLE_SUPABASE_SETUP.md` revisado com o fluxo de self-hosting completo.
+- SQL de criação do admin `guilhermearevalo27@gmail.com`.
+- Verificação/criação de migração faltante (ex.: bucket `site-assets`) se necessário.
