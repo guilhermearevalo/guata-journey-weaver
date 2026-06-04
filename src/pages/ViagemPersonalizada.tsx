@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
+import { z } from 'zod';
 
 const travelStyles = [
   { id: 'adventure', label: 'Aventura' },
@@ -22,6 +23,19 @@ const travelStyles = [
   { id: 'romantic', label: 'Romântica' },
   { id: 'family', label: 'Em Família' },
 ];
+
+const travelRequestSchema = z.object({
+  name: z.string().trim().min(2, 'Informe seu nome completo.').max(120, 'Nome muito longo.'),
+  email: z.string().trim().email('Informe um e-mail válido.').max(255, 'E-mail muito longo.'),
+  phone: z.string().trim().max(30, 'Telefone muito longo.').optional().or(z.literal('')),
+  destination: z.string().trim().min(2, 'Informe o destino desejado.').max(160, 'Destino muito longo.'),
+  departureDate: z.string().optional(),
+  returnDate: z.string().optional(),
+  travelers: z.string().min(1),
+  budget: z.string().trim().max(80, 'Orçamento muito longo.').optional().or(z.literal('')),
+  styles: z.array(z.string()).max(8),
+  specialRequests: z.string().trim().max(2000, 'Observações muito longas.').optional().or(z.literal('')),
+});
 
 export default function ViagemPersonalizada() {
   const { user } = useAuth();
@@ -58,22 +72,25 @@ export default function ViagemPersonalizada() {
     setLoading(true);
 
     try {
+      const parsed = travelRequestSchema.parse(formData);
+      const travelersCount = parsed.travelers === '6+' ? 6 : parseInt(parsed.travelers, 10);
+
       const { error } = await supabase.from('travel_requests').insert({
         client_id: user?.id || null,
-        client_name: formData.name,
-        client_email: formData.email,
-        client_phone: formData.phone,
-        destination: formData.destination,
+        client_name: parsed.name,
+        client_email: parsed.email,
+        client_phone: parsed.phone || null,
+        destination: parsed.destination,
         travel_dates: {
-          departure: formData.departureDate,
-          return: formData.returnDate,
+          start: parsed.departureDate || null,
+          end: parsed.returnDate || null,
         },
-        travelers_count: parseInt(formData.travelers),
-        budget_range: formData.budget,
+        travelers_count: Number.isFinite(travelersCount) ? travelersCount : 1,
+        budget_range: parsed.budget || null,
         preferences: {
-          styles: formData.styles,
+          styles: parsed.styles,
         },
-        special_requests: formData.specialRequests,
+        special_requests: parsed.specialRequests || null,
         status: 'pending',
       });
 
@@ -86,7 +103,11 @@ export default function ViagemPersonalizada() {
       });
     } catch (error) {
       console.error('Error submitting request:', error);
-      const message = error instanceof Error ? error.message : 'Ocorreu um erro. Tente novamente.';
+      const message = error instanceof z.ZodError
+        ? error.issues[0]?.message || 'Revise os dados informados.'
+        : error instanceof Error
+          ? error.message
+          : 'Ocorreu um erro. Tente novamente.';
       toast({
         title: 'Erro ao enviar',
         description: message,
