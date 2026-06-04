@@ -206,7 +206,7 @@ const RecentRequests = () => {
       {requests.map((request) => (
         <Link
           key={request.id}
-          to={demandRoute}
+          to={`${demandRoute}?demanda=${request.id}`}
           className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors"
         >
           <div>
