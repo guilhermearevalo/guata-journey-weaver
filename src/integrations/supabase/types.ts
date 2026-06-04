@@ -946,6 +946,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_shared_proposal_for_request: {
+        Args: { _request_id: string }
+        Returns: boolean
+      }
+      is_request_client: {
+        Args: { _request_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       update_demo_roles: { Args: never; Returns: undefined }
     }
