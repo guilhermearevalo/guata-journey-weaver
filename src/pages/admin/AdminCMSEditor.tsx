@@ -20,6 +20,20 @@ import {
 import { ArrowLeft, Save, Plus, Trash2, GripVertical, Eye, FileUp, Loader2, X, FileText as FileTextIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+const isStorageSchemaError = (message: string, statusCode?: string) =>
+  message.includes('database schema is invalid') ||
+  message.includes('schema is out of sync') ||
+  statusCode === '503';
+
+const isValidPdfUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return /^https?:$/.test(url.protocol) && url.pathname.toLowerCase().endsWith('.pdf');
+  } catch {
+    return false;
+  }
+};
+
 const AdminCMSEditor = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -32,6 +46,7 @@ const AdminCMSEditor = () => {
   const [status, setStatus] = useState<'draft' | 'published' | 'hidden'>('draft');
   const [content, setContent] = useState<CmsPageContent>({});
   const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [pdfUploadUnavailable, setPdfUploadUnavailable] = useState(false);
 
   const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -58,6 +73,7 @@ const AdminCMSEditor = () => {
       const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true, contentType: 'application/pdf' });
       if (error) throw error;
       const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+      setPdfUploadUnavailable(false);
       setContent((prev) => ({ ...prev, pdf_url: data.publicUrl }));
       toast({ title: 'PDF enviado!', description: 'Lembre-se de salvar a página.' });
     } catch (err) {
@@ -67,9 +83,10 @@ const AdminCMSEditor = () => {
         message = 'Sem permissão para enviar arquivos. Faça login como administrador ou consultor.';
       } else if (message.includes('Bucket not found')) {
         message = 'Bucket de arquivos não configurado no Supabase (site-assets).';
-      } else if (message.includes('database schema is invalid') || message.includes('schema is out of sync')) {
+      } else if (isStorageSchemaError(message, supa.statusCode)) {
+        setPdfUploadUnavailable(true);
         message =
-          'Storage do Supabase desatualizado neste projeto. Envie o PDF pelo painel Storage do Supabase e cole a URL abaixo, ou abra um ticket no suporte Supabase.';
+          'O upload direto está indisponível no backend agora. Cole a URL pública do PDF abaixo e salve a página.';
       }
       console.error('Erro no upload do PDF:', err);
       toast({ title: 'Erro no upload do PDF', description: message, variant: 'destructive' });
@@ -90,6 +107,10 @@ const AdminCMSEditor = () => {
 
   const updateMutation = useMutation({
     mutationFn: async () => {
+      if (content.pdf_url && !isValidPdfUrl(content.pdf_url)) {
+        throw new Error('Informe uma URL pública de PDF válida terminando em .pdf.');
+      }
+
       const { error } = await supabase
         .from('cms_pages')
         .update({
@@ -321,15 +342,20 @@ const AdminCMSEditor = () => {
             <div className="flex items-center gap-2">
               <Label htmlFor="pdf-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80">
                 {uploadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
-                {uploadingPdf ? 'Enviando…' : 'Enviar PDF'}
+                {uploadingPdf ? 'Enviando…' : pdfUploadUnavailable ? 'Upload indisponível' : 'Enviar PDF'}
               </Label>
-              <Input id="pdf-upload" type="file" accept="application/pdf,.pdf" className="hidden" onChange={handlePdfUpload} disabled={uploadingPdf} />
+              <Input id="pdf-upload" type="file" accept="application/pdf,.pdf" className="hidden" onChange={handlePdfUpload} disabled={uploadingPdf || pdfUploadUnavailable} />
               {content.pdf_url && (
                 <Button type="button" variant="ghost" size="icon" onClick={() => setContent((prev) => ({ ...prev, pdf_url: undefined }))}>
                   <X className="h-4 w-4" />
                 </Button>
               )}
             </div>
+            {pdfUploadUnavailable && (
+              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                O envio automático foi desligado temporariamente porque o storage do backend respondeu com erro de esquema. Use a URL pública do PDF logo abaixo.
+              </p>
+            )}
             <div className="space-y-2 border-t pt-3">
               <Label htmlFor="pdf-url-manual">Ou cole a URL pública do PDF</Label>
               <Input
