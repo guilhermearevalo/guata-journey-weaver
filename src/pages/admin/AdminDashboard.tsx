@@ -5,6 +5,8 @@ import { ClipboardList, Compass, Users, Building2, TrendingUp, Clock } from 'luc
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 
+const demandRoute = '/admin/demandas';
+
 const AdminDashboard = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-stats'],
@@ -33,7 +35,7 @@ const AdminDashboard = () => {
       title: 'Demandas Pendentes',
       value: stats?.pendingRequests || 0,
       icon: Clock,
-      href: '/admin/demandas?status=pending',
+      href: demandRoute,
       color: 'text-amber-500',
       bgColor: 'bg-amber-500/10',
     },
@@ -114,7 +116,7 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent className="space-y-2">
             <Link 
-              to="/admin/demandas?status=pending" 
+              to={demandRoute}
               className="block rounded-lg border p-4 hover:bg-accent transition-colors"
             >
               <p className="font-medium">Ver demandas pendentes</p>
@@ -204,7 +206,7 @@ const RecentRequests = () => {
       {requests.map((request) => (
         <Link
           key={request.id}
-          to={`/admin/demandas/${request.id}`}
+          to={demandRoute}
           className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors"
         >
           <div>
