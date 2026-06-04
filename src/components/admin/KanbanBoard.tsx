@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables, Enums } from '@/integrations/supabase/types';
@@ -9,6 +9,7 @@ import { KanbanFilters } from './KanbanFilters';
 import { NewRequestDialog } from './NewRequestDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { useSearchParams } from 'react-router-dom';
 
 type RequestStatus = Enums<'request_status'>;
 
@@ -31,9 +32,12 @@ const columns: Column[] = [
 export function KanbanBoard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedRequest, setSelectedRequest] = useState<Tables<'travel_requests'> | null>(null);
   const [filterAgency, setFilterAgency] = useState('all');
   const [filterPayment, setFilterPayment] = useState('all');
+  const requestedStatus = searchParams.get('status') as RequestStatus | null;
+  const requestedDemandId = searchParams.get('demanda');
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['travel_requests'],
@@ -117,6 +121,38 @@ export function KanbanBoard() {
     return filtered;
   };
 
+  const visibleColumns = useMemo(() => {
+    if (requestedStatus && columns.some((column) => column.id === requestedStatus)) {
+      return columns.filter((column) => column.id === requestedStatus);
+    }
+
+    return columns;
+  }, [requestedStatus]);
+
+  useEffect(() => {
+    if (!requestedDemandId || !requests?.length) return;
+
+    const match = requests.find((request) => request.id === requestedDemandId);
+    if (match) {
+      setSelectedRequest(match);
+    }
+  }, [requestedDemandId, requests]);
+
+  const handleSelectRequest = (request: Tables<'travel_requests'>) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('demanda', request.id);
+    setSearchParams(nextParams, { replace: true });
+    setSelectedRequest(request);
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    if (open) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('demanda');
+    setSearchParams(nextParams, { replace: true });
+    setSelectedRequest(null);
+  };
+
   if (isLoading) {
     return (
       <div className="flex gap-4 overflow-x-auto pb-4">
@@ -146,7 +182,7 @@ export function KanbanBoard() {
         <NewRequestDialog />
       </div>
       <div className="flex gap-4 overflow-x-auto pb-4 mt-4">
-        {columns.map((column) => {
+        {visibleColumns.map((column) => {
           const columnRequests = getRequestsByStatus(column.id);
           return (
             <KanbanColumn
@@ -163,7 +199,7 @@ export function KanbanBoard() {
                   key={request.id}
                   request={request}
                   onDragStart={handleDragStart}
-                  onClick={() => setSelectedRequest(request)}
+                  onClick={() => handleSelectRequest(request)}
                 />
               ))}
             </KanbanColumn>
@@ -174,7 +210,7 @@ export function KanbanBoard() {
       <RequestDetailDialog
         request={selectedRequest}
         open={!!selectedRequest}
-        onOpenChange={(open) => !open && setSelectedRequest(null)}
+        onOpenChange={handleDialogChange}
       />
     </>
   );
