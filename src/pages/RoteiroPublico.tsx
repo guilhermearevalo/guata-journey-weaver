@@ -48,31 +48,20 @@ export default function RoteiroPublico() {
   const { data: proposal, isLoading, error } = useQuery({
     queryKey: ['public-itinerary', token],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('proposals')
-        .select('id, request_id, title, itinerary, dossier, documents_checklist, share_token, share_enabled, agency_id, travel_requests!inner(destination, travel_dates, travelers_count)')
-        .eq('share_token', token!)
-        .maybeSingle();
-      
-      // Check if access code exists separately (don't expose the actual code)
-      if (data) {
-        const { data: codeCheck } = await supabase
-          .from('proposals')
-          .select('access_code')
-          .eq('id', data.id)
-          .maybeSingle();
-        (data as any)._has_access_code = !!codeCheck?.access_code;
-        if (data.agency_id) {
-          const { data: branding } = await supabase
-            .from('partner_agency_branding' as any)
-            .select('name, logo_url, cover_image_url')
-            .eq('id', data.agency_id)
-            .maybeSingle();
-          (data as any).agency_branding = branding;
-        }
-      }
+      const { data, error } = await supabase.rpc('get_public_itinerary', { _token: token! });
       if (error) throw error;
-      return data;
+      if (!data) return null;
+      const result = data as Record<string, any>;
+      result._has_access_code = !!result.has_access_code;
+      if (result.agency_id) {
+        const { data: branding } = await supabase
+          .from('partner_agency_branding' as any)
+          .select('name, logo_url, cover_image_url')
+          .eq('id', result.agency_id)
+          .maybeSingle();
+        result.agency_branding = branding;
+      }
+      return result;
     },
     enabled: !!token,
   });
@@ -92,7 +81,7 @@ export default function RoteiroPublico() {
     enabled: !!proposal?.id,
   });
 
-  const request = proposal?.travel_requests as unknown as {
+  const request = (proposal?.request ?? null) as {
     destination: string;
     travel_dates: { start?: string; end?: string } | null;
     travelers_count: number;
@@ -151,15 +140,13 @@ export default function RoteiroPublico() {
   const needsCode = hasAccessCode && !isUnlocked;
 
   const handleCodeSubmit = async () => {
-    // Validate code on backend by querying with the code
-    const { data } = await supabase
-      .from('proposals')
-      .select('id')
-      .eq('id', proposal!.id)
-      .eq('access_code', codeInput.trim().toUpperCase())
-      .maybeSingle();
-    
-    if (data) {
+    // Validate code on the backend without exposing the actual code value
+    const { data, error: rpcError } = await supabase.rpc('verify_proposal_access_code', {
+      _token: token!,
+      _code: codeInput.trim(),
+    });
+
+    if (!rpcError && data === true) {
       setIsUnlocked(true);
       setCodeError(false);
     } else {

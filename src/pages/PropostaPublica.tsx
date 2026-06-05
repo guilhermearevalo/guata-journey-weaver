@@ -13,18 +13,14 @@ export default function PropostaPublica() {
   const { data: proposal, isLoading, error } = useQuery({
     queryKey: ['public-proposal', token],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('proposals')
-        .select('*, travel_requests!inner(destination, travel_dates, travelers_count, client_name)')
-        .eq('share_token', token!)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('get_public_proposal', { _token: token! });
       if (error) throw error;
-      return data;
+      return data as Record<string, any> | null;
     },
     enabled: !!token,
   });
 
-  const request = proposal?.travel_requests as unknown as {
+  const request = (proposal?.request ?? null) as {
     destination: string;
     travel_dates: { start?: string; end?: string } | null;
     travelers_count: number;
