@@ -1,59 +1,33 @@
-# Caminho A — Self-hosting com Supabase externo
+## Objetivo
 
-## Contexto importante (ler primeiro)
+Fazer o **envio automático de PDF voltar a funcionar** como caminho principal no editor de CMS (Termos / Política de Serviços), removendo a dependência da URL manual. A URL pública continua existindo, mas só como conveniência opcional — não mais como obrigatória.
 
-Dentro do editor Lovable, o backend é **fixo** no projeto gerenciado (`xddzshslltdxstqpwvzr`). Os arquivos `.env` e `src/integrations/supabase/client.ts` são **gerados automaticamente** e qualquer edição manual é sobrescrita. Por isso, para usar o seu Supabase próprio (`ojpgobftvomqxyvrqxma`) é necessário **exportar o código e hospedar fora do Lovable** (Vercel, Netlify, etc.). O preview dentro do Lovable continuará usando o backend gerenciado — isso é esperado.
+## Diagnóstico
 
-O que este plano faz: deixar o **código pronto** para rodar contra o Supabase externo quando hospedado por você, sem quebrar o preview do Lovable, e te entregar um passo-a-passo claro do que precisa ser feito manualmente no dashboard do Supabase e na hospedagem.
+Verifiquei o backend ativo:
 
-## O que será feito no código (dentro do Lovable)
+- Bucket `site-assets` existe e é **público**, sem limite de tamanho nem restrição de mime.
+- As políticas de storage estão corretas: `Staff can upload site assets` usa `is_staff(auth.uid())` para INSERT, e há SELECT público.
+- As funções `is_staff` / `has_role` mantêm permissão de `EXECUTE` para o papel `authenticated`.
 
-1. **Documentação de deploy atualizada** (`docs/LOVABLE_SUPABASE_SETUP.md`)
-   - Passo-a-passo de export → configurar env → deploy em Vercel/Netlify.
-   - Lista das variáveis necessárias e onde colá-las.
-   - Ordem de aplicação das migrações no projeto externo.
+Conclusão: o storage está saudável. O erro "schema out of sync" (503) que motivou o fallback foi **transitório** (ou veio de testes contra o projeto externo vazio), não um defeito real de schema. O problema atual é só de UX: ao receber esse erro uma vez, o botão de upload fica **permanentemente desabilitado** (`pdfUploadUnavailable`), forçando o uso da URL manual.
 
-2. **Conferência das migrações** em `supabase/migrations/`
-   - Garantir que existe a migração do bucket `site-assets` (público) e que a ordem dos arquivos recria todo o schema (`cms_pages`, `travel_requests`, `user_roles`, etc.).
-   - Se faltar algo (ex.: bucket), criar a migração correspondente para você aplicar no projeto externo.
+## Mudanças (somente frontend)
 
-3. **Script/SQL de bootstrap de admin** (arquivo em `docs/` ou `supabase/`)
-   - SQL pronto para criar o role admin de `guilhermearevalo27@gmail.com` no projeto externo, mantendo o fluxo de Login de Demonstração (`update_demo_roles`) intacto.
+Em `src/pages/admin/AdminCMSEditor.tsx`:
 
-> Observação: não vou editar `.env` nem `client.ts` (são auto-gerados). O `client.ts` já lê `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` do ambiente, então na sua hospedagem basta definir essas variáveis apontando para o projeto externo.
+1. **Não desabilitar o upload de forma permanente.** Remover o estado `pdfUploadUnavailable` que trava o botão. Em caso de erro de schema/503, mostrar mensagem amigável pedindo para **tentar novamente em instantes** (e oferecer a URL manual como alternativa), mas manter o botão ativo para nova tentativa.
 
-## O que você fará manualmente (fora do Lovable)
+2. **Retry automático leve** no `handlePdfUpload`: ao detectar erro de schema/503, tentar o upload mais 1–2 vezes com pequeno atraso antes de exibir o erro, cobrindo a janela de indisponibilidade transitória.
 
-```text
-1. Exportar o código
-   - GitHub: conectar projeto (menu + → GitHub) e clonar o repo
-   - ou Code Editor → Download codebase
+3. **Reposicionar a URL manual como opcional.** Manter o campo "Ou cole a URL pública do PDF", mas com texto deixando claro que o envio automático é o padrão e a URL é só para casos excepcionais.
 
-2. No Supabase externo (ojpgobftvomqxyvrqxma)
-   - Aplicar TODAS as migrações de supabase/migrations/ (db push)
-   - Confirmar tabelas: cms_pages, travel_requests, user_roles
-   - Confirmar bucket site-assets (público)
-   - Authentication → Add user: guilhermearevalo27@gmail.com (Auto Confirm)
-   - Rodar o SQL de admin (entregue no passo 3 acima)
+4. **Mensagens de erro mais precisas** mantendo os casos já tratados (RLS/403 → login como admin/consultor; Bucket not found → bucket não configurado).
 
-3. Na hospedagem (Vercel/Netlify)
-   - Definir variáveis:
-     VITE_SUPABASE_URL=https://ojpgobftvomqxyvrqxma.supabase.co
-     VITE_SUPABASE_PROJECT_ID=ojpgobftvomqxyvrqxma
-     VITE_SUPABASE_PUBLISHABLE_KEY=<anon key do dashboard>
-     VITE_SITE_URL=https://www.agenciaguata.com
-     VITE_ONER_STORE_URL=...
-   - Deploy / redeploy
-```
+## Verificação
 
-## Detalhes técnicos
+- Build limpa.
+- Conferir no preview, logado como admin, que o botão "Enviar PDF" permanece habilitado e o upload grava em `site-assets/legal/...` e preenche `pdf_url` automaticamente.
+- Confirmar que, mesmo após um erro simulado, o botão continua clicável (não trava).
 
-- `client.ts` usa `import.meta.env.VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` — portanto a troca de backend acontece 100% por variáveis de ambiente na hospedagem, sem alterar código.
-- Edge functions (`supabase/functions/itinerary-ai`) precisam ser deployadas no projeto externo via `supabase functions deploy`, e os secrets (`LOVABLE_API_KEY`, `STRIPE_SECRET_KEY`, etc.) reconfigurados lá.
-- O Login de Demonstração depende da função `update_demo_roles` e das contas `*@guata.test` — incluído nas migrações, então continuará funcionando no projeto externo após o push.
-
-## Entregáveis
-
-- `docs/LOVABLE_SUPABASE_SETUP.md` revisado com o fluxo de self-hosting completo.
-- SQL de criação do admin `guilhermearevalo27@gmail.com`.
-- Verificação/criação de migração faltante (ex.: bucket `site-assets`) se necessário.
+Nenhuma migração de banco é necessária — o storage já está correto.
