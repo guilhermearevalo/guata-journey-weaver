@@ -140,15 +140,13 @@ export default function RoteiroPublico() {
   const needsCode = hasAccessCode && !isUnlocked;
 
   const handleCodeSubmit = async () => {
-    // Validate code on backend by querying with the code
-    const { data } = await supabase
-      .from('proposals')
-      .select('id')
-      .eq('id', proposal!.id)
-      .eq('access_code', codeInput.trim().toUpperCase())
-      .maybeSingle();
-    
-    if (data) {
+    // Validate code on the backend without exposing the actual code value
+    const { data, error: rpcError } = await supabase.rpc('verify_proposal_access_code', {
+      _token: token!,
+      _code: codeInput.trim(),
+    });
+
+    if (!rpcError && data === true) {
       setIsUnlocked(true);
       setCodeError(false);
     } else {
