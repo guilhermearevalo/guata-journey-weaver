@@ -43,6 +43,7 @@ const ViagensRealizadas = () => {
         title="Viagens realizadas e pacotes"
         description="Inspire-se com viagens reais organizadas pela Guatá pelo Brasil e exterior. Veja roteiros, destinos e a experiência dos nossos viajantes."
       />
+      <section className="bg-gradient-to-r from-secondary to-secondary/80 py-16 text-white">
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-display text-4xl font-bold md:text-5xl">Viagens Realizadas</h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-white/85">
