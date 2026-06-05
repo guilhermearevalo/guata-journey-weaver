@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Seo } from '@/components/seo/Seo';
 import { Link } from 'react-router-dom';
 import { Search, Filter, MapPin, Clock, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,11 @@ const Excursoes = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        path="/excursoes"
+        title="Excursões e saídas em grupo"
+        description="Confira as excursões e saídas em grupo da Guatá pelo Pantanal, Bonito e outros destinos. Roteiros guiados com parceiros locais credenciados."
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary to-primary/80 py-16 text-white">
         <div className="container mx-auto px-4 text-center">
