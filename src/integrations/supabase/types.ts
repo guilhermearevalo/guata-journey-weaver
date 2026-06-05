@@ -938,6 +938,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_itinerary: { Args: { _token: string }; Returns: Json }
+      get_public_proposal: { Args: { _token: string }; Returns: Json }
       get_user_agency: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -955,7 +957,12 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      proposal_is_shared: { Args: { _proposal_id: string }; Returns: boolean }
       update_demo_roles: { Args: never; Returns: undefined }
+      verify_proposal_access_code: {
+        Args: { _code: string; _token: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "client" | "consultant" | "manager" | "admin" | "partner"
