@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Seo } from '@/components/seo/Seo';
 import { Link } from 'react-router-dom';
 import { ExternalLink, Loader2, Plane, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -69,6 +70,11 @@ export default function Passagens() {
 
   return (
     <div className="container mx-auto px-4 py-10 lg:px-8 lg:py-14">
+      <Seo
+        path="/passagens"
+        title="Passagens aéreas"
+        description="Encontre e reserve passagens aéreas com a Guatá Viagens. Tarifas pesquisadas em tempo real e suporte da nossa equipe para a sua viagem."
+      />
       <div className="mx-auto max-w-5xl space-y-8">
         <div className="space-y-3 text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">

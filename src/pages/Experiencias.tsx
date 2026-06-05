@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Seo } from '@/components/seo/Seo';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Search, MapPin, Clock, Users, Filter, X, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -176,6 +177,11 @@ export default function Experiencias() {
 
   return (
     <div className="py-12">
+      <Seo
+        path="/experiencias"
+        title="Experiências e roteiros de viagem"
+        description="Explore as experiências de viagem da Guatá: ecoturismo no Pantanal, passeios em Bonito e roteiros pelo Brasil e exterior, com curadoria e parceiros locais."
+      />
       <div className="container mx-auto px-4 lg:px-8">
         {/* Header */}
         <div className="mb-8">
