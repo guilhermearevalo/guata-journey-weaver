@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
 import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
+import { Seo } from '@/components/seo/Seo';
 
 // Conteúdo padrão caso o CMS esteja vazio
 const defaultContent = {
@@ -33,8 +34,24 @@ const FAQ = () => {
     return <CmsPageSkeleton />;
   }
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: (items || []).map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        path="/faq"
+        title="Perguntas Frequentes"
+        description="Tire suas dúvidas sobre reservas, cancelamento, seguro viagem e como a Guatá organiza roteiros personalizados no Pantanal, em Bonito e pelo mundo."
+        jsonLd={faqJsonLd}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16">
         <div className="container mx-auto px-4 text-center">
