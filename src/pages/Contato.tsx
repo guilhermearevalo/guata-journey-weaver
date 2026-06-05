@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Seo } from '@/components/seo/Seo';
 import { Mail, Phone, MapPin, Send, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,6 +94,11 @@ const Contato = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        path="/contato"
+        title="Fale com a Guatá"
+        description="Entre em contato com a Guatá Viagens. Tire dúvidas, peça um orçamento e comece a planejar sua próxima viagem com a nossa equipe."
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16">
         <div className="container mx-auto px-4 text-center">

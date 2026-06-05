@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Seo } from '@/components/seo/Seo';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, Users, DollarSign, Heart, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -142,6 +143,11 @@ export default function ViagemPersonalizada() {
 
   return (
     <div className="py-12">
+      <Seo
+        path="/viagem-personalizada"
+        title="Monte sua viagem personalizada"
+        description="Conte para a Guatá o que você sonha e receba um roteiro de viagem sob medida, com curadoria e parceiros locais — no Pantanal, em Bonito, no Brasil ou no exterior."
+      />
       <div className="container mx-auto px-4 lg:px-8">
         {/* Header */}
         <div className="mx-auto mb-12 max-w-2xl text-center">

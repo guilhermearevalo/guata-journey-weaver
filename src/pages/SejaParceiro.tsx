@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Seo } from '@/components/seo/Seo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -124,6 +125,11 @@ const SejaParceiro = () => {
 
   return (
     <div className="min-h-screen">
+      <Seo
+        path="/seja-parceiro"
+        title="Seja parceiro da Guatá"
+        description="É agência ou operador local? Torne-se parceiro da Guatá e venda suas experiências para viajantes do Brasil e do mundo com nossa plataforma."
+      />
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-primary/10 via-background to-secondary/20 py-20 lg:py-28">
         <div className="container mx-auto px-4 lg:px-8">

@@ -1,4 +1,5 @@
 import { MapPin, Heart, Users, Award, ShieldCheck, ExternalLink } from 'lucide-react';
+import { Seo } from '@/components/seo/Seo';
 import { Card, CardContent } from '@/components/ui/card';
 import cadasturCertificate from '@/assets/cadastur-certificate.png';
 import { useCmsPage } from '@/hooks/useCmsPage';
@@ -85,6 +86,11 @@ const Sobre = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        path="/sobre"
+        title="Sobre a Guatá — Agência de turismo jovem e tecnológica de MS"
+        description="Conheça a Guatá: agência de turismo inovadora de Mato Grosso do Sul, registrada no Cadastur. Curadoria, tecnologia e parceiros locais para viagens no Pantanal, Bonito e no mundo."
+      />
       {/* Hero Section */}
       <section className="relative py-24 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
         <div className="container mx-auto px-4 text-center">
