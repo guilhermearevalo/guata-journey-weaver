@@ -10,5 +10,34 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+# AI / Generative engines (GEO)
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /partner
+Disallow: /minha-conta
+Disallow: /login
+Disallow: /cadastro
+
+Sitemap: https://www.agenciaguata.com/sitemap.xml
