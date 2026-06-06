@@ -45,28 +45,71 @@ export default function LegalPageLayout({
     return () => window.clearTimeout(timer);
   }, [pdfUrl, items]);
 
-  // Modo PDF: exibe documento embutido, pronto para leitura ao abrir
+  // Modo PDF: documento sempre acessível (alguns navegadores, sobretudo no
+  // celular, não exibem PDF embutido — por isso oferecemos botões claros).
   if (pdfUrl) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
-        <div className="gradient-hero py-6">
-          <div className="container mx-auto flex items-center justify-between gap-4 px-4">
-            <h1 className="font-display text-2xl font-bold text-primary-foreground md:text-3xl">
+        <section className="relative overflow-hidden gradient-hero py-16">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_55%)]" />
+          <div className="container relative mx-auto px-4 text-center">
+            {badge && (
+              <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-background/15 px-4 py-1.5 text-sm font-medium text-primary-foreground backdrop-blur">
+                <ShieldCheck className="h-4 w-4" />
+                {badge}
+              </span>
+            )}
+            <h1 className="font-display text-3xl font-bold text-primary-foreground hero-text-shadow md:text-4xl">
               {title}
             </h1>
-            <a
-              href={pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 rounded-full bg-background/15 px-4 py-2 text-sm font-medium text-primary-foreground backdrop-blur transition hover:bg-background/25"
-            >
-              Abrir em nova aba
-            </a>
+            {subtitle && (
+              <p className="mx-auto mt-4 max-w-2xl text-primary-foreground/90">{subtitle}</p>
+            )}
           </div>
-        </div>
-        <object data={pdfUrl} type="application/pdf" className="w-full flex-1 min-h-[80vh]">
-          <iframe src={pdfUrl} title={title} className="w-full min-h-[80vh]" />
-        </object>
+        </section>
+
+        <section className="container mx-auto px-4 py-12">
+          <div className="mx-auto max-w-3xl">
+            {/* Card de acesso ao documento — funciona em qualquer dispositivo */}
+            <div className="rounded-2xl border bg-card p-6 shadow-sm md:p-8">
+              <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                  <FileText className="h-8 w-8 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="font-display text-xl font-semibold text-foreground">Documento oficial em PDF</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Abra ou baixe o documento completo. Recomendado para leitura em qualquer dispositivo.
+                  </p>
+                </div>
+                <div className="flex w-full flex-col gap-2 sm:w-auto">
+                  <a
+                    href={pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+                  >
+                    <ExternalLink className="h-4 w-4" /> Abrir documento
+                  </a>
+                  <a
+                    href={pdfUrl}
+                    download
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent"
+                  >
+                    <Download className="h-4 w-4" /> Baixar PDF
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Visualizador embutido (complemento para desktop) */}
+            <div className="mt-6 hidden overflow-hidden rounded-2xl border bg-card shadow-sm md:block">
+              <object data={pdfUrl} type="application/pdf" className="h-[80vh] w-full">
+                <iframe src={pdfUrl} title={title} className="h-[80vh] w-full" />
+              </object>
+            </div>
+          </div>
+        </section>
       </div>
     );
   }
