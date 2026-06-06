@@ -13,8 +13,19 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Tables } from '@/integrations/supabase/types';
-import { Calendar, Users, MapPin, Mail, Phone, DollarSign, MessageSquare, Route, Building2, Save, Loader2 } from 'lucide-react';
+import { Calendar, Users, MapPin, Mail, Phone, DollarSign, MessageSquare, Route, Building2, Save, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface RequestDetailDialogProps {
