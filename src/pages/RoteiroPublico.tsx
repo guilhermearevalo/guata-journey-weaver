@@ -19,6 +19,7 @@ interface Activity {
   estimated_cost: number;
   time_slot: string;
   image_url?: string;
+  image_position?: string;
   maps_url?: string;
 }
 
