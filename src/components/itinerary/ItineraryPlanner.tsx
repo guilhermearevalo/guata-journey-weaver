@@ -457,7 +457,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                                 <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
                                 {activity.image_url && (
                                   <div className="mt-2 rounded-md overflow-hidden border h-24 w-40">
-                                    <img src={activity.image_url} alt={activity.name} className="w-full h-full object-cover" />
+                                    <img src={activity.image_url} alt={activity.name} className="w-full h-full object-cover" style={{ objectPosition: activity.image_position || 'center center' }} />
                                   </div>
                                 )}
                                 {activity.maps_url && (
