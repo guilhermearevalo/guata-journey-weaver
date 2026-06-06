@@ -37,6 +37,7 @@ interface Activity {
   time_slot: string;
   is_suggestion?: boolean;
   image_url?: string;
+  image_position?: string;
   maps_url?: string;
 }
 
