@@ -64,6 +64,7 @@ interface ItineraryPlannerProps {
 
 export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: ItineraryPlannerProps) {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
