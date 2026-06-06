@@ -286,6 +286,34 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
               </Button>
             )}
           </div>
+
+          {existingProposal && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir proposta / roteiro
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir esta proposta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    A proposta e o roteiro vinculados a esta demanda serão removidos permanentemente. Esta ação não pode ser desfeita. A demanda continua existindo e você poderá criar uma nova proposta.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => deleteProposalMutation.mutate()}
+                  >
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </DialogContent>
     </Dialog>
