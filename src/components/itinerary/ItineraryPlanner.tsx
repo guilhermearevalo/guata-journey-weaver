@@ -291,6 +291,20 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     } finally { setSharing(false); }
   };
 
+  const deleteProposal = useMutation({
+    mutationFn: async () => {
+      if (!proposal?.id) throw new Error('Sem proposta');
+      await supabase.from('travel_documents' as any).delete().eq('proposal_id', proposal.id);
+      const { error } = await supabase.from('proposals').delete().eq('id', proposal.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: 'Proposta excluída', description: 'O roteiro foi removido.' });
+      navigate(backLink);
+    },
+    onError: () => toast({ title: 'Erro ao excluir', variant: 'destructive' }),
+  });
+
   const totalCost = itinerary.reduce((sum, day) => sum + day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0), 0);
 
   if (isLoading) return <div className="space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-64 w-full" /></div>;
