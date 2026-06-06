@@ -77,6 +77,7 @@ export default {
           "brown-light": "hsl(var(--guata-brown-light))",
           cream: "hsl(var(--guata-cream))",
           sand: "hsl(var(--guata-sand))",
+          gold: "hsl(var(--guata-gold))",
         },
       },
       fontFamily: {
