@@ -89,6 +89,38 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
     },
   });
 
+  // Check whether a proposal already exists for this request
+  const { data: existingProposal } = useQuery({
+    queryKey: ['proposal-exists', request?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('proposals')
+        .select('id')
+        .eq('request_id', request!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!request?.id,
+  });
+
+  const deleteProposalMutation = useMutation({
+    mutationFn: async () => {
+      if (!existingProposal?.id) return;
+      // Remove travel documents linked to this proposal first
+      await supabase.from('travel_documents' as any).delete().eq('proposal_id', existingProposal.id);
+      const { error } = await supabase.from('proposals').delete().eq('id', existingProposal.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['proposal-exists', request?.id] });
+      queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+      toast({ title: 'Proposta excluída', description: 'O roteiro foi removido. Você pode criar uma nova proposta.' });
+    },
+    onError: () => {
+      toast({ title: 'Erro ao excluir', description: 'Não foi possível excluir a proposta.', variant: 'destructive' });
+    },
+  });
+
   if (!request) return null;
 
   const travelDates = request.travel_dates as { start?: string; end?: string } | null;
