@@ -65,10 +65,32 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
   const [timeSlot, setTimeSlot] = useState('manhã');
   const [estimatedCost, setEstimatedCost] = useState('0');
   const [imageUrl, setImageUrl] = useState('');
+  const [imagePosition, setImagePosition] = useState('center center');
   const [mapsUrl, setMapsUrl] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropSource, setCropSource] = useState('');
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadBlob = async (blob: Blob) => {
+    setUploading(true);
+    try {
+      const fileName = `activity-${Date.now()}.jpg`;
+      const { error } = await supabase.storage
+        .from('site-assets')
+        .upload(fileName, blob, { upsert: true, contentType: 'image/jpeg' });
+      if (error) throw error;
+      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+      setImageUrl(data.publicUrl);
+      setImagePosition('center center');
+      toast({ title: 'Imagem enviada!' });
+    } catch {
+      toast({ title: 'Erro no upload', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -79,21 +101,20 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       toast({ title: 'Imagem muito grande', description: 'Máximo 5MB.', variant: 'destructive' });
       return;
     }
-    setUploading(true);
-    try {
-      const ext = file.name.split('.').pop();
-      const fileName = `activity-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
-      setImageUrl(data.publicUrl);
-      toast({ title: 'Imagem enviada!' });
-    } catch {
-      toast({ title: 'Erro no upload', variant: 'destructive' });
-    } finally {
-      setUploading(false);
-      e.target.value = '';
-    }
+    // Abre o editor de recorte com a imagem local antes de enviar
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropSource(reader.result as string);
+      setCropperOpen(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const openCropForExisting = () => {
+    if (!imageUrl) return;
+    setCropSource(imageUrl);
+    setCropperOpen(true);
   };
 
   useEffect(() => {
@@ -104,6 +125,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       setTimeSlot(initialData.time_slot);
       setEstimatedCost(String(initialData.estimated_cost || 0));
       setImageUrl(initialData.image_url || '');
+      setImagePosition(initialData.image_position || 'center center');
       setMapsUrl(initialData.maps_url || '');
     } else {
       setName('');
@@ -112,6 +134,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       setTimeSlot('manhã');
       setEstimatedCost('0');
       setImageUrl('');
+      setImagePosition('center center');
       setMapsUrl('');
     }
   }, [initialData, open]);
@@ -126,6 +149,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       estimated_cost: parseFloat(estimatedCost) || 0,
       is_suggestion: false,
       image_url: imageUrl.trim() || undefined,
+      image_position: imageUrl.trim() ? imagePosition : undefined,
       maps_url: mapsUrl.trim() || undefined,
     });
     onOpenChange(false);
