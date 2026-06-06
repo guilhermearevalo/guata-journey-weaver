@@ -207,7 +207,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
           {/* Image */}
           <div className="space-y-2">
             <Label htmlFor="act-image">Imagem da atividade</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Label
                 htmlFor="act-image-upload"
                 className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm font-medium hover:bg-secondary/80"
@@ -215,11 +215,16 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
                 {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                 {uploading ? 'Enviando…' : 'Enviar imagem'}
               </Label>
-              <Input id="act-image-upload" type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+              <Input id="act-image-upload" type="file" accept="image/*" className="hidden" onChange={handleFileSelect} disabled={uploading} />
               {imageUrl && (
-                <Button type="button" variant="ghost" size="icon" onClick={() => setImageUrl('')} className="shrink-0">
-                  <X className="h-4 w-4" />
-                </Button>
+                <>
+                  <Button type="button" variant="outline" size="sm" onClick={openCropForExisting} className="gap-2">
+                    <Crop className="h-4 w-4" /> Cortar / enquadrar
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setImageUrl('')} className="shrink-0">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
               )}
             </div>
             <Input
@@ -229,14 +234,36 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
               placeholder="ou cole uma URL: https://..."
             />
             {imageUrl ? (
-              <div className="relative rounded-lg overflow-hidden border bg-muted h-32">
-                <img
-                  src={imageUrl}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-              </div>
+              <>
+                <div className="relative rounded-lg overflow-hidden border bg-muted h-32">
+                  <img
+                    src={imageUrl}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    style={{ objectPosition: imagePosition }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">Ajustar foco da imagem (parte que fica visível)</p>
+                  <div className="grid w-24 grid-cols-3 gap-1">
+                    {FOCUS_POINTS.map((fp) => (
+                      <button
+                        key={fp.value}
+                        type="button"
+                        onClick={() => setImagePosition(fp.value)}
+                        className={`flex h-7 items-center justify-center rounded border text-xs transition-colors ${
+                          imagePosition === fp.value
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border bg-background hover:bg-accent'
+                        }`}
+                      >
+                        {fp.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             ) : (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <ImagePlus className="h-3 w-3" /> Envie uma foto ou cole uma URL para ilustrar a atividade
@@ -244,6 +271,12 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
             )}
           </div>
         </div>
+        <ImageCropper
+          open={cropperOpen}
+          onOpenChange={setCropperOpen}
+          image={cropSource}
+          onCropComplete={uploadBlob}
+        />
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSave} disabled={!name.trim()}>Salvar</Button>
