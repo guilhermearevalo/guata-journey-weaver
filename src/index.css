@@ -76,6 +76,7 @@
     --guata-brown-light: 4 20% 35%;
     --guata-cream: 40 30% 96%;
     --guata-sand: 35 25% 90%;
+    --guata-gold: 42 55% 54%;
   }
 
   .dark {
@@ -122,6 +123,7 @@
     --guata-brown-light: 4 15% 45%;
     --guata-cream: 40 15% 15%;
     --guata-sand: 35 15% 20%;
+    --guata-gold: 42 60% 58%;
   }
 }
 

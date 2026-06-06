@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ImagePlus, X, Upload, Loader2 } from 'lucide-react';
+import { ImagePlus, X, Upload, Loader2, Crop } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import ImageCropper from './ImageCropper';
 
 interface Activity {
   name: string;
@@ -17,8 +18,21 @@ interface Activity {
   time_slot: string;
   is_suggestion?: boolean;
   image_url?: string;
+  image_position?: string;
   maps_url?: string;
 }
+
+const FOCUS_POINTS: { label: string; value: string }[] = [
+  { label: '↖', value: 'left top' },
+  { label: '↑', value: 'center top' },
+  { label: '↗', value: 'right top' },
+  { label: '←', value: 'left center' },
+  { label: '●', value: 'center center' },
+  { label: '→', value: 'right center' },
+  { label: '↙', value: 'left bottom' },
+  { label: '↓', value: 'center bottom' },
+  { label: '↘', value: 'right bottom' },
+];
 
 interface ActivityFormDialogProps {
   open: boolean;
@@ -51,10 +65,32 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
   const [timeSlot, setTimeSlot] = useState('manhã');
   const [estimatedCost, setEstimatedCost] = useState('0');
   const [imageUrl, setImageUrl] = useState('');
+  const [imagePosition, setImagePosition] = useState('center center');
   const [mapsUrl, setMapsUrl] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropSource, setCropSource] = useState('');
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadBlob = async (blob: Blob) => {
+    setUploading(true);
+    try {
+      const fileName = `activity-${Date.now()}.jpg`;
+      const { error } = await supabase.storage
+        .from('site-assets')
+        .upload(fileName, blob, { upsert: true, contentType: 'image/jpeg' });
+      if (error) throw error;
+      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+      setImageUrl(data.publicUrl);
+      setImagePosition('center center');
+      toast({ title: 'Imagem enviada!' });
+    } catch {
+      toast({ title: 'Erro no upload', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -65,21 +101,20 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       toast({ title: 'Imagem muito grande', description: 'Máximo 5MB.', variant: 'destructive' });
       return;
     }
-    setUploading(true);
-    try {
-      const ext = file.name.split('.').pop();
-      const fileName = `activity-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
-      setImageUrl(data.publicUrl);
-      toast({ title: 'Imagem enviada!' });
-    } catch {
-      toast({ title: 'Erro no upload', variant: 'destructive' });
-    } finally {
-      setUploading(false);
-      e.target.value = '';
-    }
+    // Abre o editor de recorte com a imagem local antes de enviar
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropSource(reader.result as string);
+      setCropperOpen(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const openCropForExisting = () => {
+    if (!imageUrl) return;
+    setCropSource(imageUrl);
+    setCropperOpen(true);
   };
 
   useEffect(() => {
@@ -90,6 +125,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       setTimeSlot(initialData.time_slot);
       setEstimatedCost(String(initialData.estimated_cost || 0));
       setImageUrl(initialData.image_url || '');
+      setImagePosition(initialData.image_position || 'center center');
       setMapsUrl(initialData.maps_url || '');
     } else {
       setName('');
@@ -98,6 +134,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       setTimeSlot('manhã');
       setEstimatedCost('0');
       setImageUrl('');
+      setImagePosition('center center');
       setMapsUrl('');
     }
   }, [initialData, open]);
@@ -112,6 +149,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       estimated_cost: parseFloat(estimatedCost) || 0,
       is_suggestion: false,
       image_url: imageUrl.trim() || undefined,
+      image_position: imageUrl.trim() ? imagePosition : undefined,
       maps_url: mapsUrl.trim() || undefined,
     });
     onOpenChange(false);
@@ -169,7 +207,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
           {/* Image */}
           <div className="space-y-2">
             <Label htmlFor="act-image">Imagem da atividade</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Label
                 htmlFor="act-image-upload"
                 className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm font-medium hover:bg-secondary/80"
@@ -177,11 +215,16 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
                 {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                 {uploading ? 'Enviando…' : 'Enviar imagem'}
               </Label>
-              <Input id="act-image-upload" type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+              <Input id="act-image-upload" type="file" accept="image/*" className="hidden" onChange={handleFileSelect} disabled={uploading} />
               {imageUrl && (
-                <Button type="button" variant="ghost" size="icon" onClick={() => setImageUrl('')} className="shrink-0">
-                  <X className="h-4 w-4" />
-                </Button>
+                <>
+                  <Button type="button" variant="outline" size="sm" onClick={openCropForExisting} className="gap-2">
+                    <Crop className="h-4 w-4" /> Cortar / enquadrar
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setImageUrl('')} className="shrink-0">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
               )}
             </div>
             <Input
@@ -191,14 +234,36 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
               placeholder="ou cole uma URL: https://..."
             />
             {imageUrl ? (
-              <div className="relative rounded-lg overflow-hidden border bg-muted h-32">
-                <img
-                  src={imageUrl}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-              </div>
+              <>
+                <div className="relative rounded-lg overflow-hidden border bg-muted h-32">
+                  <img
+                    src={imageUrl}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    style={{ objectPosition: imagePosition }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">Ajustar foco da imagem (parte que fica visível)</p>
+                  <div className="grid w-24 grid-cols-3 gap-1">
+                    {FOCUS_POINTS.map((fp) => (
+                      <button
+                        key={fp.value}
+                        type="button"
+                        onClick={() => setImagePosition(fp.value)}
+                        className={`flex h-7 items-center justify-center rounded border text-xs transition-colors ${
+                          imagePosition === fp.value
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border bg-background hover:bg-accent'
+                        }`}
+                      >
+                        {fp.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             ) : (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <ImagePlus className="h-3 w-3" /> Envie uma foto ou cole uma URL para ilustrar a atividade
@@ -206,6 +271,12 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
             )}
           </div>
         </div>
+        <ImageCropper
+          open={cropperOpen}
+          onOpenChange={setCropperOpen}
+          image={cropSource}
+          onCropComplete={uploadBlob}
+        />
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSave} disabled={!name.trim()}>Salvar</Button>

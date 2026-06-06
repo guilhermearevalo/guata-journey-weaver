@@ -13,8 +13,19 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Tables } from '@/integrations/supabase/types';
-import { Calendar, Users, MapPin, Mail, Phone, DollarSign, MessageSquare, Route, Building2, Save, Loader2 } from 'lucide-react';
+import { Calendar, Users, MapPin, Mail, Phone, DollarSign, MessageSquare, Route, Building2, Save, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface RequestDetailDialogProps {
@@ -75,6 +86,38 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
       toast({ title: 'Notas salvas com sucesso!' });
+    },
+  });
+
+  // Check whether a proposal already exists for this request
+  const { data: existingProposal } = useQuery({
+    queryKey: ['proposal-exists', request?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('proposals')
+        .select('id')
+        .eq('request_id', request!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!request?.id,
+  });
+
+  const deleteProposalMutation = useMutation({
+    mutationFn: async () => {
+      if (!existingProposal?.id) return;
+      // Remove travel documents linked to this proposal first
+      await supabase.from('travel_documents' as any).delete().eq('proposal_id', existingProposal.id);
+      const { error } = await supabase.from('proposals').delete().eq('id', existingProposal.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['proposal-exists', request?.id] });
+      queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+      toast({ title: 'Proposta excluída', description: 'O roteiro foi removido. Você pode criar uma nova proposta.' });
+    },
+    onError: () => {
+      toast({ title: 'Erro ao excluir', description: 'Não foi possível excluir a proposta.', variant: 'destructive' });
     },
   });
 
@@ -243,6 +286,34 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
               </Button>
             )}
           </div>
+
+          {existingProposal && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir proposta / roteiro
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir esta proposta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    A proposta e o roteiro vinculados a esta demanda serão removidos permanentemente. Esta ação não pode ser desfeita. A demanda continua existindo e você poderá criar uma nova proposta.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => deleteProposalMutation.mutate()}
+                  >
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </DialogContent>
     </Dialog>

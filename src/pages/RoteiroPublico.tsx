@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { MapPin, Calendar, DollarSign, Printer, Lock, ExternalLink, Plane, Hotel, Car, FileText, Luggage, ShieldCheck, Banknote } from 'lucide-react';
+import { MapPin, Calendar, Printer, Lock, ExternalLink, Plane, Hotel, Car, FileText, Luggage, ShieldCheck, Banknote, Users, Clock, Sparkles } from 'lucide-react';
 import { parseDossier, hasAnyFlight, type Dossier } from '@/lib/dossier';
 import { Input } from '@/components/ui/input';
 import DocumentsChecklist from '@/components/itinerary/DocumentsChecklist';
@@ -19,6 +19,7 @@ interface Activity {
   estimated_cost: number;
   time_slot: string;
   image_url?: string;
+  image_position?: string;
   maps_url?: string;
 }
 
@@ -28,13 +29,13 @@ interface ItineraryDay {
 }
 
 const categoryColors: Record<string, string> = {
-  gastronomia: 'bg-orange-500/10 text-orange-600',
-  cultura: 'bg-purple-500/10 text-purple-600',
-  aventura: 'bg-red-500/10 text-red-600',
-  natureza: 'bg-green-500/10 text-green-600',
-  compras: 'bg-pink-500/10 text-pink-600',
-  transporte: 'bg-blue-500/10 text-blue-600',
-  hospedagem: 'bg-cyan-500/10 text-cyan-600',
+  gastronomia: 'bg-orange-500/10 text-orange-700',
+  cultura: 'bg-purple-500/10 text-purple-700',
+  aventura: 'bg-red-500/10 text-red-700',
+  natureza: 'bg-green-500/10 text-green-700',
+  compras: 'bg-pink-500/10 text-pink-700',
+  transporte: 'bg-blue-500/10 text-blue-700',
+  hospedagem: 'bg-cyan-500/10 text-cyan-700',
 };
 
 const timeSlotOrder = ['manhã', 'tarde', 'noite'];
@@ -103,11 +104,11 @@ export default function RoteiroPublico() {
     try { return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }); } catch { return ''; }
   };
 
-  const totalCost = itinerary.reduce((sum, day) => sum + day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0), 0);
   const agency = (proposal as any)?.agency_branding as { name?: string; logo_url?: string | null; cover_image_url?: string | null } | null;
   const firstActivityImage = itinerary.flatMap(day => day.activities).find(activity => activity.image_url)?.image_url;
   const coverImage = dossier.cover_image || agency?.cover_image_url || firstActivityImage;
   const brandName = agency?.name || 'Guatá Viagens';
+  const totalActivities = itinerary.reduce((s, d) => s + d.activities.length, 0);
 
   if (isLoading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -121,7 +122,7 @@ export default function RoteiroPublico() {
   if (!proposal || error) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold">Roteiro não encontrado</h1>
+        <h1 className="font-display text-2xl font-bold">Roteiro não encontrado</h1>
         <p className="text-muted-foreground">Este link pode estar expirado ou inválido.</p>
       </div>
     </div>
@@ -130,7 +131,7 @@ export default function RoteiroPublico() {
   if ((proposal as any).share_enabled === false) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center space-y-2 px-4">
-        <h1 className="text-2xl font-bold">Roteiro indisponível</h1>
+        <h1 className="font-display text-2xl font-bold">Roteiro indisponível</h1>
         <p className="text-muted-foreground">Este roteiro não está mais disponível para visualização.</p>
       </div>
     </div>
@@ -140,12 +141,10 @@ export default function RoteiroPublico() {
   const needsCode = hasAccessCode && !isUnlocked;
 
   const handleCodeSubmit = async () => {
-    // Validate code on the backend without exposing the actual code value
     const { data, error: rpcError } = await supabase.rpc('verify_proposal_access_code', {
       _token: token!,
       _code: codeInput.trim(),
     });
-
     if (!rpcError && data === true) {
       setIsUnlocked(true);
       setCodeError(false);
@@ -155,13 +154,13 @@ export default function RoteiroPublico() {
   };
 
   if (needsCode) return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <Card className="w-full max-w-sm mx-4">
+    <div className="min-h-screen gradient-hero flex items-center justify-center">
+      <Card className="w-full max-w-sm mx-4 animate-scale-in">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Lock className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle>Roteiro Protegido</CardTitle>
+          <CardTitle className="font-display">Roteiro Protegido</CardTitle>
           <p className="text-sm text-muted-foreground">Insira o código de acesso fornecido pela agência.</p>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -183,49 +182,65 @@ export default function RoteiroPublico() {
 
   return (
     <div className="min-h-screen bg-muted/20">
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-8 print:py-0">
-        {/* Capa — estilo revista de viagem */}
-        <div className="animate-fade-in relative overflow-hidden rounded-2xl border bg-background shadow-lg print:rounded-none print:border-0 print:shadow-none">
-          {coverImage ? (
-            <div className="relative h-72 w-full overflow-hidden sm:h-80 print:h-40">
-              <img src={coverImage} alt={request?.destination || proposal.title} className="h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-              <Button variant="secondary" size="sm" onClick={() => window.print()} className="absolute right-4 top-4 print:hidden">
-                <Printer className="mr-2 h-4 w-4" />Imprimir
-              </Button>
-              <div className="absolute inset-x-0 bottom-0 p-6 text-white print:text-foreground">
-                <p className="text-xs font-medium uppercase tracking-[0.2em] opacity-90">Roteiro de Viagem</p>
-                <h1 className="font-display text-4xl font-bold mt-2 drop-shadow-md sm:text-5xl">{request?.destination || proposal.title}</h1>
-                <div className="flex items-center gap-5 mt-3 text-sm flex-wrap opacity-95">
-                  {travelDates?.start && (
-                    <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />{formatDate(travelDates.start)} — {formatDate(travelDates.end)}</span>
-                  )}
-                  {request?.travelers_count && (
-                    <span className="flex items-center gap-1.5">{request.travelers_count} viajante(s)</span>
-                  )}
-                </div>
-              </div>
+      {/* ===== Capa imersiva — estilo revista ===== */}
+      <header className="relative w-full overflow-hidden print:h-48">
+        {coverImage ? (
+          <div className="relative h-[70vh] min-h-[460px] w-full print:h-48">
+            <img src={coverImage} alt={request?.destination || proposal.title} className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-guata-brown/90 via-guata-teal/40 to-black/30" />
+          </div>
+        ) : (
+          <div className="relative h-[60vh] min-h-[420px] w-full gradient-hero print:h-48" />
+        )}
+
+        <Button variant="secondary" size="sm" onClick={() => window.print()} className="absolute right-4 top-4 print:hidden">
+          <Printer className="mr-2 h-4 w-4" />Imprimir
+        </Button>
+
+        <div className="absolute inset-x-0 bottom-0">
+          <div className="mx-auto max-w-4xl px-6 pb-10 text-primary-foreground animate-fade-in">
+            {agency?.logo_url && (
+              <img src={agency.logo_url} alt={`Logo ${brandName}`} className="mb-5 h-12 max-w-[160px] object-contain drop-shadow" />
+            )}
+            <span className="inline-flex items-center gap-2 rounded-full bg-guata-gold/90 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-guata-brown">
+              <Sparkles className="h-3.5 w-3.5" /> Roteiro Exclusivo
+            </span>
+            <h1 className="mt-4 font-display text-5xl font-bold leading-tight drop-shadow-lg sm:text-6xl">
+              {request?.destination || proposal.title}
+            </h1>
+            <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium opacity-95">
+              {travelDates?.start && (
+                <span className="flex items-center gap-2"><Calendar className="h-4 w-4 text-guata-gold" />{formatDate(travelDates.start)} — {formatDate(travelDates.end)}</span>
+              )}
+              {request?.travelers_count != null && (
+                <span className="flex items-center gap-2"><Users className="h-4 w-4 text-guata-gold" />{request.travelers_count} viajante(s)</span>
+              )}
+              {itinerary.length > 0 && (
+                <span className="flex items-center gap-2"><Clock className="h-4 w-4 text-guata-gold" />{itinerary.length} dia(s)</span>
+              )}
             </div>
-          ) : (
-            <div className="flex items-start justify-between gap-4 bg-gradient-hero p-8 text-primary-foreground">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium uppercase tracking-[0.2em] opacity-90">Roteiro de Viagem</p>
-                <h1 className="font-display text-4xl font-bold mt-2">{request?.destination || proposal.title}</h1>
-                <div className="flex items-center gap-5 mt-3 text-sm flex-wrap opacity-95">
-                  {travelDates?.start && (
-                    <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />{formatDate(travelDates.start)} — {formatDate(travelDates.end)}</span>
-                  )}
-                  {request?.travelers_count && (
-                    <span>{request.travelers_count} viajante(s)</span>
-                  )}
-                </div>
-              </div>
-              <Button variant="secondary" size="sm" onClick={() => window.print()} className="print:hidden shrink-0">
-                <Printer className="mr-2 h-4 w-4" />Imprimir
-              </Button>
-            </div>
-          )}
+          </div>
         </div>
+      </header>
+
+      <main className="mx-auto max-w-4xl space-y-12 px-4 py-12 sm:px-6 print:py-4">
+        {/* ===== Faixa resumo ===== */}
+        {(itinerary.length > 0 || request?.travelers_count != null) && (
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4 -mt-4 animate-slide-up">
+            {[
+              { icon: MapPin, label: 'Destino', value: request?.destination || '—' },
+              { icon: Clock, label: 'Duração', value: itinerary.length > 0 ? `${itinerary.length} dia(s)` : '—' },
+              { icon: Users, label: 'Viajantes', value: request?.travelers_count != null ? String(request.travelers_count) : '—' },
+              { icon: Sparkles, label: 'Experiências', value: String(totalActivities) },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="rounded-xl border bg-card p-4 text-center shadow-sm">
+                <Icon className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+                <p className="mt-0.5 truncate font-display text-base font-semibold text-foreground" title={value}>{value}</p>
+              </div>
+            ))}
+          </section>
+        )}
 
         {travelDocuments.length > 0 && (
           <TravelDocumentsVault
@@ -238,79 +253,76 @@ export default function RoteiroPublico() {
           />
         )}
 
-        {/* Timeline */}
-        <div className="relative">
-          {itinerary.length > 0 && <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />}
-          <div className="space-y-6">
-            {itinerary.map((day) => {
-              const dayCost = day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0);
+        {/* ===== Timeline dia a dia ===== */}
+        <section className="relative">
+          {itinerary.length > 0 && <div className="absolute left-[14px] top-2 bottom-2 w-px bg-gradient-to-b from-guata-gold via-border to-transparent sm:left-4" />}
+          <div className="space-y-10">
+            {itinerary.map((day, idx) => {
               const sorted = [...day.activities].sort((a, b) => timeSlotOrder.indexOf(a.time_slot) - timeSlotOrder.indexOf(b.time_slot));
               return (
-                <div key={day.day} className="relative pl-16">
-                  <div className="absolute left-3 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">{day.day}</div>
-                  <Card className="overflow-hidden bg-background">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wider text-primary">Dia {day.day}</p>
-                          {dossier.day_titles?.[String(day.day)] && (
-                            <CardTitle className="font-display text-xl mt-0.5">{dossier.day_titles[String(day.day)]}</CardTitle>
-                          )}
-                        </div>
-                        <span className="text-sm text-muted-foreground shrink-0">R$ {dayCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {sorted.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Sem atividades planejadas</p>}
-                      {sorted.map((activity, actIdx) => (
-                        <div key={actIdx} className="overflow-hidden rounded-lg border bg-card">
-                          {activity.image_url && (
-                            <div className="h-48 w-full overflow-hidden sm:h-56">
-                              <img src={activity.image_url} alt={activity.name} className="w-full h-full object-cover" />
-                            </div>
-                          )}
-                          <div className="flex items-start justify-between gap-3 p-4">
-                            <div className="flex-1 space-y-3">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-display text-lg font-semibold">{activity.name}</span>
-                                <Badge variant="outline" className="text-xs">{activity.time_slot}</Badge>
-                                <Badge className={`text-xs ${categoryColors[activity.category] || 'bg-muted text-muted-foreground'}`}>{activity.category}</Badge>
-                              </div>
-                              {activity.description && (
-                                <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{activity.description}</p>
-                              )}
-                              {activity.maps_url && (
-                                <Button variant="outline" size="sm" asChild className="print:hidden">
-                                  <a href={activity.maps_url} target="_blank" rel="noopener noreferrer">
-                                    <MapPin className="mr-2 h-4 w-4" /> Rota até aqui <ExternalLink className="ml-2 h-3 w-3" />
-                                  </a>
-                                </Button>
-                              )}
-                            </div>
-                            <span className="text-sm font-medium shrink-0">R$ {(activity.estimated_cost || 0).toLocaleString('pt-BR')}</span>
+                <article key={day.day} className="relative pl-10 sm:pl-14 animate-fade-in" style={{ animationDelay: `${idx * 60}ms` }}>
+                  <div className="absolute left-0 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-guata-gold bg-background text-xs font-bold text-primary sm:h-9 sm:w-9 sm:text-sm">
+                    {day.day}
+                  </div>
+                  <div className="mb-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-guata-gold">Dia {day.day}</p>
+                    {dossier.day_titles?.[String(day.day)] && (
+                      <h2 className="mt-1 font-display text-2xl font-bold text-foreground sm:text-3xl">{dossier.day_titles[String(day.day)]}</h2>
+                    )}
+                  </div>
+
+                  <div className="space-y-5">
+                    {sorted.length === 0 && <p className="text-sm text-muted-foreground">Sem atividades planejadas.</p>}
+                    {sorted.map((activity, actIdx) => (
+                      <div key={actIdx} className="overflow-hidden rounded-2xl border bg-card shadow-sm transition-shadow hover:shadow-md">
+                        {activity.image_url && (
+                          <div className="aspect-[16/9] w-full overflow-hidden">
+                            <img
+                              src={activity.image_url}
+                              alt={activity.name}
+                              className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                              style={{ objectPosition: activity.image_position || 'center center' }}
+                            />
                           </div>
+                        )}
+                        <div className="space-y-3 p-5 sm:p-6">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-display text-xl font-semibold text-foreground">{activity.name}</h3>
+                            <Badge variant="outline" className="text-xs capitalize">{activity.time_slot}</Badge>
+                            <Badge className={`text-xs capitalize ${categoryColors[activity.category] || 'bg-muted text-muted-foreground'}`}>{activity.category}</Badge>
+                          </div>
+                          {activity.description && (
+                            <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{activity.description}</p>
+                          )}
+                          {activity.maps_url && (
+                            <Button variant="outline" size="sm" asChild className="print:hidden">
+                              <a href={activity.maps_url} target="_blank" rel="noopener noreferrer">
+                                <MapPin className="mr-2 h-4 w-4" /> Ver rota <ExternalLink className="ml-2 h-3 w-3" />
+                              </a>
+                            </Button>
+                          )}
                         </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                </article>
               );
             })}
           </div>
-        </div>
+        </section>
 
         {itinerary.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
-            <p className="text-lg font-medium">Roteiro ainda em planejamento</p>
+            <p className="font-display text-lg font-medium">Roteiro ainda em planejamento</p>
             <p className="text-sm mt-1">As atividades serão adicionadas em breve.</p>
           </div>
         )}
 
-        {/* Seções do dossiê (opcionais) */}
+        {/* ===== Seções do dossiê ===== */}
         {hasAnyFlight(dossier) && (
           <Card className="overflow-hidden bg-background shadow-sm">
             {dossier.flight_image && (
-              <div className="h-48 w-full overflow-hidden">
+              <div className="aspect-[16/9] w-full overflow-hidden sm:aspect-[21/9]">
                 <img src={dossier.flight_image} alt="Aéreo" className="h-full w-full object-cover" />
               </div>
             )}
@@ -320,19 +332,19 @@ export default function RoteiroPublico() {
             <CardContent className="space-y-4 pt-4">
               {dossier.flight_outbound && (
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Voo de ida</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-guata-gold mb-1">Voo de ida</p>
                   <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{dossier.flight_outbound}</p>
                 </div>
               )}
               {dossier.flight_internal && (
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Voo interno</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-guata-gold mb-1">Voo interno</p>
                   <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{dossier.flight_internal}</p>
                 </div>
               )}
               {dossier.flight_inbound && (
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Voo de volta</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-guata-gold mb-1">Voo de volta</p>
                   <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{dossier.flight_inbound}</p>
                 </div>
               )}
@@ -354,7 +366,7 @@ export default function RoteiroPublico() {
           return (
             <Card key={key} className="overflow-hidden bg-background shadow-sm">
               {image && (
-                <div className="h-48 w-full overflow-hidden">
+                <div className="aspect-[16/9] w-full overflow-hidden sm:aspect-[21/9]">
                   <img src={image} alt={label} className="h-full w-full object-cover" />
                 </div>
               )}
@@ -369,8 +381,6 @@ export default function RoteiroPublico() {
             </Card>
           );
         })}
-
-
 
         {/* Documents Checklist */}
         {travelDocuments.length > 0 && (
@@ -388,11 +398,11 @@ export default function RoteiroPublico() {
         )}
 
         {/* Footer */}
-        <div className="text-center text-xs text-muted-foreground pt-8 border-t print:block">
+        <footer className="text-center text-xs text-muted-foreground pt-10 border-t print:block">
           {agency?.logo_url && <img src={agency.logo_url} alt={`Logo ${brandName}`} className="mx-auto mb-3 h-10 max-w-32 object-contain" />}
-          <p>Roteiro preparado por <strong>{brandName}</strong></p>
-        </div>
-      </div>
+          <p>Roteiro preparado com cuidado por <strong className="text-foreground">{brandName}</strong></p>
+        </footer>
+      </main>
     </div>
   );
 }

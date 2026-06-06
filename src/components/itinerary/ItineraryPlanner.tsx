@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
@@ -10,6 +10,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil, ChevronUp, ChevronDown, Save, FolderOpen, MapPin } from 'lucide-react';
 import ActivityFormDialog from './ActivityFormDialog';
@@ -26,6 +37,7 @@ interface Activity {
   time_slot: string;
   is_suggestion?: boolean;
   image_url?: string;
+  image_position?: string;
   maps_url?: string;
 }
 
@@ -53,6 +65,7 @@ interface ItineraryPlannerProps {
 
 export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: ItineraryPlannerProps) {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -279,6 +292,20 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     } finally { setSharing(false); }
   };
 
+  const deleteProposal = useMutation({
+    mutationFn: async () => {
+      if (!proposal?.id) throw new Error('Sem proposta');
+      await supabase.from('travel_documents' as any).delete().eq('proposal_id', proposal.id);
+      const { error } = await supabase.from('proposals').delete().eq('id', proposal.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: 'Proposta excluída', description: 'O roteiro foi removido.' });
+      navigate(backLink);
+    },
+    onError: () => toast({ title: 'Erro ao excluir', variant: 'destructive' }),
+  });
+
   const totalCost = itinerary.reduce((sum, day) => sum + day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0), 0);
 
   if (isLoading) return <div className="space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-64 w-full" /></div>;
@@ -324,6 +351,30 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
             {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             {itinerary.length > 0 ? 'Regenerar com IA' : 'Gerar Roteiro com IA'}
           </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                <Trash2 className="mr-2 h-4 w-4" />Excluir
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir esta proposta?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  A proposta e o roteiro serão removidos permanentemente. Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => deleteProposal.mutate()}
+                >
+                  Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
@@ -406,7 +457,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                                 <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
                                 {activity.image_url && (
                                   <div className="mt-2 rounded-md overflow-hidden border h-24 w-40">
-                                    <img src={activity.image_url} alt={activity.name} className="w-full h-full object-cover" />
+                                    <img src={activity.image_url} alt={activity.name} className="w-full h-full object-cover" style={{ objectPosition: activity.image_position || 'center center' }} />
                                   </div>
                                 )}
                                 {activity.maps_url && (
