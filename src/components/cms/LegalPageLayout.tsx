@@ -1,5 +1,5 @@
 import { useMemo, useEffect } from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, FileText, Download, ExternalLink } from 'lucide-react';
 
 interface LegalSection {
   title: string;
