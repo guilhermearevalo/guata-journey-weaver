@@ -68,18 +68,16 @@ export default function RoteiroPublico() {
   });
 
   const { data: travelDocuments = [] } = useQuery({
-    queryKey: ['public-travel-documents', proposal?.id],
+    queryKey: ['public-travel-documents', token, isUnlocked],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('travel_documents' as any)
-        .select('*')
-        .eq('proposal_id', proposal!.id)
-        .eq('visible_in_public', true)
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_public_travel_documents' as any, {
+        _token: token!,
+        _code: codeInput.trim() || null,
+      });
       if (error) throw error;
-      return data as unknown as TravelDocument[];
+      return (data ?? []) as unknown as TravelDocument[];
     },
-    enabled: !!proposal?.id,
+    enabled: !!token && !!proposal?.id,
   });
 
   const request = (proposal?.request ?? null) as {
