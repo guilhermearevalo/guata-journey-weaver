@@ -940,6 +940,19 @@ export type Database = {
     Functions: {
       get_public_itinerary: { Args: { _token: string }; Returns: Json }
       get_public_proposal: { Args: { _token: string }; Returns: Json }
+      get_public_travel_documents: {
+        Args: { _code?: string; _token: string }
+        Returns: {
+          category: string
+          created_at: string
+          file_url: string
+          id: string
+          notes: string
+          proposal_id: string
+          title: string
+          visible_in_public: boolean
+        }[]
+      }
       get_user_agency: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
