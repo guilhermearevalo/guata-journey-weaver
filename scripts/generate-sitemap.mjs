@@ -5,13 +5,7 @@ import { resolve } from "path";
 
 const BASE_URL = "https://www.agenciaguata.com";
 
-interface SitemapEntry {
-  path: string;
-  changefreq?: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
-  priority?: string;
-}
-
-const entries: SitemapEntry[] = [
+const entries = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
   { path: "/experiencias", changefreq: "weekly", priority: "0.9" },
   { path: "/excursoes", changefreq: "weekly", priority: "0.8" },
@@ -26,7 +20,7 @@ const entries: SitemapEntry[] = [
   { path: "/termos", changefreq: "yearly", priority: "0.3" },
 ];
 
-function generateSitemap(items: SitemapEntry[]) {
+function generateSitemap(items) {
   const urls = items.map((e) =>
     [
       `  <url>`,

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,8 +8,6 @@
    Modern, technological agency with welcoming Brazilian essence
    Colors extracted from logo: Brown (#4A2C2A), Teal (#0B5D5D), Cream/Beige
 */
-
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
