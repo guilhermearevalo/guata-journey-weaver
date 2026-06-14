@@ -30,75 +30,6 @@ const typeLabels: Record<string, string> = {
   thematic: 'Temática',
 };
 
-const placeholderExperiences: Experience[] = [
-  {
-    id: '1',
-    title: 'Fernando de Noronha Exclusivo',
-    short_description: 'Uma semana de imersão em um dos arquipélagos mais preservados do mundo.',
-    destination: 'Fernando de Noronha, PE',
-    price: 12500,
-    duration_days: 7,
-    max_participants: 8,
-    cover_image: 'https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?q=80&w=2073&auto=format&fit=crop',
-    experience_type: 'package',
-  },
-  {
-    id: '2',
-    title: 'Aventura no Jalapão',
-    short_description: 'Trilhas, fervedouros e dunas douradas no coração do cerrado brasileiro.',
-    destination: 'Jalapão, TO',
-    price: 4800,
-    duration_days: 5,
-    max_participants: 12,
-    cover_image: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?q=80&w=2126&auto=format&fit=crop',
-    experience_type: 'excursion',
-  },
-  {
-    id: '3',
-    title: 'Chapada Diamantina Completa',
-    short_description: 'Cachoeiras, grutas e trekking em paisagens de tirar o fôlego.',
-    destination: 'Chapada Diamantina, BA',
-    price: 3200,
-    duration_days: 4,
-    max_participants: 15,
-    cover_image: 'https://images.unsplash.com/photo-1533587851505-d119e13fa0d7?q=80&w=2070&auto=format&fit=crop',
-    experience_type: 'excursion',
-  },
-  {
-    id: '4',
-    title: 'Lençóis Maranhenses Premium',
-    short_description: 'Lagos cristalinos entre dunas brancas em uma experiência inesquecível.',
-    destination: 'Lençóis Maranhenses, MA',
-    price: 5600,
-    duration_days: 4,
-    max_participants: 10,
-    cover_image: 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?q=80&w=2070&auto=format&fit=crop',
-    experience_type: 'package',
-  },
-  {
-    id: '5',
-    title: 'Amazônia Selvagem',
-    short_description: 'Expedição pela floresta amazônica com hospedagem em lodge exclusivo.',
-    destination: 'Manaus, AM',
-    price: 8900,
-    duration_days: 6,
-    max_participants: 8,
-    cover_image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=2066&auto=format&fit=crop',
-    experience_type: 'package',
-  },
-  {
-    id: '6',
-    title: 'Bonito e Pantanal',
-    short_description: 'Águas cristalinas e vida selvagem em um roteiro inesquecível.',
-    destination: 'Bonito, MS',
-    price: 6200,
-    duration_days: 5,
-    max_participants: 12,
-    cover_image: 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?q=80&w=2128&auto=format&fit=crop',
-    experience_type: 'excursion',
-  },
-];
-
 export default function Experiencias() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -116,7 +47,7 @@ export default function Experiencias() {
         .eq('is_published', true);
 
       if (error || !data || data.length === 0) {
-        setExperiences(placeholderExperiences);
+        setExperiences([]);
       } else {
         setExperiences(data);
       }
@@ -316,24 +247,29 @@ export default function Experiencias() {
               <MapPin className="h-10 w-10 text-muted-foreground" />
             </div>
             <h2 className="mb-2 font-display text-2xl font-bold">
-              Nenhuma experiência encontrada
+              {experiences.length === 0 ? 'Nenhuma experiência disponível' : 'Nenhuma experiência encontrada'}
             </h2>
             <p className="mb-6 max-w-md text-muted-foreground">
-              {search
-                ? `Não encontramos experiências para "${search}". Que tal solicitar uma viagem personalizada?`
-                : 'Nenhuma experiência corresponde aos filtros selecionados.'}
+              {experiences.length === 0
+                ? 'Em breve teremos novos roteiros publicados. Enquanto isso, solicite uma viagem personalizada.'
+                : search
+                  ? `Não encontramos experiências para "${search}". Que tal solicitar uma viagem personalizada?`
+                  : 'Nenhuma experiência corresponde aos filtros selecionados.'}
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              {search && (
+              {(search || experiences.length === 0) && (
                 <Button
                   onClick={() =>
-                    navigate(`/viagem-personalizada?destino=${encodeURIComponent(search)}`)
+                    navigate(
+                      `/viagem-personalizada${search ? `?destino=${encodeURIComponent(search)}` : ''}`,
+                    )
                   }
                 >
                   <Heart className="mr-2 h-4 w-4" />
                   Solicitar Viagem Personalizada
                 </Button>
               )}
+              {experiences.length > 0 && (
               <Button
                 variant="outline"
                 onClick={() => {
@@ -343,6 +279,7 @@ export default function Experiencias() {
               >
                 Limpar filtros
               </Button>
+              )}
             </div>
           </div>
         )}

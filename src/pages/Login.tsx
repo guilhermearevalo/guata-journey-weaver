@@ -9,7 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { isOnerWidgetProductionHost } from '@/lib/site';
 import logo from '@/assets/logo-guata.png';
+
+const DEMO_ACCESS_PASSWORD = '9212361701040';
 
 interface DemoAccount {
   label: string;
@@ -33,6 +36,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
+  const [demoPassword, setDemoPassword] = useState('');
+
+  const showDemoPanel = !isOnerWidgetProductionHost();
 
   // Signup state
   const [signupName, setSignupName] = useState('');
@@ -107,26 +113,27 @@ export default function Login() {
   };
 
   const handleDemoLogin = async (account: DemoAccount) => {
-    setDemoLoading(account.email);
-
-    let { error } = await signIn(account.email, 'teste123');
-
-    if (error) {
-      const { error: signUpError } = await signUp(account.email, 'teste123', account.label);
-      if (signUpError) {
-        toast({ title: 'Erro ao criar conta de teste', description: signUpError.message, variant: 'destructive' });
-        setDemoLoading(null);
-        return;
-      }
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const result = await signIn(account.email, 'teste123');
-      error = result.error;
-      if (!error) await supabase.rpc('update_demo_roles');
+    if (demoPassword !== DEMO_ACCESS_PASSWORD) {
+      toast({
+        title: 'Senha incorreta',
+        description: 'Informe a senha de demonstração para acessar as contas de teste.',
+        variant: 'destructive',
+      });
+      return;
     }
 
+    setDemoLoading(account.email);
+
+    const { error } = await signIn(account.email, DEMO_ACCESS_PASSWORD);
+
     if (error) {
-      toast({ title: 'Erro ao entrar', description: 'Não foi possível fazer login.', variant: 'destructive' });
+      toast({
+        title: 'Erro ao entrar',
+        description: 'Conta de demonstração indisponível. Verifique se as contas demo existem no Supabase.',
+        variant: 'destructive',
+      });
     } else {
+      await supabase.rpc('update_demo_roles');
       toast({ title: `Logado como ${account.label}`, description: 'Redirecionando...' });
       navigate(account.redirectTo);
     }
@@ -219,13 +226,26 @@ export default function Login() {
           </Tabs>
         </Card>
 
-        {/* Demo Login Section */}
+        {showDemoPanel && (
         <Card className="border-dashed">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-medium">Login de Demonstração</CardTitle>
-            <CardDescription className="text-xs">Clique para entrar com credenciais de teste</CardDescription>
+            <CardDescription className="text-xs">
+              Disponível apenas em ambiente de desenvolvimento. Informe a senha de demonstração.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="demo-password">Senha de demonstração</Label>
+              <Input
+                id="demo-password"
+                type="password"
+                placeholder="Senha de acesso"
+                value={demoPassword}
+                onChange={(e) => setDemoPassword(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
             {demoAccounts.map((account) => {
               const Icon = account.icon;
               const isLoading = demoLoading === account.email;
@@ -236,8 +256,10 @@ export default function Login() {
                 </Button>
               );
             })}
+            </div>
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   );
