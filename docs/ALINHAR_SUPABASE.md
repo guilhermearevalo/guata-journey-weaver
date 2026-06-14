@@ -28,11 +28,31 @@ VITE_SITE_URL=https://www.agenciaguata.com
 VITE_ONER_STORE_URL=https://www.comprarviagem.com.br/guataviagenseturismo/home
 ```
 
-### 2. Hospedagem de produção (`agenciaguata.com`)
+### 2. Hospedagem de produção (`agenciaguata.com`) — **Vercel**
 
-O site **fora do Lovable** (Vercel, Netlify, etc.) precisa das **mesmas** variáveis no painel de Environment Variables, depois **redeploy**.
+O domínio está na **Vercel** (erro `404: NOT_FOUND` com ID `gru1::...` = página Vercel, não do app).
 
-> Se o domínio ainda estiver no deploy **Lovable Cloud**, ele continuará usando `xddzshslltdxstqpwvzr`. Nesse caso é preciso hospedar o código exportado (Caminho A do `LOVABLE_SUPABASE_SETUP.md`).
+#### 2a. Rotas do React (`/experiencias`, `/sobre`, etc.)
+
+A Vercel não usa `public/_redirects` (isso é Netlify). O arquivo `vercel.json` na raiz faz o rewrite para `index.html`. Após o push, faça **redeploy**.
+
+#### 2b. Variáveis de ambiente na Vercel
+
+**Project → Settings → Environment Variables** (Production):
+
+| Variável | Valor |
+|----------|--------|
+| `VITE_SUPABASE_URL` | `https://ojpgobftvomqxyvrqxma.supabase.co` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | anon key do dashboard Guatá |
+| `VITE_SUPABASE_PROJECT_ID` | `ojpgobftvomqxyvrqxma` |
+| `VITE_SITE_URL` | `https://www.agenciaguata.com` |
+| `VITE_ONER_STORE_URL` | `https://www.comprarviagem.com.br/guataviagenseturismo/home` |
+
+**Remova** variáveis antigas que apontem para `xddzshslltdxstqpwvzr`.
+
+Os erros `401` no console (`xddzshslltdxstqpwvzr.supabase.co`) significam que o build ainda usa o Supabase **Lovable** com chave inválida. Corrija as variáveis e rode **Redeploy** (Deployments → ⋯ → Redeploy).
+
+> Variáveis `VITE_*` são embutidas no build — mudar no painel **sem** redeploy não atualiza o site.
 
 ### 3. Migrações no banco Guatá
 
