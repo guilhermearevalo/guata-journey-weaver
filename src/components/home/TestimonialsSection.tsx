@@ -12,36 +12,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 
-const fallbackTestimonials = [
-  {
-    id: '1',
-    client_name: 'Mariana Costa',
-    client_location: 'São Paulo, SP',
-    client_photo_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    rating: 5,
-    text: 'A equipe da Guatá transformou nossa lua de mel em algo inesquecível. O atendimento personalizado fez toda a diferença. Cada detalhe foi pensado para nós.',
-    trip_name: 'Lua de Mel em Maldivas',
-  },
-  {
-    id: '2',
-    client_name: 'Ricardo Almeida',
-    client_location: 'Rio de Janeiro, RJ',
-    client_photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-    rating: 5,
-    text: 'Fiz uma excursão para o Jalapão e voltei apaixonado. O roteiro foi perfeito, os guias incríveis e a organização impecável. Já estou planejando a próxima!',
-    trip_name: 'Excursão Jalapão',
-  },
-  {
-    id: '3',
-    client_name: 'Fernanda Souza',
-    client_location: 'Belo Horizonte, MG',
-    client_photo_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-    rating: 5,
-    text: 'Viajo com a família e precisava de algo que agradasse a todos. A Guatá montou um roteiro que superou nossas expectativas. As crianças amaram!',
-    trip_name: 'Férias em Família - Nordeste',
-  },
-];
-
 export function TestimonialsSection() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -50,7 +20,7 @@ export function TestimonialsSection() {
   const [form, setForm] = useState({ name: '', location: '', text: '', trip: '', rating: 5 });
   const [photo, setPhoto] = useState<File | null>(null);
 
-  const { data: dbTestimonials } = useQuery({
+  const { data: dbTestimonials, isLoading } = useQuery({
     queryKey: ['testimonials-approved'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -64,17 +34,17 @@ export function TestimonialsSection() {
     },
   });
 
-  const testimonials = dbTestimonials && dbTestimonials.length > 0
-    ? dbTestimonials.map(t => ({
-        id: t.id,
-        client_name: t.client_name,
-        client_location: t.client_location || '',
-        client_photo_url: t.client_photo_url || '',
-        rating: t.rating || 5,
-        text: t.text,
-        trip_name: t.trip_name || '',
-      }))
-    : fallbackTestimonials;
+  if (isLoading) return null;
+
+  const testimonials = (dbTestimonials ?? []).map(t => ({
+    id: t.id,
+    client_name: t.client_name,
+    client_location: t.client_location || '',
+    client_photo_url: t.client_photo_url || '',
+    rating: t.rating || 5,
+    text: t.text,
+    trip_name: t.trip_name || '',
+  }));
 
   const handleSubmit = async () => {
     if (!user) {
@@ -133,6 +103,7 @@ export function TestimonialsSection() {
           </p>
         </div>
 
+        {testimonials.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-3">
           {testimonials.map((testimonial) => (
             <Card key={testimonial.id} className="relative overflow-hidden">
@@ -171,6 +142,11 @@ export function TestimonialsSection() {
             </Card>
           ))}
         </div>
+        ) : (
+          <p className="text-center text-muted-foreground">
+            Ainda não há depoimentos publicados. Seja o primeiro a compartilhar sua experiência!
+          </p>
+        )}
 
         {/* Submit testimonial button */}
         <div className="mt-10 text-center">

@@ -1,4 +1,6 @@
 -- Atualiza a senha das contas de demonstração (@guata.test).
+-- Projeto: ojpgobftvomqxyvrqxma
+-- Dashboard: https://supabase.com/dashboard/project/ojpgobftvomqxyvrqxma
 -- Rode no SQL Editor do Supabase (Dashboard → SQL → New query).
 --
 -- Senha definida: 9212361701040
