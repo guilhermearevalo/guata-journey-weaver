@@ -1,8 +1,8 @@
 import { Helmet } from 'react-helmet-async';
 
 const SITE_URL = 'https://www.agenciaguata.com';
-const DEFAULT_IMAGE =
-  'https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a5b9897d-5bdb-4f65-850e-1f50c8a9fb21/id-preview-b31e3217--56f718d3-6970-41ee-91a3-e2d51d9255d3.lovable.app-1770210519079.png';
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-guata.png`;
+export const DEFAULT_LOGO = `${SITE_URL}/logo-guata.png`;
 
 export interface SeoProps {
   /** Page title. Keep under ~60 chars. The " | Guatá Viagens" suffix is added unless `rawTitle` is set. */
@@ -31,7 +31,7 @@ export const Seo = ({
   title,
   description,
   path = '/',
-  image = DEFAULT_IMAGE,
+  image = DEFAULT_OG_IMAGE,
   type = 'website',
   rawTitle = false,
   noindex = false,
@@ -53,6 +53,9 @@ export const Seo = ({
       <meta property="og:description" content={description} />
       <meta property="og:url" content={url} />
       <meta property="og:image" content={image} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content="Guatá Viagens e Turismo" />
       <meta property="og:site_name" content="Guatá Viagens" />
       <meta property="og:locale" content="pt_BR" />
 
