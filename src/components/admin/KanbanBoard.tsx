@@ -207,6 +207,27 @@ export function KanbanBoard() {
         />
         <NewRequestDialog />
       </div>
+      {requestedStatus && (
+        <div className="mt-4 flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Mostrando apenas:</span>
+          <Badge variant="secondary" className="gap-1">
+            {columns.find((c) => c.id === requestedStatus)?.title ?? requestedStatus}
+          </Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-muted-foreground"
+            onClick={() => {
+              const nextParams = new URLSearchParams(searchParams);
+              nextParams.delete('status');
+              setSearchParams(nextParams, { replace: true });
+            }}
+          >
+            <X className="mr-1 h-3.5 w-3.5" />
+            Ver todas as demandas
+          </Button>
+        </div>
+      )}
       <div className="flex gap-4 overflow-x-auto pb-4 mt-4">
         {visibleColumns.map((column) => {
           const columnRequests = getRequestsByStatus(column.id);
