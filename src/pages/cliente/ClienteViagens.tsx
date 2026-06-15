@@ -40,6 +40,8 @@ export default function ClienteViagens() {
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['client-all-requests', user?.id],
+    enabled: !!user?.id,
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('travel_requests')
@@ -49,7 +51,6 @@ export default function ClienteViagens() {
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.id,
   });
 
   const filteredRequests = requests?.filter(request => {
