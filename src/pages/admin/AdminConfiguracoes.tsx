@@ -457,7 +457,10 @@ function CadasturConfigCard() {
       if (message.includes('row-level security') || supa.statusCode === '403') {
         message = 'Sem permissão. Confirme que seu usuário tem papel admin no Supabase.';
       } else if (message.includes('Bucket not found')) {
-        message = 'Bucket site-assets não existe. Rode docs/ensure_site_assets_storage.sql no Supabase.';
+        message = 'Bucket site-assets não existe. Crie em Storage → New bucket (público).';
+      } else if (message.includes('database schema is invalid') || message.includes('schema is out of sync')) {
+        message =
+          'Storage incompatível: apague o bucket site-assets se foi criado via SQL, recrie em Storage → New bucket (público) e rode docs/ensure_site_assets_storage.sql.';
       }
       console.error('Erro no upload Cadastur:', err);
       toast({ title: 'Erro no upload', description: message, variant: 'destructive' });

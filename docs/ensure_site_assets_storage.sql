@@ -1,15 +1,16 @@
--- Cria bucket site-assets + políticas de Storage (upload admin/consultor).
+-- Políticas RLS para o bucket site-assets (upload admin/consultor).
 -- Projeto: ojpgobftvomqxyvrqxma
--- Dashboard: https://supabase.com/dashboard/project/ojpgobftvomqxyvrqxma/sql/new
 --
--- Rode se uploads em Admin → Configurações falharem com "Bucket not found" ou HTTP 400.
+-- IMPORTANTE: NÃO crie o bucket com INSERT SQL neste projeto (Storage v3).
+-- Crie primeiro pela interface:
+--   Dashboard → Storage → New bucket → nome: site-assets → Public bucket
+--   https://supabase.com/dashboard/project/ojpgobftvomqxyvrqxma/storage/buckets
+--
+-- Se já criou via SQL e o upload dá "database schema is invalid or incompatible",
+-- apague o bucket na UI e recrie pelo dashboard.
+--
+-- Guia completo: docs/FIX_STORAGE_UPLOAD.md
 
--- 1) Bucket público para imagens/PDFs do site
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('site-assets', 'site-assets', true)
-ON CONFLICT (id) DO UPDATE SET public = true;
-
--- 2) Políticas (idempotente)
 DROP POLICY IF EXISTS "Anyone can view site assets" ON storage.objects;
 CREATE POLICY "Anyone can view site assets"
   ON storage.objects FOR SELECT
@@ -30,5 +31,7 @@ CREATE POLICY "Staff can delete site assets"
   ON storage.objects FOR DELETE TO authenticated
   USING (bucket_id = 'site-assets' AND is_staff(auth.uid()));
 
--- 3) Confirmação
-SELECT id, name, public FROM storage.buckets WHERE id = 'site-assets';
+-- Confirmação (bucket deve existir — criado pela UI)
+SELECT id, name, public, created_at
+FROM storage.buckets
+WHERE id = 'site-assets';
