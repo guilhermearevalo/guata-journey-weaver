@@ -23,13 +23,23 @@ O projeto Supabase Guatá (`ojpgobftvomqxyvrqxma`) usa **Storage v3**. Criar o b
 
 Repita para `testimonials` se for usar fotos em depoimentos.
 
-### Passo 2 — Políticas RLS (SQL)
+### Passo 2 — Reparar schema interno do Storage
+
+No SQL Editor, rode **`docs/repair_storage_schema.sql`**. Esse script aplica as migrações internas que faltam (prefixes, triggers, colunas owner_id/level).
+
+### Passo 3 — Políticas RLS (SQL)
 
 No SQL Editor, rode apenas **`docs/ensure_site_assets_storage.sql`** (parte das políticas — o script não insere bucket).
 
 ### Passo 3 — Se já criou bucket via SQL antes
 
 Apague o bucket inválido pela UI (Storage → site-assets → Delete) e crie de novo pelo **Passo 1**.
+
+### Alternativa imediata (sem Storage)
+
+No admin **Configurações → Cadastur**, use os campos **&quot;ou cole a URL da imagem&quot;** e clique em **Salvar Credenciais**. Funciona com qualquer link público `https://` (ex.: imagem já hospedada).
+
+---
 
 ### Passo 4 — Testar
 

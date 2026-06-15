@@ -20,6 +20,7 @@ const AdminConfiguracoes = () => {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [slides, setSlides] = useState<Slide[]>([]);
+  const [heroUrlInput, setHeroUrlInput] = useState('');
 
   const { data: heroSetting } = useQuery({
     queryKey: ['site-setting', 'hero_image_url'],
@@ -117,6 +118,22 @@ const AdminConfiguracoes = () => {
     toast({ title: 'Imagem restaurada', description: 'A imagem padrão foi restaurada.' });
   };
 
+  const addHeroSlideFromUrl = async () => {
+    const url = heroUrlInput.trim();
+    if (!url) return;
+    try {
+      new URL(url);
+    } catch {
+      toast({ title: 'URL inválida', description: 'Use um link https:// completo.', variant: 'destructive' });
+      return;
+    }
+    const isVideo = /\.(mp4|webm)(\?|$)/i.test(url);
+    const newSlides = [...slides, { type: isVideo ? 'video' as const : 'image' as const, url }];
+    await saveSlides(newSlides);
+    setHeroUrlInput('');
+    toast({ title: 'Mídia adicionada por URL!' });
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -192,8 +209,20 @@ const AdminConfiguracoes = () => {
               Restaurar Padrão
             </Button>
           </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Input
+              placeholder="ou cole a URL da imagem/vídeo (https://...)"
+              value={heroUrlInput}
+              onChange={(e) => setHeroUrlInput(e.target.value)}
+              className="flex-1"
+            />
+            <Button type="button" variant="secondary" onClick={addHeroSlideFromUrl} disabled={!heroUrlInput.trim()}>
+              Adicionar por URL
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">
             Imagens: JPG, PNG, WEBP (recomendado 1920×1080). Vídeos: MP4, WEBM (máx. 30MB).
+            Se o upload falhar, use &quot;Adicionar por URL&quot; ou rode <code className="text-xs">docs/repair_storage_schema.sql</code> no Supabase.
           </p>
         </CardContent>
       </Card>
@@ -460,7 +489,7 @@ function CadasturConfigCard() {
         message = 'Bucket site-assets não existe. Crie em Storage → New bucket (público).';
       } else if (message.includes('database schema is invalid') || message.includes('schema is out of sync')) {
         message =
-          'Storage incompatível: apague o bucket site-assets se foi criado via SQL, recrie em Storage → New bucket (público) e rode docs/ensure_site_assets_storage.sql.';
+          'Storage incompatível. Rode docs/repair_storage_schema.sql no Supabase — ou cole a URL da imagem no campo abaixo.';
       }
       console.error('Erro no upload Cadastur:', err);
       toast({ title: 'Erro no upload', description: message, variant: 'destructive' });
@@ -559,6 +588,11 @@ function CadasturConfigCard() {
               />
             </div>
           </div>
+          <Input
+            placeholder="ou cole a URL da imagem (https://...)"
+            value={certificateImageUrl}
+            onChange={(e) => setCertificateImageUrl(e.target.value)}
+          />
         </div>
 
         {/* Agency Logo */}
@@ -586,7 +620,15 @@ function CadasturConfigCard() {
               />
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">A logo será exibida ao lado do certificado na página "Sobre Nós".</p>
+          <Input
+            placeholder="ou cole a URL da logo (https://...)"
+            value={agencyLogoUrl}
+            onChange={(e) => setAgencyLogoUrl(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            A logo será exibida ao lado do certificado na página &quot;Sobre Nós&quot;.
+            Se o upload falhar, cole a URL e clique em Salvar Credenciais.
+          </p>
         </div>
 
         <Button onClick={handleSave} disabled={saving}>
