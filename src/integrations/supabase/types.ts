@@ -971,6 +971,10 @@ export type Database = {
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       proposal_is_shared: { Args: { _proposal_id: string }; Returns: boolean }
+      update_commission_note: {
+        Args: { _notes: string; _payment_id: string }
+        Returns: undefined
+      }
       update_demo_roles: { Args: never; Returns: undefined }
       verify_proposal_access_code: {
         Args: { _code: string; _token: string }
