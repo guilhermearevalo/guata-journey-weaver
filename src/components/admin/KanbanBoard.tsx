@@ -35,6 +35,7 @@ const columns: Column[] = [
 
 export function KanbanBoard() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedRequest, setSelectedRequest] = useState<Tables<'travel_requests'> | null>(null);
@@ -44,7 +45,9 @@ export function KanbanBoard() {
   const requestedDemandId = searchParams.get('demanda');
 
   const { data: requests, isLoading } = useQuery({
-    queryKey: ['travel_requests'],
+    queryKey: ['travel_requests', user?.id],
+    enabled: !!user,
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('travel_requests')
@@ -55,6 +58,25 @@ export function KanbanBoard() {
       return data as Tables<'travel_requests'>[];
     },
   });
+
+  // Realtime: keep the board in sync when demands are created/updated/deleted
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('kanban-travel-requests')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'travel_requests' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: RequestStatus }) => {
