@@ -8,8 +8,12 @@ import { RequestDetailDialog } from './RequestDetailDialog';
 import { KanbanFilters } from './KanbanFilters';
 import { NewRequestDialog } from './NewRequestDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/lib/auth';
 
 type RequestStatus = Enums<'request_status'>;
 
