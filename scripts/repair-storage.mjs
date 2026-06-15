@@ -76,15 +76,21 @@ async function main() {
   const buckets = await dbQuery('SELECT id, name, public, created_at FROM storage.buckets ORDER BY created_at', true);
   console.log('Buckets atuais:', JSON.stringify(buckets, null, 2));
 
-  console.log('\n=== Removendo buckets criados via SQL ===');
-  await dbQuery(`DELETE FROM storage.objects WHERE bucket_id IN ('site-assets', 'testimonials')`);
-  await dbQuery(`DELETE FROM storage.buckets WHERE id IN ('site-assets', 'testimonials')`);
-  console.log('Buckets SQL removidos.');
-
   const serviceKey = await getServiceRoleKey();
-  console.log('\n=== Recriando site-assets via Storage API ===');
 
-  await storageRequest(serviceKey, 'DELETE', '/bucket/site-assets').catch(() => {});
+  console.log('\n=== Removendo buckets via Storage API (não use DELETE SQL) ===');
+  for (const bucketId of ['site-assets', 'testimonials']) {
+    const del = await storageRequest(serviceKey, 'DELETE', `/bucket/${bucketId}`);
+    if (del.status === 200 || del.status === 204) {
+      console.log(`Bucket ${bucketId} removido.`);
+    } else if (del.status === 404) {
+      console.log(`Bucket ${bucketId} não existe (ok).`);
+    } else {
+      console.warn(`Bucket ${bucketId}: HTTP ${del.status}`, del.text);
+    }
+  }
+
+  console.log('\n=== Recriando site-assets via Storage API ===');
   let create = await storageRequest(serviceKey, 'POST', '/bucket', {
     id: 'site-assets',
     name: 'site-assets',

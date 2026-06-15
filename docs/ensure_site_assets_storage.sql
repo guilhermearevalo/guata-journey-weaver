@@ -7,7 +7,8 @@
 --   https://supabase.com/dashboard/project/ojpgobftvomqxyvrqxma/storage/buckets
 --
 -- Se já criou via SQL e o upload dá "database schema is invalid or incompatible",
--- apague o bucket na UI e recrie pelo dashboard.
+-- apague o bucket na UI (Storage → ⋯ → Delete) e recrie pelo dashboard.
+-- NÃO use DELETE FROM storage.buckets no SQL Editor (erro 42501).
 --
 -- Guia completo: docs/FIX_STORAGE_UPLOAD.md
 

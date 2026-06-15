@@ -1,16 +1,19 @@
 -- Reparo do Storage Guatá (erro 400 "database schema is invalid or incompatible")
 -- Projeto: ojpgobftvomqxyvrqxma
 --
--- CAUSA: buckets criados via INSERT SQL nas migrações (Storage v3 exige criação pela UI ou API).
+-- ⚠️ NÃO use DELETE em storage.buckets / storage.objects — o Supabase bloqueia:
+--    "42501: Direct deletion from storage tables is not allowed. Use the Storage API instead."
 --
--- ORDEM (siga exatamente):
---   1) Rode ESTE arquivo no SQL Editor (passos 1 e 2 abaixo)
---   2) Dashboard → Storage → New bucket → nome: site-assets → Public bucket
+-- ORDEM CORRETA:
+--   1) Rode ESTE arquivo (só diagnóstico, abaixo)
+--   2) Dashboard → Storage → apague site-assets (e testimonials se existir)
 --      https://supabase.com/dashboard/project/ojpgobftvomqxyvrqxma/storage/buckets
---   3) Rode docs/ensure_site_assets_storage.sql (políticas RLS)
---   4) Teste upload em Admin → Configurações
+--      (⋯ no bucket → Delete bucket — ou use: node scripts/repair-storage.mjs)
+--   3) Dashboard → Storage → New bucket → site-assets → Public bucket
+--   4) Rode docs/ensure_site_assets_storage.sql (políticas RLS)
+--   5) Teste upload em Admin → Configurações
 
--- ========== 1) Diagnóstico (opcional — copie o resultado se precisar abrir ticket) ==========
+-- ========== Diagnóstico (seguro — só SELECT) ==========
 SELECT id, name, executed_at FROM storage.migrations ORDER BY id;
 
 SELECT column_name
@@ -19,12 +22,3 @@ WHERE table_schema = 'storage' AND table_name = 'objects'
 ORDER BY ordinal_position;
 
 SELECT id, name, public, created_at FROM storage.buckets ORDER BY created_at;
-
--- ========== 2) Remove buckets criados via SQL (quebrados no Storage v3) ==========
-DELETE FROM storage.objects WHERE bucket_id IN ('site-assets', 'testimonials');
-DELETE FROM storage.buckets WHERE id IN ('site-assets', 'testimonials');
-
--- Confirmação (deve retornar 0 linhas para site-assets)
-SELECT id, name, public FROM storage.buckets WHERE id IN ('site-assets', 'testimonials');
-
--- PARE AQUI. Crie o bucket site-assets pela UI (passo 2 acima), depois rode ensure_site_assets_storage.sql.
