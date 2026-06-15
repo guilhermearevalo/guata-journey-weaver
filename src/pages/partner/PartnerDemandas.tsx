@@ -60,6 +60,8 @@ export default function PartnerDemandas() {
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['partner-requests', agencyId, searchTerm],
+    enabled: !!agencyId,
+    refetchOnMount: 'always',
     queryFn: async () => {
       let query = supabase
         .from('travel_requests')
@@ -75,7 +77,6 @@ export default function PartnerDemandas() {
       if (error) throw error;
       return data as TravelRequest[];
     },
-    enabled: !!agencyId,
   });
 
   const { data: proposals } = useQuery({

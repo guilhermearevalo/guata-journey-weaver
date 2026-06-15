@@ -1,49 +1,33 @@
-# Plano: Roteiro encantador, exclusão de propostas, edição de imagens e PDF
+## Diagnóstico
 
-Quatro melhorias, todas focadas em deixar a experiência profissional e atrativa para o cliente final.
+Investiguei os dois problemas direto no backend e no código.
 
-## 1. Excluir propostas/roteiros (nos dois lugares)
+### 1. Erros de upload de arquivos/imagens
+O app está com uploads **desligados de propósito** por uma configuração antiga (`VITE_STORAGE_UPLOADS=false`). Isso foi um contorno da época em que o armazenamento do projeto anterior estava quebrado. Testei o armazenamento atual (Lovable Cloud): os buckets `site-assets`, `testimonials` e `travel-documents` existem e funcionam — usuários logados (admin/staff) têm permissão de envio. Ou seja, dá para reativar os uploads de verdade agora.
 
-Hoje não existe nenhum botão para excluir uma proposta criada. Vou adicionar:
+### 2. Demandas que somem / aparecem vazias / não aparecem
+As telas de demandas (Admin Kanban, Parceiro e Cliente) carregam os dados sem esperar a sessão de login estar totalmente pronta e sem se atualizarem sozinhas. Resultado: às vezes a consulta roda "sem usuário" e o banco devolve vazio (regras de segurança bloqueiam), e quando você cria/move uma demanda a tela nem sempre reflete na hora. No Admin há ainda um detalhe: quando se chega pela tela com um filtro de status na URL, só uma coluna aparece — dando a impressão de que as outras demandas "sumiram".
 
-- **Na lista de demandas (Kanban):** botão "Excluir proposta" no detalhe da demanda (`RequestDetailDialog`), com diálogo de confirmação ("Tem certeza? Esta ação não pode ser desfeita").
-- **No planejador de roteiro:** botão de excluir no cabeçalho do `ItineraryPlanner`, também com confirmação. Após excluir, redireciona de volta para a lista.
-- A exclusão remove a proposta e os dados associados (roteiro, dossiê, documentos de viagem vinculados). A demanda em si continua existindo — só a proposta/roteiro é apagada, permitindo recriar.
+## O que vou fazer
 
-## 2. Roteiro do cliente redesenhado — estilo "Revista de Viagem"
+### Uploads
+- Reativar os uploads de arquivos/imagens (deixar o armazenamento ligado por padrão, ignorando a flag antiga).
+- Manter o campo de URL como alternativa, mas voltar a exibir os botões de envio de arquivo no Admin (configurações, viagens realizadas, CMS), roteiro (atividades, dossiê, documentos) e depoimentos.
+- Validar enviando um arquivo de teste de verdade após a mudança.
 
-A página pública do roteiro (`RoteiroPublico` em `/roteiro/:token`) será transformada numa experiência editorial premium, usando a identidade Guatá (Playfair Display, teal/marrom, dourado de destaque):
-
-- **Capa imersiva:** foto grande em destaque, título em serifada, selo "Roteiro Exclusivo", datas e número de viajantes com ícones elegantes, logo da agência.
-- **Resumo da viagem:** faixa com destino, duração, investimento total e contagem de dias, em cards refinados.
-- **Timeline dia a dia mais bonita:** cada dia como um "capítulo" com número grande, título do dia, e atividades em cards com foto, horário, categoria (badges com cor suave), descrição legível e botão "Ver rota". Espaçamento generoso e sombras suaves.
-- **Animações sutis** (fade/slide ao rolar) para dar sensação premium sem pesar.
-- **Seções do dossiê** (aéreo, hospedagem, seguro, etc.) com o mesmo padrão visual.
-- **Abertura ao clicar:** garantir que o link do roteiro abre direto numa página completa e navegável (já abre, mas o visual atual é fraco) — o foco é torná-la encantadora.
-- O modo impressão/PDF continua funcionando.
-
-> Observação: como você pediu "a melhor opção", segui o estilo Revista (elegante). Se ao ver pronto quiser testar o "Moderno clean" ou "Aventura imersivo", ajusto depois.
-
-## 3. Edição de imagens das atividades (cortar + ajustar foco)
-
-No `ActivityFormDialog`, ao enviar/colar uma imagem, adicionar:
-
-- **Cropper (cortar e enquadrar):** ferramenta para recortar, dar zoom e girar a foto antes de salvar, com proporção fixa adequada ao card do roteiro (paisagem). Usarei a biblioteca `react-easy-crop`.
-- **Ajuste de foco:** controle de ponto focal (qual parte da foto fica centralizada) para quando não quiser cortar.
-- A imagem final recortada é reenviada ao storage e salva na atividade.
-
-## 4. PDF da "Política de Prestação de Serviços" aparecendo para todos
-
-O PDF está salvo e acessível publicamente (já testei: responde corretamente). O problema é que o embed atual (`<object>/<iframe>`) **não renderiza em muitos navegadores, principalmente no celular** — por isso "não aparece para as pessoas".
-
-Solução no `LegalPageLayout` (modo PDF):
-
-- Card de destaque com ícone de documento, título e dois botões claros: **"Abrir documento"** e **"Baixar PDF"**.
-- Visualizador embutido como complemento (para desktop), mas com fallback elegante e mensagem + botões quando o navegador não conseguir exibir inline.
-- Garante que, em qualquer dispositivo, o cliente sempre consegue acessar o documento.
+### Demandas
+- **Admin (Kanban):** só carregar as demandas depois que o login estiver pronto; recarregar sempre ao abrir a tela; e adicionar atualização em tempo real para que demandas novas e mudanças de coluna apareçam na hora, sem precisar recarregar a página.
+- **Tornar o filtro de status visível e removível** no Kanban, para que não pareça que demandas sumiram quando só está filtrado.
+- **Parceiro e Cliente:** mesma proteção — esperar o login pronto antes de consultar e recarregar ao abrir, para não aparecer lista vazia indevidamente.
+- Garantir que a "Nova Demanda" manual apareça imediatamente no quadro após criada.
 
 ## Detalhes técnicos
-- **Dependência nova:** `react-easy-crop` para o recorte de imagem.
-- **Banco:** exclusão de proposta usa `DELETE` em `proposals` (RLS já permite staff/parceiro). Verifico se há documentos de viagem vinculados para limpar referências.
-- **Arquivos principais a alterar:** `src/pages/RoteiroPublico.tsx` (redesign), `src/components/itinerary/ItineraryPlanner.tsx` (botão excluir), `src/components/admin/RequestDetailDialog.tsx` (botão excluir), `src/components/itinerary/ActivityFormDialog.tsx` (cropper + foco), `src/components/cms/LegalPageLayout.tsx` (PDF), e possivelmente um novo componente `ImageCropper`.
-- Tudo usando tokens semânticos do design system (sem cores hardcoded).
+- `src/lib/storageUploads.ts`: `isStorageUploadEnabled` passa a ser `true` por padrão (só desliga se a env for explicitamente `false`, que removerei do `.env`/`.env.example`).
+- `src/components/admin/KanbanBoard.tsx`: importar `useAuth`; `useQuery(['travel_requests', user?.id])` com `enabled: !!user`, `refetchOnMount: 'always'`; adicionar canal `supabase.channel().on('postgres_changes', ... travel_requests)` para invalidar a query; exibir badge "Filtrando por status — limpar" quando `?status=` estiver presente.
+- `src/pages/partner/PartnerDemandas.tsx` e telas de demandas do cliente (`src/pages/cliente/ClienteViagens.tsx`): adicionar `refetchOnMount: 'always'` e confirmar gating por `!!user`/`agencyId`.
+- Para o tempo real funcionar, criar migração adicionando `travel_requests` (e `proposals`) à publicação `supabase_realtime` com `REPLICA IDENTITY FULL`.
+- Sem mudanças nas regras de acesso (RLS) — elas já estão corretas; o problema é momento de carga e atualização da UI.
+
+## Validação
+- Upload: enviar um arquivo de teste e confirmar a URL pública/preview.
+- Demandas: criar uma demanda manual e confirmar que aparece sem recarregar; mover entre colunas e confirmar persistência; conferir Parceiro e Cliente.

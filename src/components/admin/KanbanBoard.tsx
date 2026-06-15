@@ -8,8 +8,12 @@ import { RequestDetailDialog } from './RequestDetailDialog';
 import { KanbanFilters } from './KanbanFilters';
 import { NewRequestDialog } from './NewRequestDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/lib/auth';
 
 type RequestStatus = Enums<'request_status'>;
 
@@ -31,6 +35,7 @@ const columns: Column[] = [
 
 export function KanbanBoard() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedRequest, setSelectedRequest] = useState<Tables<'travel_requests'> | null>(null);
@@ -40,7 +45,9 @@ export function KanbanBoard() {
   const requestedDemandId = searchParams.get('demanda');
 
   const { data: requests, isLoading } = useQuery({
-    queryKey: ['travel_requests'],
+    queryKey: ['travel_requests', user?.id],
+    enabled: !!user,
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('travel_requests')
@@ -51,6 +58,25 @@ export function KanbanBoard() {
       return data as Tables<'travel_requests'>[];
     },
   });
+
+  // Realtime: keep the board in sync when demands are created/updated/deleted
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('kanban-travel-requests')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'travel_requests' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: RequestStatus }) => {
@@ -181,6 +207,27 @@ export function KanbanBoard() {
         />
         <NewRequestDialog />
       </div>
+      {requestedStatus && (
+        <div className="mt-4 flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Mostrando apenas:</span>
+          <Badge variant="secondary" className="gap-1">
+            {columns.find((c) => c.id === requestedStatus)?.title ?? requestedStatus}
+          </Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-muted-foreground"
+            onClick={() => {
+              const nextParams = new URLSearchParams(searchParams);
+              nextParams.delete('status');
+              setSearchParams(nextParams, { replace: true });
+            }}
+          >
+            <X className="mr-1 h-3.5 w-3.5" />
+            Ver todas as demandas
+          </Button>
+        </div>
+      )}
       <div className="flex gap-4 overflow-x-auto pb-4 mt-4">
         {visibleColumns.map((column) => {
           const columnRequests = getRequestsByStatus(column.id);
