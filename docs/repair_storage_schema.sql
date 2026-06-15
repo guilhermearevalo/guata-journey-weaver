@@ -1,8 +1,15 @@
--- Repara schema interno do Supabase Storage (erro "database schema is invalid or incompatible").
--- Projeto: ojpgobftvomqxyvrqxma
--- Rode no SQL Editor DEPOIS de criar o bucket site-assets pela UI (Storage → New bucket).
+-- ⚠️ NÃO RODE ESTE ARQUIVO NO SQL EDITOR DO DASHBOARD
 --
--- 1) Diagnóstico (rode primeiro e veja o resultado)
+-- Erro esperado: "42501: must be owner of table objects"
+-- As tabelas storage.* pertencem ao role supabase_storage_admin — só o suporte
+-- Supabase ou migrações internas da plataforma podem repará-las.
+--
+-- Use em vez disso:
+--   1) docs/repair_storage_diagnostic.sql  (só leitura)
+--   2) docs/FIX_STORAGE_UPLOAD.md          (workaround por URL + ticket ao suporte)
+--
+-- Projeto: ojpgobftvomqxyvrqxma
+-- Mantido como referência técnica — não executar em produção via SQL Editor.
 SELECT id, name, executed_at FROM storage.migrations ORDER BY id;
 
 SELECT column_name

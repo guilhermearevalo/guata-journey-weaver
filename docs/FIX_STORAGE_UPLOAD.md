@@ -8,65 +8,72 @@ POST .../storage/v1/object/site-assets/... 400
 
 ## Causa
 
-O projeto Supabase Guatá (`ojpgobftvomqxyvrqxma`) usa **Storage v3**. Criar o bucket só com `INSERT INTO storage.buckets` no SQL Editor deixa o schema **incompatível** com a API de Storage — o upload falha mesmo que a linha apareça na tabela.
+O **Storage interno** do projeto Guatá (`ojpgobftvomqxyvrqxma`) está incompleto ou incompatível (migrações internas do Storage v3 não aplicadas pela plataforma). Isso **não se corrige** com SQL comum no dashboard — as tabelas `storage.*` pertencem ao role `supabase_storage_admin`.
 
-## Solução (recomendada)
-
-### Passo 1 — Criar o bucket pela interface (obrigatório)
-
-1. Abra **Storage** no dashboard:  
-   https://supabase.com/dashboard/project/ojpgobftvomqxyvrqxma/storage/buckets
-2. **New bucket**
-3. Nome: `site-assets`
-4. Marque **Public bucket**
-5. Create
-
-Repita para `testimonials` se for usar fotos em depoimentos.
-
-### Passo 2 — Reparar schema interno do Storage
-
-No SQL Editor, rode **`docs/repair_storage_schema.sql`**. Esse script aplica as migrações internas que faltam (prefixes, triggers, colunas owner_id/level).
-
-### Passo 3 — Políticas RLS (SQL)
-
-No SQL Editor, rode apenas **`docs/ensure_site_assets_storage.sql`** (parte das políticas — o script não insere bucket).
-
-### Passo 3 — Se já criou bucket via SQL antes
-
-Apague o bucket inválido pela UI (Storage → site-assets → Delete) e crie de novo pelo **Passo 1**.
-
-### Alternativa imediata (sem Storage)
-
-No admin **Configurações → Cadastur**, use os campos **&quot;ou cole a URL da imagem&quot;** e clique em **Salvar Credenciais**. Funciona com qualquer link público `https://` (ex.: imagem já hospedada).
+Se ao rodar `repair_storage_schema.sql` aparecer:
+```
+ERROR: 42501: must be owner of table objects
+```
+é **esperado**. O SQL Editor não tem permissão para alterar essas tabelas.
 
 ---
 
-### Passo 4 — Testar
+## ✅ Solução que funciona agora (sem Storage)
 
-1. Faça login como admin em https://agenciaguata.com/login  
-2. Admin → Configurações → Cadastur → Enviar imagem  
-3. Ctrl+Shift+R se a página estiver em cache
+### Cadastur / Logo / Certificado
 
-## Diagnóstico (opcional)
+1. Abra https://agenciaguata.com/admin/configuracoes (Ctrl+Shift+R)
+2. Em **Cadastur**, use o campo **"ou cole a URL da imagem"**
+3. Exemplos de URL que já funcionam no seu site:
+   - Logo: `https://www.agenciaguata.com/logo-guata.png`
+   - Banner: `https://www.agenciaguata.com/og-guata.png`
+4. Clique **Salvar Credenciais**
 
-No SQL Editor:
+### Hero (carrossel)
 
-```sql
--- Versão das migrações internas do Storage (v3 deve ter id >= 17)
-SELECT * FROM storage.migrations ORDER BY id;
+Use **"Adicionar por URL"** com link `https://` de imagem ou vídeo.
 
--- Buckets registrados
-SELECT id, name, public, created_at FROM storage.buckets;
+---
+
+## Reparar upload de arquivo (requer Supabase)
+
+### Passo 1 — Diagnóstico
+
+Rode **`docs/repair_storage_diagnostic.sql`** no SQL Editor e **copie o resultado**.
+
+### Passo 2 — Abrir ticket no Supabase Support
+
+https://supabase.com/dashboard/support/new
+
+**Assunto:** Storage schema invalid on project ojpgobftvomqxyvrqxma
+
+**Mensagem (copie e cole):**
+```
+Project ref: ojpgobftvomqxyvrqxma
+Error on upload: "The database schema is invalid or incompatible" (HTTP 400)
+Cannot repair via SQL Editor: "42501: must be owner of table objects"
+
+Please repair / re-initialize the internal Storage schema (migrations tenant 0016+)
+and ensure bucket "site-assets" works for authenticated uploads.
+
+Diagnostic output attached below:
+[cole aqui o resultado do repair_storage_diagnostic.sql]
 ```
 
-Se `storage.migrations` não existir ou estiver vazio, abra um ticket no Supabase ou rode `supabase db push` com CLI linkada ao projeto.
+### Passo 3 — Depois que o Supabase corrigir
 
-## Solução completa (CLI)
+1. Confirme bucket **site-assets** (público) em Storage → Buckets
+2. Rode **`docs/ensure_site_assets_storage.sql`** (políticas RLS — esse sim funciona no SQL Editor)
+3. Teste upload em Admin → Configurações
 
-```powershell
-npx supabase login
-npx supabase link --project-ref ojpgobftvomqxyvrqxma
-npx supabase db push
-```
+---
 
-Depois confirme o bucket `site-assets` no dashboard (crie pela UI se ainda não existir).
+## Checklist rápido
+
+| Ação | Funciona no SQL Editor? |
+|------|-------------------------|
+| `repair_storage_diagnostic.sql` | ✅ Sim (só leitura) |
+| `ensure_site_assets_storage.sql` | ✅ Sim (políticas) |
+| `repair_storage_schema.sql` | ❌ Não (42501) |
+| Colar URL no admin | ✅ Sim (agora) |
+| Ticket Supabase Support | ✅ Sim (reparo definitivo) |
