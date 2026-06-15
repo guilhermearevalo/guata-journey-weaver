@@ -34,14 +34,12 @@ const statusColors: Record<string, string> = {
 };
 
 export default function ClienteViagens() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['client-all-requests', user?.id],
-    enabled: !!user?.id,
-    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('travel_requests')
@@ -51,6 +49,8 @@ export default function ClienteViagens() {
       if (error) throw error;
       return data;
     },
+    enabled: !!user?.id && !authLoading,
+    refetchOnMount: 'always',
   });
 
   const filteredRequests = requests?.filter(request => {
@@ -102,7 +102,7 @@ export default function ClienteViagens() {
       </div>
 
       {/* Requests List */}
-      {isLoading ? (
+      {authLoading || isLoading ? (
         <div className="grid gap-4 md:grid-cols-2">
           {[1, 2, 3, 4].map(i => (
             <Skeleton key={i} className="h-48 w-full" />

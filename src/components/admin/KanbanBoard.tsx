@@ -33,9 +33,19 @@ const columns: Column[] = [
   { id: 'cancelled', title: 'Cancelada', color: 'red' },
 ];
 
+const statusFilterLabels: Record<RequestStatus, string> = {
+  pending: 'Pendente',
+  in_analysis: 'Em Análise',
+  proposal_sent: 'Proposta Enviada',
+  approved: 'Aprovada',
+  in_operation: 'Em Operação',
+  completed: 'Concluída',
+  cancelled: 'Cancelada',
+};
+
 export function KanbanBoard() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedRequest, setSelectedRequest] = useState<Tables<'travel_requests'> | null>(null);
@@ -46,29 +56,29 @@ export function KanbanBoard() {
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['travel_requests', user?.id],
-    enabled: !!user,
-    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('travel_requests')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       return data as Tables<'travel_requests'>[];
     },
+    enabled: !!user && !authLoading,
+    refetchOnMount: 'always',
   });
 
-  // Realtime: keep the board in sync when demands are created/updated/deleted
   useEffect(() => {
     if (!user) return;
+
     const channel = supabase
-      .channel('kanban-travel-requests')
+      .channel('admin-travel-requests')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'travel_requests' },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+          queryClient.invalidateQueries({ queryKey: ['travel_requests', user.id] });
         }
       )
       .subscribe();
@@ -84,11 +94,11 @@ export function KanbanBoard() {
         .from('travel_requests')
         .update({ status })
         .eq('id', id);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['travel_requests', user?.id] });
       toast({
         title: 'Status atualizado',
         description: 'A demanda foi movida com sucesso.',
@@ -119,7 +129,6 @@ export function KanbanBoard() {
     }
   };
 
-  // Fetch proposals for payment filter
   const { data: proposalMap } = useQuery({
     queryKey: ['proposals-payment-map'],
     queryFn: async () => {
@@ -128,21 +137,21 @@ export function KanbanBoard() {
         .select('request_id, payment_status');
       if (error) throw error;
       const map = new Map<string, string>();
-      data?.forEach(p => map.set(p.request_id, p.payment_status || 'pending'));
+      data?.forEach((p) => map.set(p.request_id, p.payment_status || 'pending'));
       return map;
     },
     enabled: filterPayment !== 'all',
   });
 
   const getRequestsByStatus = (status: RequestStatus) => {
-    let filtered = requests?.filter(r => r.status === status) || [];
+    let filtered = requests?.filter((r) => r.status === status) || [];
     if (filterAgency === 'none') {
-      filtered = filtered.filter(r => !r.assigned_agency_id);
+      filtered = filtered.filter((r) => !r.assigned_agency_id);
     } else if (filterAgency !== 'all') {
-      filtered = filtered.filter(r => r.assigned_agency_id === filterAgency);
+      filtered = filtered.filter((r) => r.assigned_agency_id === filterAgency);
     }
     if (filterPayment !== 'all' && proposalMap) {
-      filtered = filtered.filter(r => proposalMap.get(r.id) === filterPayment);
+      filtered = filtered.filter((r) => proposalMap.get(r.id) === filterPayment);
     }
     return filtered;
   };
@@ -179,7 +188,13 @@ export function KanbanBoard() {
     setSelectedRequest(null);
   };
 
-  if (isLoading) {
+  const clearStatusFilter = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('status');
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  if (authLoading || isLoading) {
     return (
       <div className="flex gap-4 overflow-x-auto pb-4">
         {columns.map((col) => (
@@ -197,37 +212,33 @@ export function KanbanBoard() {
 
   return (
     <>
+      {requestedStatus && columns.some((column) => column.id === requestedStatus) && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <Badge variant="outline" className="border-amber-300 bg-white">
+            Filtrando por status
+          </Badge>
+          <span>
+            Mostrando apenas: <strong>{statusFilterLabels[requestedStatus]}</strong>
+          </span>
+          <Button type="button" variant="outline" size="sm" className="ml-auto" onClick={clearStatusFilter}>
+            <X className="mr-1 h-3 w-3" />
+            Ver todas as demandas
+          </Button>
+        </div>
+      )}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <KanbanFilters
           agencyId={filterAgency}
           paymentStatus={filterPayment}
           onAgencyChange={setFilterAgency}
           onPaymentStatusChange={setFilterPayment}
-          onClear={() => { setFilterAgency('all'); setFilterPayment('all'); }}
+          onClear={() => {
+            setFilterAgency('all');
+            setFilterPayment('all');
+          }}
         />
         <NewRequestDialog />
       </div>
-      {requestedStatus && (
-        <div className="mt-4 flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Mostrando apenas:</span>
-          <Badge variant="secondary" className="gap-1">
-            {columns.find((c) => c.id === requestedStatus)?.title ?? requestedStatus}
-          </Badge>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-muted-foreground"
-            onClick={() => {
-              const nextParams = new URLSearchParams(searchParams);
-              nextParams.delete('status');
-              setSearchParams(nextParams, { replace: true });
-            }}
-          >
-            <X className="mr-1 h-3.5 w-3.5" />
-            Ver todas as demandas
-          </Button>
-        </div>
-      )}
       <div className="flex gap-4 overflow-x-auto pb-4 mt-4">
         {visibleColumns.map((column) => {
           const columnRequests = getRequestsByStatus(column.id);

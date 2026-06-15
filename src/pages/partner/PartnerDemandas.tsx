@@ -36,7 +36,7 @@ interface TravelRequest {
 }
 
 export default function PartnerDemandas() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,15 +53,13 @@ export default function PartnerDemandas() {
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !authLoading,
   });
 
   const agencyId = agencyData?.agency_id;
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['partner-requests', agencyId, searchTerm],
-    enabled: !!agencyId,
-    refetchOnMount: 'always',
     queryFn: async () => {
       let query = supabase
         .from('travel_requests')
@@ -77,6 +75,8 @@ export default function PartnerDemandas() {
       if (error) throw error;
       return data as TravelRequest[];
     },
+    enabled: !!agencyId && !authLoading,
+    refetchOnMount: 'always',
   });
 
   const { data: proposals } = useQuery({
@@ -89,7 +89,8 @@ export default function PartnerDemandas() {
       if (error) throw error;
       return data;
     },
-    enabled: !!agencyId,
+    enabled: !!agencyId && !authLoading,
+    refetchOnMount: 'always',
   });
 
   const updateStatusMutation = useMutation({
@@ -203,7 +204,7 @@ export default function PartnerDemandas() {
         </div>
       </div>
 
-      {isLoading ? (
+      {authLoading || isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Skeleton key={i} className="h-48" />

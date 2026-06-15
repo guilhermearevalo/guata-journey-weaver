@@ -50,14 +50,27 @@ Admin → https://agenciaguata.com/admin/configuracoes → envie uma imagem.
 
 ## Reparo automático (script)
 
-Com token de conta Supabase:
+### Teste rápido (confirma se o problema é no Supabase)
+
+1. https://supabase.com/dashboard/project/ojpgobftvomqxyvrqxma/settings/api  
+2. Copie a **secret key** (`sb_secret_...` / service_role)  
+3. No terminal do projeto:
 
 ```powershell
-$env:SUPABASE_ACCESS_TOKEN = "sbp_..."   # https://supabase.com/dashboard/account/tokens
-node scripts/repair-storage.mjs
+$env:SUPABASE_SERVICE_ROLE_KEY = "sb_secret_..."
+node scripts/test-storage-upload.mjs
 ```
 
-O script apaga buckets via **Storage API**, recria `site-assets`, aplica RLS e testa upload.
+- **Se falhar** com o mesmo erro → schema interno quebrado; só o **Supabase Support** repara. Rode `docs/repair_storage_diagnostic.sql` e abra ticket.  
+- **Se passar** → rode `docs/ensure_site_assets_storage.sql` e teste no admin.
+
+### Reparo completo
+
+```powershell
+$env:SUPABASE_SERVICE_ROLE_KEY = "sb_secret_..."
+node scripts/repair-storage.mjs
+# Depois: docs/ensure_site_assets_storage.sql no SQL Editor
+```
 
 ---
 

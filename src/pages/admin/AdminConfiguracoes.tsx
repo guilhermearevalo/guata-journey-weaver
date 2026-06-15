@@ -196,25 +196,21 @@ const AdminConfiguracoes = () => {
           )}
 
           <div className="flex flex-wrap gap-3">
-            {isStorageUploadEnabled && (
-              <>
-                <Label
-                  htmlFor="hero-upload"
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
-                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                  {uploading ? 'Enviando...' : 'Adicionar Imagem ou Vídeo'}
-                </Label>
-                <Input
-                  id="hero-upload"
-                  type="file"
-                  accept="image/*,video/mp4,video/webm"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
-                />
-              </>
-            )}
+            <Label
+              htmlFor="hero-upload"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {uploading ? 'Enviando...' : 'Adicionar Imagem ou Vídeo'}
+            </Label>
+            <Input
+              id="hero-upload"
+              type="file"
+              accept="image/*,video/mp4,video/webm"
+              className="hidden"
+              onChange={handleFileUpload}
+              disabled={uploading}
+            />
             <Button variant="outline" size="sm" onClick={resetToDefault}>
               <Trash2 className="mr-2 h-4 w-4" />
               Restaurar Padrão
@@ -232,9 +228,7 @@ const AdminConfiguracoes = () => {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            {isStorageUploadEnabled
-              ? 'Imagens: JPG, PNG, WEBP. Vídeos: MP4, WEBM (máx. 30MB). Ou use Adicionar por URL.'
-              : storageUploadDisabledMessage}
+            Imagens: JPG, PNG, WEBP. Vídeos: MP4, WEBM (máx. 30MB). Ou use Adicionar por URL.
           </p>
         </CardContent>
       </Card>
@@ -588,28 +582,26 @@ function CadasturConfigCard() {
             {certificateImageUrl && (
               <img src={certificateImageUrl} alt="Certificado" className="h-20 w-auto rounded-md border object-contain" />
             )}
-            {isStorageUploadEnabled && (
-              <div>
-                <Label
-                  htmlFor="cert-upload"
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
-                  {uploadingCert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                  {certificateImageUrl ? 'Substituir' : 'Enviar Imagem'}
-                </Label>
-                <Input
-                  id="cert-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleUpload(e, setCertificateImageUrl, setUploadingCert, 'cadastur-cert')}
-                  disabled={uploadingCert}
-                />
-              </div>
-            )}
+            <div>
+              <Label
+                htmlFor="cert-upload"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                {uploadingCert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {certificateImageUrl ? 'Substituir' : 'Enviar Imagem'}
+              </Label>
+              <Input
+                id="cert-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleUpload(e, setCertificateImageUrl, setUploadingCert, 'cadastur-cert')}
+                disabled={uploadingCert}
+              />
+            </div>
           </div>
           <Input
-            placeholder="URL da imagem (https://...) — ex: https://www.agenciaguata.com/logo-guata.png"
+            placeholder="ou cole a URL da imagem (https://...)"
             value={certificateImageUrl}
             onChange={(e) => setCertificateImageUrl(e.target.value)}
           />
@@ -622,35 +614,31 @@ function CadasturConfigCard() {
             {agencyLogoUrl && (
               <img src={agencyLogoUrl} alt="Logo" className="h-20 w-auto rounded-md border object-contain" />
             )}
-            {isStorageUploadEnabled && (
-              <div>
-                <Label
-                  htmlFor="logo-upload"
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
-                  {uploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                  {agencyLogoUrl ? 'Substituir' : 'Enviar Logo'}
-                </Label>
-                <Input
-                  id="logo-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleUpload(e, setAgencyLogoUrl, setUploadingLogo, 'agency-logo')}
-                  disabled={uploadingLogo}
-                />
-              </div>
-            )}
+            <div>
+              <Label
+                htmlFor="logo-upload"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                {uploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {agencyLogoUrl ? 'Substituir' : 'Enviar Logo'}
+              </Label>
+              <Input
+                id="logo-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleUpload(e, setAgencyLogoUrl, setUploadingLogo, 'agency-logo')}
+                disabled={uploadingLogo}
+              />
+            </div>
           </div>
           <Input
-            placeholder="URL da logo (https://...) — ex: https://www.agenciaguata.com/logo-guata.png"
+            placeholder="ou cole a URL da logo (https://...)"
             value={agencyLogoUrl}
             onChange={(e) => setAgencyLogoUrl(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            {isStorageUploadEnabled
-              ? 'A logo será exibida ao lado do certificado na página "Sobre Nós".'
-              : storageUploadDisabledMessage}
+            A logo será exibida ao lado do certificado na página &quot;Sobre Nós&quot;. Se o upload falhar, cole a URL acima.
           </p>
         </div>
 

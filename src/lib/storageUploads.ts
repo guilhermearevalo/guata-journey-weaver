@@ -1,13 +1,11 @@
 /**
- * Supabase Storage uploads.
- *
- * Uploads are enabled by default. They only get disabled if the env var is
- * explicitly set to "false"/"0" (legacy workaround from when the old project's
- * Storage was broken). The current Lovable Cloud project has working buckets,
- * so uploads work for authenticated staff users.
+ * Supabase Storage uploads — ligado por padrão.
+ * Só desativa com VITE_STORAGE_UPLOADS=false (emergência).
+ * Projeto Guatá: ojpgobftvomqxyvrqxma
  */
 function parseStorageUploadEnabled(raw: string | undefined): boolean {
-  const normalized = raw?.trim().toLowerCase();
+  if (raw === undefined || raw === '') return true;
+  const normalized = raw.trim().toLowerCase();
   return normalized !== 'false' && normalized !== '0';
 }
 
