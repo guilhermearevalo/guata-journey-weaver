@@ -3,6 +3,7 @@
 interface ImportMetaEnv {
   readonly VITE_ONER_STORE_URL?: string;
   readonly VITE_SITE_URL?: string;
+  readonly VITE_STORAGE_UPLOADS?: string;
 }
 
 declare namespace JSX {
