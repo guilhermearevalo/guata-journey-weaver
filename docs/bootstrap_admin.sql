@@ -41,17 +41,17 @@ FROM auth.users
 WHERE email = 'guilhermearevalo27@gmail.com'
 ON CONFLICT (user_id) DO NOTHING;
 
--- 2) Cria/garante o papel admin
+-- 2) Garante o papel admin (sem duplicar)
 INSERT INTO public.user_roles (user_id, role)
 SELECT id, 'admin'::public.app_role
 FROM auth.users
 WHERE email = 'guilhermearevalo27@gmail.com'
 ON CONFLICT (user_id, role) DO NOTHING;
 
--- 3) Caso já exista uma linha de role (ex.: 'client'), promove para admin
-UPDATE public.user_roles
-SET role = 'admin'::public.app_role
-WHERE user_id = (SELECT id FROM auth.users WHERE email = 'guilhermearevalo27@gmail.com');
+-- 3) Remove outros papéis (ex.: client) — evita conflito ao promover
+DELETE FROM public.user_roles
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'guilhermearevalo27@gmail.com')
+  AND role <> 'admin'::public.app_role;
 
 -- 4) (Opcional) Recria/atualiza os papéis das contas de demonstração
 --    Mantém o fluxo "Login de Demonstração" funcionando.
@@ -64,3 +64,4 @@ SELECT public.update_demo_roles();
 -- FROM auth.users u
 -- JOIN public.user_roles r ON r.user_id = u.id
 -- WHERE u.email = 'guilhermearevalo27@gmail.com';
+-- (deve retornar 1 linha: role = admin)

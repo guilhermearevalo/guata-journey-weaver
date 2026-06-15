@@ -433,19 +433,34 @@ function CadasturConfigCard() {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast({ title: 'Sessão expirada', description: 'Faça login novamente para enviar arquivos.', variant: 'destructive' });
+      return;
+    }
+
     setLoading(true);
     try {
       const ext = file.name.split('.').pop();
       const fileName = `${prefix}-${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('site-assets')
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, file, { upsert: true, contentType: file.type || undefined });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(fileName);
       setUrl(urlData.publicUrl);
       toast({ title: 'Imagem enviada!' });
-    } catch {
-      toast({ title: 'Erro no upload', variant: 'destructive' });
+    } catch (err) {
+      const supa = err as { message?: string; statusCode?: string };
+      let message = supa.message || 'Erro desconhecido.';
+      if (message.includes('row-level security') || supa.statusCode === '403') {
+        message = 'Sem permissão. Confirme que seu usuário tem papel admin no Supabase.';
+      } else if (message.includes('Bucket not found')) {
+        message = 'Bucket site-assets não existe. Rode docs/ensure_site_assets_storage.sql no Supabase.';
+      }
+      console.error('Erro no upload Cadastur:', err);
+      toast({ title: 'Erro no upload', description: message, variant: 'destructive' });
     } finally {
       setLoading(false);
       e.target.value = '';
