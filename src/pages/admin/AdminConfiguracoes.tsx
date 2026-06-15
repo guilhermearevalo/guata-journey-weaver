@@ -476,21 +476,6 @@ function CadasturConfigCard() {
     if (!file) return;
 
     if (!isStorageUploadEnabled) {
-      // #region agent log
-      fetch('http://127.0.0.1:7449/ingest/b3289cc1-0659-4ca8-9fb9-988f3eaec03b', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '0c8053' },
-        body: JSON.stringify({
-          sessionId: '0c8053',
-          location: 'AdminConfiguracoes.tsx:handleUpload:blocked',
-          message: 'upload blocked by flag',
-          data: { prefix, fileName: file.name },
-          timestamp: Date.now(),
-          hypothesisId: 'H4',
-          runId: 'post-fix',
-        }),
-      }).catch(() => {});
-      // #endregion
       toast({ title: 'Use URL', description: storageUploadDisabledMessage, variant: 'destructive' });
       e.target.value = '';
       return;
