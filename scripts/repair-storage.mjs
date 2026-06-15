@@ -1,7 +1,11 @@
 /**
- * Repara Storage Guatá: remove buckets criados via SQL e recria pela API.
+ * Repara Storage Guatá: remove buckets via API e recria site-assets.
  *
- * Uso:
+ * Opção A — só Storage (service role do dashboard):
+ *   $env:SUPABASE_SERVICE_ROLE_KEY = "sb_secret_..."
+ *   node scripts/repair-storage.mjs
+ *
+ * Opção B — Storage + RLS via SQL (token de conta):
  *   $env:SUPABASE_ACCESS_TOKEN = "sbp_..."
  *   node scripts/repair-storage.mjs
  */
@@ -10,18 +14,24 @@ const PROJECT_REF = 'ojpgobftvomqxyvrqxma';
 const SUPABASE_URL = `https://${PROJECT_REF}.supabase.co`;
 const MGMT = `https://api.supabase.com/v1/projects/${PROJECT_REF}`;
 
-const token = process.env.SUPABASE_ACCESS_TOKEN;
-if (!token) {
-  console.error('Defina SUPABASE_ACCESS_TOKEN (https://supabase.com/dashboard/account/tokens)');
+const token = process.env.SUPABASE_ACCESS_TOKEN?.trim();
+const serviceKeyEnv = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+if (!token && !serviceKeyEnv) {
+  console.error('Defina SUPABASE_SERVICE_ROLE_KEY (Settings → API) ou SUPABASE_ACCESS_TOKEN');
   process.exit(1);
 }
 
-const mgmtHeaders = {
-  Authorization: `Bearer ${token}`,
-  'Content-Type': 'application/json',
-};
+const mgmtHeaders = token
+  ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+  : null;
 
 async function dbQuery(sql, readOnly = false) {
+  if (!mgmtHeaders) {
+    console.log('(Pule SQL — defina SUPABASE_ACCESS_TOKEN para aplicar RLS automaticamente)');
+    console.log('Rode manualmente: docs/ensure_site_assets_storage.sql');
+    return null;
+  }
   const res = await fetch(`${MGMT}/database/query${readOnly ? '/read-only' : ''}`, {
     method: 'POST',
     headers: mgmtHeaders,
@@ -33,6 +43,7 @@ async function dbQuery(sql, readOnly = false) {
 }
 
 async function getServiceRoleKey() {
+  if (serviceKeyEnv) return serviceKeyEnv;
   const res = await fetch(`${MGMT}/api-keys?reveal=true`, { headers: mgmtHeaders });
   if (!res.ok) throw new Error(`api-keys failed (${res.status}): ${await res.text()}`);
   const keys = await res.json();
@@ -58,23 +69,24 @@ async function storageRequest(serviceKey, method, path, body) {
 }
 
 async function main() {
-  console.log('=== Diagnóstico Storage ===');
-  const migrations = await dbQuery(
-    'SELECT id, name, executed_at FROM storage.migrations ORDER BY id',
-    true
-  );
-  console.log('Migrations:', JSON.stringify(migrations, null, 2));
+  if (token && mgmtHeaders) {
+    console.log('=== Diagnóstico Storage ===');
+    try {
+      const migrations = await dbQuery(
+        'SELECT id, name, executed_at FROM storage.migrations ORDER BY id',
+        true
+      );
+      console.log('Migrations:', JSON.stringify(migrations, null, 2));
 
-  const columns = await dbQuery(
-    `SELECT column_name FROM information_schema.columns
-     WHERE table_schema = 'storage' AND table_name = 'objects'
-     ORDER BY ordinal_position`,
-    true
-  );
-  console.log('objects columns:', columns?.map((r) => r.column_name).join(', '));
-
-  const buckets = await dbQuery('SELECT id, name, public, created_at FROM storage.buckets ORDER BY created_at', true);
-  console.log('Buckets atuais:', JSON.stringify(buckets, null, 2));
+      const buckets = await dbQuery(
+        'SELECT id, name, public, created_at FROM storage.buckets ORDER BY created_at',
+        true
+      );
+      console.log('Buckets atuais:', JSON.stringify(buckets, null, 2));
+    } catch (e) {
+      console.warn('Diagnóstico SQL indisponível:', e.message);
+    }
+  }
 
   const serviceKey = await getServiceRoleKey();
 
