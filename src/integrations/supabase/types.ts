@@ -970,6 +970,16 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      partner_insert_external_sale: {
+        Args: {
+          _client_name?: string
+          _destination?: string
+          _gross_amount: number
+          _notes?: string
+          _sale_date?: string
+        }
+        Returns: string
+      }
       proposal_is_shared: { Args: { _proposal_id: string }; Returns: boolean }
       update_commission_note: {
         Args: { _notes: string; _payment_id: string }
