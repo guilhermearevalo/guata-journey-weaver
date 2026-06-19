@@ -9,18 +9,7 @@ import { ImagePlus, X, Upload, Loader2, Crop } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ImageCropper from './ImageCropper';
-
-interface Activity {
-  name: string;
-  description: string;
-  category: string;
-  estimated_cost: number;
-  time_slot: string;
-  is_suggestion?: boolean;
-  image_url?: string;
-  image_position?: string;
-  maps_url?: string;
-}
+import { type Activity, MAX_ACTIVITY_IMAGES, normalizeActivityImages, getActivityImages } from '@/lib/itinerary';
 
 const FOCUS_POINTS: { label: string; value: string }[] = [
   { label: '↖', value: 'left top' },
@@ -64,14 +53,15 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
   const [category, setCategory] = useState('cultura');
   const [timeSlot, setTimeSlot] = useState('manhã');
   const [estimatedCost, setEstimatedCost] = useState('0');
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [imagePosition, setImagePosition] = useState('center center');
   const [mapsUrl, setMapsUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropSource, setCropSource] = useState('');
+  const [cropTargetIndex, setCropTargetIndex] = useState<number | null>(null);
 
-  const uploadBlob = async (blob: Blob) => {
+  const uploadBlob = async (blob: Blob, replaceIndex?: number) => {
     setUploading(true);
     try {
       const fileName = `activity-${Date.now()}.jpg`;
@@ -80,8 +70,15 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
         .upload(fileName, blob, { upsert: true, contentType: 'image/jpeg' });
       if (error) throw error;
       const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
-      setImageUrl(data.publicUrl);
-      setImagePosition('center center');
+      setImageUrls(prev => {
+        if (replaceIndex != null && replaceIndex >= 0 && replaceIndex < prev.length) {
+          const next = [...prev];
+          next[replaceIndex] = data.publicUrl;
+          return next;
+        }
+        if (prev.length >= MAX_ACTIVITY_IMAGES) return prev;
+        return [...prev, data.publicUrl];
+      });
       toast({ title: 'Imagem enviada!' });
     } catch {
       toast({ title: 'Erro no upload', variant: 'destructive' });
@@ -90,9 +87,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const uploadFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       toast({ title: 'Selecione uma imagem', variant: 'destructive' });
       return;
@@ -101,20 +96,34 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       toast({ title: 'Imagem muito grande', description: 'Máximo 5MB.', variant: 'destructive' });
       return;
     }
-    // Abre o editor de recorte com a imagem local antes de enviar
+    if (imageUrls.length >= MAX_ACTIVITY_IMAGES) {
+      toast({ title: 'Limite de fotos', description: `Máximo ${MAX_ACTIVITY_IMAGES} fotos por atividade.`, variant: 'destructive' });
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       setCropSource(reader.result as string);
+      setCropTargetIndex(null);
       setCropperOpen(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) void uploadFile(file);
     e.target.value = '';
   };
 
-  const openCropForExisting = () => {
-    if (!imageUrl) return;
-    setCropSource(imageUrl);
+  const openCropForIndex = (index: number) => {
+    if (!imageUrls[index]) return;
+    setCropSource(imageUrls[index]);
+    setCropTargetIndex(index);
     setCropperOpen(true);
+  };
+
+  const removeImage = (index: number) => {
+    setImageUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   useEffect(() => {
@@ -124,7 +133,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       setCategory(initialData.category);
       setTimeSlot(initialData.time_slot);
       setEstimatedCost(String(initialData.estimated_cost || 0));
-      setImageUrl(initialData.image_url || '');
+      setImageUrls(getActivityImages(initialData));
       setImagePosition(initialData.image_position || 'center center');
       setMapsUrl(initialData.maps_url || '');
     } else {
@@ -133,7 +142,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
       setCategory('cultura');
       setTimeSlot('manhã');
       setEstimatedCost('0');
-      setImageUrl('');
+      setImageUrls([]);
       setImagePosition('center center');
       setMapsUrl('');
     }
@@ -141,18 +150,26 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
 
   const handleSave = () => {
     if (!name.trim()) return;
-    onSave({
+    const base: Activity = {
       name: name.trim(),
       description: description.trim(),
       category,
       time_slot: timeSlot,
       estimated_cost: parseFloat(estimatedCost) || 0,
       is_suggestion: false,
-      image_url: imageUrl.trim() || undefined,
-      image_position: imageUrl.trim() ? imagePosition : undefined,
       maps_url: mapsUrl.trim() || undefined,
-    });
+    };
+    onSave(normalizeActivityImages({
+      ...base,
+      image_urls: imageUrls.length > 0 ? imageUrls : undefined,
+      image_position: imageUrls.length > 0 ? imagePosition : undefined,
+    }));
     onOpenChange(false);
+  };
+
+  const handleCropComplete = (blob: Blob) => {
+    void uploadBlob(blob, cropTargetIndex ?? undefined);
+    setCropTargetIndex(null);
   };
 
   return (
@@ -168,7 +185,7 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
           </div>
           <div className="space-y-2">
             <Label htmlFor="act-desc">Descrição</Label>
-            <Textarea id="act-desc" value={description} onChange={e => setDescription(e.target.value)} placeholder="Detalhes da atividade, recomendações, horários e observações para o cliente..." rows={4} />
+            <Textarea id="act-desc" value={description} onChange={e => setDescription(e.target.value)} placeholder="Detalhes da atividade..." rows={4} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -196,56 +213,45 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
           </div>
           <div className="space-y-2">
             <Label htmlFor="act-maps">Rota no Google Maps</Label>
-            <Input
-              id="act-maps"
-              value={mapsUrl}
-              onChange={e => setMapsUrl(e.target.value)}
-              placeholder="https://maps.google.com/..."
-            />
-            <p className="text-xs text-muted-foreground">Cole o link da localização ou rota para aparecer no roteiro do cliente.</p>
+            <Input id="act-maps" value={mapsUrl} onChange={e => setMapsUrl(e.target.value)} placeholder="https://maps.google.com/..." />
           </div>
-          {/* Image */}
+
           <div className="space-y-2">
-            <Label htmlFor="act-image">Imagem da atividade</Label>
+            <Label>Fotos da atividade ({imageUrls.length}/{MAX_ACTIVITY_IMAGES})</Label>
             <div className="flex flex-wrap gap-2">
               <Label
                 htmlFor="act-image-upload"
                 className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm font-medium hover:bg-secondary/80"
               >
                 {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                {uploading ? 'Enviando…' : 'Enviar imagem'}
+                Adicionar foto
               </Label>
-              <Input id="act-image-upload" type="file" accept="image/*" className="hidden" onChange={handleFileSelect} disabled={uploading} />
-              {imageUrl && (
-                <>
-                  <Button type="button" variant="outline" size="sm" onClick={openCropForExisting} className="gap-2">
-                    <Crop className="h-4 w-4" /> Cortar / enquadrar
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => setImageUrl('')} className="shrink-0">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
+              <Input id="act-image-upload" type="file" accept="image/*" className="hidden" onChange={handleFileSelect} disabled={uploading || imageUrls.length >= MAX_ACTIVITY_IMAGES} />
             </div>
-            <Input
-              id="act-image"
-              value={imageUrl}
-              onChange={e => setImageUrl(e.target.value)}
-              placeholder="ou cole uma URL: https://..."
-            />
-            {imageUrl ? (
-              <>
-                <div className="relative rounded-lg overflow-hidden border bg-muted h-32">
-                  <img
-                    src={imageUrl}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                    style={{ objectPosition: imagePosition }}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
+            {imageUrls.length > 0 ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-2">
+                  {imageUrls.map((url, i) => (
+                    <div key={`${url}-${i}`} className="group relative aspect-square overflow-hidden rounded-lg border bg-muted">
+                      <img src={url} alt="" className="h-full w-full object-cover" style={{ objectPosition: imagePosition }} />
+                      <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                        {i === 0 && (
+                          <Button type="button" variant="secondary" size="icon" className="h-7 w-7" onClick={() => openCropForIndex(0)}>
+                            <Crop className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <Button type="button" variant="destructive" size="icon" className="h-7 w-7" onClick={() => removeImage(i)}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      {i === 0 && (
+                        <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[9px] font-semibold text-primary-foreground">Capa</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
                 <div className="space-y-1.5">
-                  <p className="text-xs text-muted-foreground">Ajustar foco da imagem (parte que fica visível)</p>
+                  <p className="text-xs text-muted-foreground">Foco da foto de capa</p>
                   <div className="grid w-24 grid-cols-3 gap-1">
                     {FOCUS_POINTS.map((fp) => (
                       <button
@@ -263,20 +269,15 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
                     ))}
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <ImagePlus className="h-3 w-3" /> Envie uma foto ou cole uma URL para ilustrar a atividade
+                <ImagePlus className="h-3 w-3" /> Adicione até {MAX_ACTIVITY_IMAGES} fotos para o carrossel no roteiro do cliente
               </p>
             )}
           </div>
         </div>
-        <ImageCropper
-          open={cropperOpen}
-          onOpenChange={setCropperOpen}
-          image={cropSource}
-          onCropComplete={uploadBlob}
-        />
+        <ImageCropper open={cropperOpen} onOpenChange={setCropperOpen} image={cropSource} onCropComplete={handleCropComplete} />
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSave} disabled={!name.trim()}>Salvar</Button>
@@ -285,3 +286,5 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
     </Dialog>
   );
 }
+
+export type { Activity };

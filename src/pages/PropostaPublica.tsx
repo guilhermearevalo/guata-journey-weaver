@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Calendar, Users, CreditCard, CheckCircle, Route } from 'lucide-react';
+import Seo from '@/components/seo/Seo';
 
 export default function PropostaPublica() {
   const { token } = useParams<{ token: string }>();
@@ -73,6 +74,14 @@ export default function PropostaPublica() {
     proposal.total_price > 0;
 
   return (
+    <>
+      <Seo
+        title={request?.client_name ? `Proposta — ${request.client_name}` : `Proposta — ${proposal.title}`}
+        description={`Proposta de viagem${request?.destination ? ` para ${request.destination}` : ''}.`}
+        path={`/proposta/${token}`}
+        rawTitle
+        noindex
+      />
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         <div>
@@ -135,13 +144,16 @@ export default function PropostaPublica() {
         )}
 
         {itinerary.length > 0 && (
-          <Card>
-            <CardContent className="flex items-center justify-between py-4">
-              <div className="flex items-center gap-2">
-                <Route className="h-5 w-5 text-primary" />
-                <span className="font-medium">Roteiro dia a dia disponível</span>
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <Route className="h-6 w-6 text-primary shrink-0" />
+                <div>
+                  <span className="font-display font-semibold">Roteiro interativo disponível</span>
+                  <p className="text-sm text-muted-foreground">Voos, hospedagens e experiências dia a dia</p>
+                </div>
               </div>
-              <Button variant="outline" asChild>
+              <Button asChild className="shrink-0">
                 <Link to={`/roteiro/${token}`}>Ver Roteiro Completo</Link>
               </Button>
             </CardContent>
@@ -169,5 +181,6 @@ export default function PropostaPublica() {
         </div>
       </div>
     </div>
+    </>
   );
 }

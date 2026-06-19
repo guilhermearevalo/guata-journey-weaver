@@ -11,11 +11,14 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route, Share2, Check, Copy, Lock } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route, Share2, Check, Lock, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
+import {
+  buildShareUrl, buildProposalWhatsAppMessage, copyShareLink, openWhatsAppShare, ensureShareToken,
+} from '@/lib/share-proposal';
 
 export default function AdminProposta() {
   const { id: requestId } = useParams<{ id: string }>();
@@ -133,23 +136,46 @@ export default function AdminProposta() {
     if (!existingProposal) return;
     setShareLoading(true);
     try {
-      let token = existingProposal.share_token as string | null;
-      if (!token) {
-        token = crypto.randomUUID();
-        const { error } = await supabase
-          .from('proposals')
-          .update({ share_token: token } as any)
-          .eq('id', existingProposal.id);
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['admin-proposal', requestId] });
-      }
-      const url = `${window.location.origin}/proposta/${token}`;
-      await navigator.clipboard.writeText(url);
+      const token = await ensureShareToken(
+        existingProposal.id,
+        existingProposal.share_token as string | null,
+        async (newToken) => {
+          const { error } = await supabase.from('proposals').update({ share_token: newToken } as any).eq('id', existingProposal.id);
+          if (error) throw error;
+          queryClient.invalidateQueries({ queryKey: ['admin-proposal', requestId] });
+        },
+      );
+      const url = buildShareUrl('proposta', token);
+      await copyShareLink(url);
       setShareCopied(true);
       toast({ title: 'Link copiado!', description: 'Envie por WhatsApp, email ou redes sociais.' });
       setTimeout(() => setShareCopied(false), 3000);
     } catch {
       toast({ title: 'Erro ao gerar link', variant: 'destructive' });
+    } finally { setShareLoading(false); }
+  };
+
+  const handleShareProposalWhatsApp = async () => {
+    if (!existingProposal || !request) return;
+    setShareLoading(true);
+    try {
+      const token = await ensureShareToken(
+        existingProposal.id,
+        existingProposal.share_token as string | null,
+        async (newToken) => {
+          const { error } = await supabase.from('proposals').update({ share_token: newToken } as any).eq('id', existingProposal.id);
+          if (error) throw error;
+          queryClient.invalidateQueries({ queryKey: ['admin-proposal', requestId] });
+        },
+      );
+      const url = buildShareUrl('proposta', token);
+      openWhatsAppShare(buildProposalWhatsAppMessage({
+        clientName: request.client_name,
+        destination: request.destination,
+        url,
+      }));
+    } catch {
+      toast({ title: 'Erro ao compartilhar', variant: 'destructive' });
     } finally { setShareLoading(false); }
   };
 
@@ -307,7 +333,10 @@ export default function AdminProposta() {
                 </Button>
                 <Button variant="outline" onClick={handleShareProposal} disabled={shareLoading}>
                   {shareCopied ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
-                  {shareCopied ? 'Link Copiado!' : 'Compartilhar Proposta'}
+                  {shareCopied ? 'Link Copiado!' : 'Copiar link'}
+                </Button>
+                <Button variant="outline" onClick={handleShareProposalWhatsApp} disabled={shareLoading}>
+                  <MessageCircle className="mr-2 h-4 w-4" />WhatsApp
                 </Button>
               </>
             )}

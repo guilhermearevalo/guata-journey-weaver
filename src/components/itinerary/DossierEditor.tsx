@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Plane, Hotel, Car, FileText, Luggage, ShieldCheck, Banknote, Image as ImageIcon, Upload, Loader2, X } from 'lucide-react';
 import type { Dossier } from '@/lib/dossier';
+import { getAccommodationImages, setAccommodationImages } from '@/lib/dossier';
+import { MAX_ACCOMMODATION_IMAGES } from '@/lib/itinerary';
 
 interface DossierEditorProps {
   dossier: Dossier;
@@ -49,6 +51,35 @@ export default function DossierEditor({ dossier, onChange }: DossierEditorProps)
     } finally {
       setUploadingKey(null);
     }
+  };
+
+  const uploadAccommodationImage = async (file: File) => {
+    if (!file.type.startsWith('image/')) { toast({ title: 'Selecione uma imagem', variant: 'destructive' }); return; }
+    if (file.size > 5 * 1024 * 1024) { toast({ title: 'Imagem muito grande', description: 'Máximo 5MB.', variant: 'destructive' }); return; }
+    const current = getAccommodationImages(dossier);
+    if (current.length >= MAX_ACCOMMODATION_IMAGES) {
+      toast({ title: 'Limite de fotos', description: `Máximo ${MAX_ACCOMMODATION_IMAGES} fotos.`, variant: 'destructive' });
+      return;
+    }
+    setUploadingKey('accommodation_images');
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `accommodation-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+      onChange(setAccommodationImages(dossier, [...current, data.publicUrl]));
+      toast({ title: 'Foto adicionada!' });
+    } catch {
+      toast({ title: 'Erro no upload', variant: 'destructive' });
+    } finally {
+      setUploadingKey(null);
+    }
+  };
+
+  const removeAccommodationImage = (index: number) => {
+    const next = getAccommodationImages(dossier).filter((_, i) => i !== index);
+    onChange(setAccommodationImages(dossier, next));
   };
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,7 +186,51 @@ export default function DossierEditor({ dossier, onChange }: DossierEditorProps)
               </AccordionTrigger>
               <AccordionContent className="space-y-3 pt-2">
                 <Textarea value={(dossier[key] as string) || ''} onChange={(e) => set(key, e.target.value)} rows={4} placeholder={placeholder} />
-                <SectionImage imageKey={imageKey} prefix={String(key)} />
+                {key === 'accommodation' ? (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-xs">
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      Fotos do hotel ({getAccommodationImages(dossier).length}/{MAX_ACCOMMODATION_IMAGES})
+                    </Label>
+                    <div className="flex gap-2">
+                      <Label htmlFor="acc-gallery-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80">
+                        {uploadingKey === 'accommodation_images' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                        Adicionar foto
+                      </Label>
+                      <Input
+                        id="acc-gallery-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={uploadingKey === 'accommodation_images'}
+                        onChange={async (e) => { const f = e.target.files?.[0]; if (f) await uploadAccommodationImage(f); e.target.value = ''; }}
+                      />
+                    </div>
+                    {getAccommodationImages(dossier).length > 0 && (
+                      <div className="grid grid-cols-4 gap-2">
+                        {getAccommodationImages(dossier).map((url, i) => (
+                          <div key={url} className="group relative aspect-square overflow-hidden rounded-lg border bg-muted">
+                            <img src={url} alt="" className="h-full w-full object-cover" />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute right-1 top-1 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                              onClick={() => removeAccommodationImage(i)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                            {i === 0 && (
+                              <span className="absolute left-1 bottom-1 rounded bg-primary px-1 text-[8px] font-semibold text-primary-foreground">Capa</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <SectionImage imageKey={imageKey} prefix={String(key)} />
+                )}
               </AccordionContent>
             </AccordionItem>
           ))}

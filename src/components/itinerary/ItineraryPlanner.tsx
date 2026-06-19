@@ -22,29 +22,16 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, Printer, Share2, Check, Copy, Pencil, ChevronUp, ChevronDown, Save, FolderOpen, MapPin } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, Plus, Trash2, DollarSign, FileDown, Share2, Check, Copy, Pencil, ChevronUp, ChevronDown, Save, FolderOpen, MapPin, MessageCircle } from 'lucide-react';
 import ActivityFormDialog from './ActivityFormDialog';
 import TemplateDialog from './TemplateDialog';
 import TravelDocumentsVault, { TravelDocument } from './TravelDocumentsVault';
 import DossierEditor from './DossierEditor';
 import { parseDossier, type Dossier } from '@/lib/dossier';
-
-interface Activity {
-  name: string;
-  description: string;
-  category: string;
-  estimated_cost: number;
-  time_slot: string;
-  is_suggestion?: boolean;
-  image_url?: string;
-  image_position?: string;
-  maps_url?: string;
-}
-
-interface ItineraryDay {
-  day: number;
-  activities: Activity[];
-}
+import { type Activity, type ItineraryDay, getActivityImages } from '@/lib/itinerary';
+import {
+  buildShareUrl, buildItineraryWhatsAppMessage, copyShareLink, openWhatsAppShare, ensureShareToken,
+} from '@/lib/share-proposal';
 
 const categoryColors: Record<string, string> = {
   gastronomia: 'bg-orange-500/10 text-orange-600',
@@ -73,6 +60,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   const [generatingDay, setGeneratingDay] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [templateMode, setTemplateMode] = useState<'save' | 'load'>('save');
 
@@ -87,7 +75,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     queryFn: async () => {
       const { data, error } = await supabase
         .from('proposals')
-        .select('*, travel_requests!inner(destination, travel_dates, travelers_count, preferences)')
+        .select('*, travel_requests!inner(destination, travel_dates, travelers_count, preferences, client_name)')
         .eq('request_id', id!)
         .maybeSingle();
       if (error) throw error;
@@ -101,6 +89,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     travel_dates: { start?: string; end?: string } | null;
     travelers_count: number;
     preferences: Record<string, unknown> | null;
+    client_name?: string;
   } | null;
 
   const itinerary: ItineraryDay[] = Array.isArray(proposal?.itinerary)
@@ -271,18 +260,17 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     if (!proposal?.id) return;
     setSharing(true);
     try {
-      let token = proposal.share_token as string | null;
-      if (!token) {
-        token = crypto.randomUUID();
-        const { error } = await supabase
-          .from('proposals')
-          .update({ share_token: token } as any)
-          .eq('id', proposal.id);
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] });
-      }
-      const url = `${window.location.origin}/roteiro/${token}`;
-      await navigator.clipboard.writeText(url);
+      const token = await ensureShareToken(
+        proposal.id,
+        proposal.share_token as string | null,
+        async (newToken) => {
+          const { error } = await supabase.from('proposals').update({ share_token: newToken } as any).eq('id', proposal.id);
+          if (error) throw error;
+          queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] });
+        },
+      );
+      const url = buildShareUrl('roteiro', token);
+      await copyShareLink(url);
       setCopied(true);
       toast({ title: 'Link copiado!', description: 'Envie para quem quiser visualizar o roteiro.' });
       setTimeout(() => setCopied(false), 3000);
@@ -290,6 +278,70 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
       console.error(err);
       toast({ title: 'Erro ao gerar link', variant: 'destructive' });
     } finally { setSharing(false); }
+  };
+
+  const shareWhatsApp = async () => {
+    if (!proposal?.id) return;
+    setSharing(true);
+    try {
+      const token = await ensureShareToken(
+        proposal.id,
+        proposal.share_token as string | null,
+        async (newToken) => {
+          const { error } = await supabase.from('proposals').update({ share_token: newToken } as any).eq('id', proposal.id);
+          if (error) throw error;
+          queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] });
+        },
+      );
+      const url = buildShareUrl('roteiro', token);
+      const message = buildItineraryWhatsAppMessage({
+        clientName: request?.client_name,
+        destination: request?.destination,
+        url,
+      });
+      openWhatsAppShare(message);
+    } catch {
+      toast({ title: 'Erro ao compartilhar', variant: 'destructive' });
+    } finally { setSharing(false); }
+  };
+
+  const handleGeneratePdf = async () => {
+    if (!proposal) return;
+    setGeneratingPdf(true);
+    try {
+      let logoUrl: string | null = null;
+      let brandName = 'Guatá Viagens';
+      if (proposal.agency_id) {
+        const { data: agency } = await supabase
+          .from('partner_agencies')
+          .select('name, logo_url')
+          .eq('id', proposal.agency_id)
+          .maybeSingle();
+        if (agency) {
+          brandName = agency.name;
+          logoUrl = agency.logo_url;
+        }
+      }
+      const { generateItineraryPdf } = await import('@/lib/generate-itinerary-pdf');
+      await generateItineraryPdf({
+        title: proposal.title || 'Roteiro',
+        clientName: request?.client_name,
+        destination: request?.destination,
+        travelDates: request?.travel_dates,
+        travelersCount: request?.travelers_count,
+        brandName,
+        logoUrl,
+        coverImage: dossier.cover_image || logoUrl,
+        itinerary,
+        dossier,
+      });
+      toast({ title: 'PDF gerado!', description: 'O download deve iniciar automaticamente.' });
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Erro ao gerar PDF', variant: 'destructive' });
+    } finally {
+      setGeneratingPdf(false);
+    }
   };
 
   const deleteProposal = useMutation({
@@ -332,12 +384,16 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" className="text-base px-3 py-1"><DollarSign className="mr-1 h-4 w-4" />R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Badge>
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <Printer className="mr-2 h-4 w-4" />PDF
+          <Button variant="outline" size="sm" onClick={handleGeneratePdf} disabled={generatingPdf || itinerary.length === 0}>
+            {generatingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+            PDF do Roteiro
           </Button>
           <Button variant="outline" size="sm" onClick={generateShareLink} disabled={sharing || itinerary.length === 0}>
             {copied ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
-            {copied ? 'Copiado!' : 'Compartilhar'}
+            {copied ? 'Copiado!' : 'Copiar link'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={shareWhatsApp} disabled={sharing || itinerary.length === 0}>
+            <MessageCircle className="mr-2 h-4 w-4" />WhatsApp
           </Button>
           <Button variant="outline" size="sm" onClick={() => { setTemplateMode('load'); setTemplateDialogOpen(true); }}>
             <FolderOpen className="mr-2 h-4 w-4" />Templates
@@ -455,9 +511,9 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                                   {activity.is_suggestion && <Badge className="bg-primary/10 text-primary text-xs print:hidden"><Sparkles className="mr-1 h-3 w-3" />Sugestão IA</Badge>}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
-                                {activity.image_url && (
+                                {getActivityImages(activity)[0] && (
                                   <div className="mt-2 rounded-md overflow-hidden border h-24 w-40">
-                                    <img src={activity.image_url} alt={activity.name} className="w-full h-full object-cover" style={{ objectPosition: activity.image_position || 'center center' }} />
+                                    <img src={getActivityImages(activity)[0]} alt={activity.name} className="w-full h-full object-cover" style={{ objectPosition: activity.image_position || 'center center' }} />
                                   </div>
                                 )}
                                 {activity.maps_url && (

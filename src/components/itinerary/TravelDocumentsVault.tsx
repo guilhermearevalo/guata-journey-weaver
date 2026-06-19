@@ -67,7 +67,7 @@ export default function TravelDocumentsVault({ proposalId, requestId, documents,
   const [category, setCategory] = useState(mode === 'client' ? 'personal' : 'voucher');
   const [documentType, setDocumentType] = useState<'checklist' | 'vault'>('vault');
   const [notes, setNotes] = useState('');
-  const [visibleInPublic, setVisibleInPublic] = useState(mode !== 'client');
+  const [visibleInPublic, setVisibleInPublic] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
   const checklist = useMemo(() => documents.filter(doc => doc.document_type === 'checklist'), [documents]);
@@ -124,6 +124,20 @@ export default function TravelDocumentsVault({ proposalId, requestId, documents,
       if (error) throw error;
     },
     onSuccess: refresh,
+  });
+
+  const updateVisibility = useMutation({
+    mutationFn: async ({ id, visible }: { id: string; visible: boolean }) => {
+      const payload: Record<string, unknown> = { visible_in_public: visible };
+      if (visible) payload.status = 'sent';
+      const { error } = await supabase.from('travel_documents' as any).update(payload).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refresh();
+      toast({ title: 'Visibilidade atualizada' });
+    },
+    onError: () => toast({ title: 'Erro ao atualizar', variant: 'destructive' }),
   });
 
   const removeDocument = useMutation({
@@ -193,7 +207,7 @@ export default function TravelDocumentsVault({ proposalId, requestId, documents,
                 </div>
                 <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
                   <Checkbox checked={visibleInPublic} onCheckedChange={(checked) => setVisibleInPublic(Boolean(checked))} />
-                  Mostrar no link público do roteiro
+                  Enviar ao cliente (visível no link público)
                 </label>
               </div>
             )}
@@ -227,8 +241,24 @@ export default function TravelDocumentsVault({ proposalId, requestId, documents,
           <h3 className="flex items-center gap-2 text-sm font-semibold"><FileArchive className="h-4 w-4" />Cofre da viagem</h3>
           {vault.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum arquivo guardado ainda.</p> : vault.map(doc => (
             <div key={doc.id} className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center">
-              <div className="flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-medium">{doc.title}</p><Badge variant="secondary">{categories.find(c => c.value === doc.category)?.label || doc.category}</Badge><Badge variant="outline">{typeLabels[doc.document_type]}</Badge></div>{doc.notes && <p className="mt-1 text-xs text-muted-foreground">{doc.notes}</p>}</div>
-              <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium">{doc.title}</p>
+                  <Badge variant="secondary">{categories.find(c => c.value === doc.category)?.label || doc.category}</Badge>
+                  {doc.visible_in_public && <Badge className="bg-green-500/10 text-green-700">No link do cliente</Badge>}
+                </div>
+                {doc.notes && <p className="mt-1 text-xs text-muted-foreground">{doc.notes}</p>}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {mode === 'manage' && (
+                  <label className="flex items-center gap-2 text-xs">
+                    <Checkbox
+                      checked={doc.visible_in_public}
+                      onCheckedChange={(checked) => updateVisibility.mutate({ id: doc.id, visible: Boolean(checked) })}
+                    />
+                    Cliente vê
+                  </label>
+                )}
                 {(doc.file_path || doc.file_url) && <Button variant="outline" size="sm" onClick={() => openDocument(doc)}><Download className="mr-2 h-4 w-4" />Abrir</Button>}
                 {mode === 'manage' && <Button variant="ghost" size="icon" onClick={() => removeDocument.mutate(doc)}><Trash2 className="h-4 w-4" /></Button>}
               </div>

@@ -11,6 +11,7 @@ export interface Dossier {
   // Demais seções (texto livre)
   accommodation?: string;
   accommodation_image?: string;
+  accommodation_images?: string[];
   transfer?: string;
   transfer_image?: string;
   documentation?: string;
@@ -36,4 +37,29 @@ export function parseDossier(raw: unknown): Dossier {
 
 export function hasAnyFlight(d: Dossier): boolean {
   return Boolean(d.flight_outbound || d.flight_internal || d.flight_inbound);
+}
+
+/** Merge legacy single accommodation image with optional gallery. */
+export function getAccommodationImages(d: Dossier): string[] {
+  const fromArray = (d.accommodation_images ?? []).filter(Boolean);
+  if (fromArray.length > 0) return fromArray;
+  if (d.accommodation_image) return [d.accommodation_image];
+  return [];
+}
+
+export function setAccommodationImages(d: Dossier, images: string[]): Dossier {
+  const cleaned = images.filter(Boolean);
+  if (cleaned.length === 0) {
+    const { accommodation_image, accommodation_images, ...rest } = d;
+    return rest;
+  }
+  return {
+    ...d,
+    accommodation_image: cleaned[0],
+    accommodation_images: cleaned,
+  };
+}
+
+export function hasAccommodation(d: Dossier): boolean {
+  return Boolean(d.accommodation?.trim() || getAccommodationImages(d).length > 0);
 }

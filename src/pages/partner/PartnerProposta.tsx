@@ -11,10 +11,13 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route, Lock } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route, Lock, Share2, Check, MessageCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  buildShareUrl, buildProposalWhatsAppMessage, copyShareLink, openWhatsAppShare, ensureShareToken,
+} from '@/lib/share-proposal';
 
 export default function PartnerProposta() {
   const { id: requestId } = useParams<{ id: string }>();
@@ -30,6 +33,8 @@ export default function PartnerProposta() {
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [paymentEnabled, setPaymentEnabled] = useState(false);
   const [accessCode, setAccessCode] = useState('');
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   // Buscar agência do parceiro
   const { data: agencyData } = useQuery({
@@ -176,6 +181,50 @@ export default function PartnerProposta() {
     }
   };
 
+  const handleShareProposal = async () => {
+    if (!existingProposal) return;
+    setShareLoading(true);
+    try {
+      const token = await ensureShareToken(
+        existingProposal.id,
+        existingProposal.share_token as string | null,
+        async (newToken) => {
+          const { error } = await supabase.from('proposals').update({ share_token: newToken } as any).eq('id', existingProposal.id);
+          if (error) throw error;
+          queryClient.invalidateQueries({ queryKey: ['proposal', requestId, agencyData?.agency_id] });
+        },
+      );
+      await copyShareLink(buildShareUrl('proposta', token));
+      setShareCopied(true);
+      toast({ title: 'Link copiado!' });
+      setTimeout(() => setShareCopied(false), 3000);
+    } catch {
+      toast({ title: 'Erro ao gerar link', variant: 'destructive' });
+    } finally { setShareLoading(false); }
+  };
+
+  const handleShareWhatsApp = async () => {
+    if (!existingProposal || !request) return;
+    setShareLoading(true);
+    try {
+      const token = await ensureShareToken(
+        existingProposal.id,
+        existingProposal.share_token as string | null,
+        async (newToken) => {
+          const { error } = await supabase.from('proposals').update({ share_token: newToken } as any).eq('id', existingProposal.id);
+          if (error) throw error;
+        },
+      );
+      openWhatsAppShare(buildProposalWhatsAppMessage({
+        clientName: request.client_name,
+        destination: request.destination,
+        url: buildShareUrl('proposta', token),
+      }));
+    } catch {
+      toast({ title: 'Erro ao compartilhar', variant: 'destructive' });
+    } finally { setShareLoading(false); }
+  };
+
   const isLoading = requestLoading || proposalLoading;
 
   return (
@@ -304,7 +353,7 @@ export default function PartnerProposta() {
                   )}
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4">
+                <div className="flex flex-wrap justify-end gap-2 pt-4">
                   <Button
                     type="button"
                     variant="outline"
@@ -312,6 +361,17 @@ export default function PartnerProposta() {
                   >
                     Cancelar
                   </Button>
+                  {existingProposal && (
+                    <>
+                      <Button type="button" variant="outline" onClick={handleShareProposal} disabled={shareLoading}>
+                        {shareCopied ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
+                        Copiar link
+                      </Button>
+                      <Button type="button" variant="outline" onClick={handleShareWhatsApp} disabled={shareLoading}>
+                        <MessageCircle className="mr-2 h-4 w-4" />WhatsApp
+                      </Button>
+                    </>
+                  )}
                   <Button type="submit" disabled={saveMutation.isPending}>
                     {saveMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
