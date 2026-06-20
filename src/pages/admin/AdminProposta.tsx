@@ -20,6 +20,7 @@ import {
   buildShareUrl, buildProposalWhatsAppMessage, copyShareLink, openWhatsAppShare, ensureShareToken,
 } from '@/lib/share-proposal';
 import { fetchProposalByRequest } from '@/lib/fetchProposals';
+import { markSentOnShare, markInOperationOnPaid } from '@/lib/travelRequestStatus';
 
 export default function AdminProposta() {
   const { id: requestId } = useParams<{ id: string }>();
@@ -105,6 +106,7 @@ export default function AdminProposta() {
       } as any;
 
       const current = existingProposal ?? (await fetchProposalByRequest(requestId!));
+      const wasPaid = current?.payment_status === 'paid';
 
       if (current) {
         const { error } = await supabase.from('proposals').update(payload).eq('id', current.id);
@@ -112,13 +114,18 @@ export default function AdminProposta() {
       } else {
         const { error } = await supabase.from('proposals').insert(payload);
         if (error) throw error;
-        await supabase.from('travel_requests').update({ status: 'proposal_sent' }).eq('id', requestId!);
+      }
+
+      if (paymentStatus === 'paid' && !wasPaid && request) {
+        await markInOperationOnPaid(requestId!, request);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-proposal', requestId] });
       queryClient.invalidateQueries({ queryKey: ['proposal-exists', requestId] });
       queryClient.invalidateQueries({ queryKey: ['proposal-request-ids'] });
+      queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['travel-request', requestId] });
       toast({ title: 'Proposta salva com sucesso!' });
     },
     onError: () => {
@@ -127,6 +134,13 @@ export default function AdminProposta() {
   });
 
   const travelDates = request?.travel_dates as { start?: string; end?: string } | null;
+
+  const markProposalSentIfNeeded = async () => {
+    if (!requestId || !request) return;
+    await markSentOnShare(requestId, request);
+    queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+    queryClient.invalidateQueries({ queryKey: ['travel-request', requestId] });
+  };
 
   const handleShareProposal = async () => {
     if (!existingProposal) return;
@@ -142,6 +156,7 @@ export default function AdminProposta() {
         },
       );
       const url = buildShareUrl('proposta', token);
+      await markProposalSentIfNeeded();
       await copyShareLink(url);
       setShareCopied(true);
       toast({ title: 'Link copiado!', description: 'Envie por WhatsApp, email ou redes sociais.' });
@@ -165,6 +180,7 @@ export default function AdminProposta() {
         },
       );
       const url = buildShareUrl('proposta', token);
+      await markProposalSentIfNeeded();
       openWhatsAppShare(buildProposalWhatsAppMessage({
         clientName: request.client_name,
         destination: request.destination,
@@ -248,11 +264,17 @@ export default function AdminProposta() {
           <div className="space-y-2">
             <Label>Descrição</Label>
             <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} placeholder="Descreva os detalhes da proposta..." />
+            <p className="text-xs text-muted-foreground">
+              Usada na proposta pública e enviada à IA ao gerar o roteiro — descreva o pacote, hotel, regime e diferenciais.
+            </p>
           </div>
 
           <div className="space-y-2">
             <Label>Inclusões (uma por linha)</Label>
             <Textarea value={inclusions} onChange={e => setInclusions(e.target.value)} rows={4} placeholder="Hospedagem 4 noites&#10;Transfer aeroporto&#10;Passeio de barco" />
+            <p className="text-xs text-muted-foreground">
+              Cada linha vira um item na proposta e orienta a IA sobre o que já está contratado (não sugira o que já está incluso).
+            </p>
           </div>
 
           <div className="flex items-center justify-between rounded-lg border p-4">

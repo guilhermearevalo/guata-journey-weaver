@@ -26,3 +26,32 @@ export async function fetchTravelRequests(): Promise<TravelRequest[]> {
   const rpcError = rpc.status === 'fulfilled' ? rpc.value.error : rpc.reason;
   throw restError ?? rpcError ?? new Error('Erro ao carregar demandas');
 }
+
+export async function updateTravelRequestStatus(
+  id: string,
+  status: TravelRequest['status'],
+): Promise<void> {
+  try {
+    const { error } = await supabase.rpc(
+      'staff_update_travel_request_status' as never,
+      { p_id: id, p_status: status } as never,
+    );
+    if (!error) return;
+  } catch {
+    // fallback REST
+  }
+
+  const { error } = await supabase.from('travel_requests').update({ status }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateTravelRequestServiceType(
+  id: string,
+  serviceType: TravelRequest['service_type'],
+): Promise<void> {
+  const { error } = await supabase
+    .from('travel_requests')
+    .update({ service_type: serviceType })
+    .eq('id', id);
+  if (error) throw error;
+}

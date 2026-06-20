@@ -857,6 +857,7 @@ export type Database = {
           internal_notes: string | null
           preferences: Json | null
           special_requests: string | null
+          service_type: Database["public"]["Enums"]["service_type"]
           status: Database["public"]["Enums"]["request_status"]
           travel_dates: Json | null
           travelers_count: number | null
@@ -877,6 +878,7 @@ export type Database = {
           internal_notes?: string | null
           preferences?: Json | null
           special_requests?: string | null
+          service_type?: Database["public"]["Enums"]["service_type"]
           status?: Database["public"]["Enums"]["request_status"]
           travel_dates?: Json | null
           travelers_count?: number | null
@@ -897,6 +899,7 @@ export type Database = {
           internal_notes?: string | null
           preferences?: Json | null
           special_requests?: string | null
+          service_type?: Database["public"]["Enums"]["service_type"]
           status?: Database["public"]["Enums"]["request_status"]
           travel_dates?: Json | null
           travelers_count?: number | null
@@ -1003,6 +1006,7 @@ export type Database = {
         | "in_operation"
         | "completed"
         | "cancelled"
+      service_type: "consultancy" | "full_package"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1142,6 +1146,7 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      service_type: ["consultancy", "full_package"],
     },
   },
 } as const

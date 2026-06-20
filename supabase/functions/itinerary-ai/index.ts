@@ -7,12 +7,16 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const MODELS = [
-  Deno.env.get("GEMINI_MODEL"),
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-8b",
-].filter(Boolean) as string[];
+const DEFAULT_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-2.5-pro",
+];
+
+function resolveModels(): string[] {
+  const envModel = Deno.env.get("GEMINI_MODEL")?.trim();
+  return [...new Set([envModel, ...DEFAULT_MODELS].filter(Boolean))];
+}
 
 function jsonError(message: string, status = 500) {
   return new Response(JSON.stringify({ error: message }), {
@@ -75,7 +79,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { destination, days, preferences, existing_activities, day_number } = await req.json();
+    const { destination, days, preferences, existing_activities, day_number, context } = await req.json();
     const apiKey = Deno.env.get("GEMINI_API_KEY")?.trim();
     if (!apiKey) {
       return jsonError("GEMINI_API_KEY não configurada nos secrets da Edge Function.");
@@ -90,22 +94,41 @@ serve(async (req) => {
 
     const dayCount = Math.min(Math.max(1, Number(days) || 3), 21);
 
+    const ctx = context && typeof context === 'object' ? context as Record<string, unknown> : {};
+    const contextBlock = [
+      ctx.client_name ? `Cliente: ${ctx.client_name}` : '',
+      ctx.proposal_title ? `Pacote: ${ctx.proposal_title}` : '',
+      ctx.proposal_description ? `Descrição da proposta: ${ctx.proposal_description}` : '',
+      Array.isArray(ctx.inclusions) && ctx.inclusions.length
+        ? `Inclusões: ${(ctx.inclusions as string[]).join('; ')}`
+        : '',
+      ctx.budget_range ? `Orçamento: ${ctx.budget_range}` : '',
+      ctx.special_requests ? `Pedidos especiais: ${ctx.special_requests}` : '',
+      ctx.travelers_count ? `Viajantes: ${ctx.travelers_count}` : '',
+      ctx.travel_dates && typeof ctx.travel_dates === 'object'
+        ? `Datas: ${JSON.stringify(ctx.travel_dates)}`
+        : '',
+    ].filter(Boolean).join('\n');
+
     const systemPrompt = `Você é um planejador de roteiros de viagem no Brasil e no mundo.
 Responda APENAS com JSON válido: {"days":[{"day":1,"activities":[...]}]}
-Cada atividade: name, description, category (gastronomia|cultura|aventura|natureza|compras|transporte|hospedagem), estimated_cost (número BRL), time_slot (manhã|tarde|noite).`;
+Cada atividade: name, description, category (gastronomia|cultura|aventura|natureza|compras|transporte|hospedagem), estimated_cost (número BRL), time_slot (manhã|tarde|noite).
+Use o contexto da proposta e da demanda para alinhar sugestões ao pacote vendido.`;
+
+    const contextSection = contextBlock ? `\nContexto da proposta:\n${contextBlock}\n` : '';
 
     const userPrompt = day_number
       ? `Sugira 3-4 atividades para o Dia ${day_number} em ${destination}.
-Preferências: ${preferences || "nenhuma"}.
+Preferências: ${preferences || "nenhuma"}.${contextSection}
 Já planejado: ${JSON.stringify(existing_activities || [])}.
 Retorne só o dia ${day_number}.`
       : `Roteiro de ${dayCount} dia(s) para ${destination}.
-Preferências: ${preferences || "nenhuma"}.
+Preferências: ${preferences || "nenhuma"}.${contextSection}
 3-5 atividades por dia (manhã, tarde, noite).
 Já existente: ${JSON.stringify(existing_activities || [])}.`;
 
-    const uniqueModels = [...new Set(MODELS)];
-    let lastError = "Nenhum modelo Gemini respondeu.";
+    const uniqueModels = resolveModels();
+    const errors: string[] = [];
 
     for (const model of uniqueModels) {
       try {
@@ -114,12 +137,15 @@ Já existente: ${JSON.stringify(existing_activities || [])}.`;
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } catch (e) {
-        lastError = e instanceof Error ? e.message : String(e);
-        console.error("Gemini attempt failed:", lastError);
+        const msg = e instanceof Error ? e.message : String(e);
+        errors.push(msg);
+        console.error("Gemini attempt failed:", msg);
       }
     }
 
-    return jsonError(`Erro Gemini: ${lastError}`);
+    return jsonError(
+      `Erro Gemini (${errors.length} modelos): ${errors.join(" | ")}`,
+    );
   } catch (e) {
     console.error("itinerary-ai error:", e);
     return jsonError(e instanceof Error ? e.message : "Unknown error");

@@ -25,11 +25,9 @@ Ou no Dashboard: **Project Settings → Edge Functions → Secrets** → `GEMINI
 
 ### Modelo (opcional)
 
-Por padrão usa `gemini-1.5-flash`. Para trocar:
+Por padrão tenta: `gemini-2.5-flash` → `gemini-2.5-flash-lite` → `gemini-2.5-pro`.
 
-```powershell
-npx supabase secrets set GEMINI_MODEL=gemini-1.5-flash
-```
+Remova `GEMINI_MODEL` se apontar para modelos antigos (`gemini-2.0-*`, `gemini-1.5-*`).
 
 ## Testar
 

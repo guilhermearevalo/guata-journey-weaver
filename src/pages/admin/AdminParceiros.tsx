@@ -132,6 +132,43 @@ const AdminParceiros = () => {
     },
   });
 
+  const updateAgencyDetailsMutation = useMutation({
+    mutationFn: async ({
+      id,
+      commission_rate,
+      contact_phone,
+      responsible_name,
+      address,
+    }: {
+      id: string;
+      commission_rate: number;
+      contact_phone: string | null;
+      responsible_name: string | null;
+      address: string | null;
+    }) => {
+      const { error } = await supabase
+        .from('partner_agencies')
+        .update({
+          commission_rate,
+          contact_phone,
+          responsible_name,
+          address,
+        })
+        .eq('id', id);
+      if (error) throw error;
+      return { commission_rate, contact_phone, responsible_name, address };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['partner-agencies'] });
+      queryClient.invalidateQueries({ queryKey: ['all-agencies'] });
+      setSelectedAgency((agency) => (agency ? { ...agency, ...data } : agency));
+      toast({ title: 'Dados da agência salvos!' });
+    },
+    onError: () => {
+      toast({ title: 'Erro ao salvar dados', variant: 'destructive' });
+    },
+  });
+
   const updateBrandingMutation = useMutation({
     mutationFn: async ({ id, logo_url, cover_image_url }: { id: string; logo_url: string | null; cover_image_url: string | null }) => {
       const { error } = await supabase
@@ -444,11 +481,77 @@ const AdminParceiros = () => {
                   <p className="text-sm text-muted-foreground">CNPJ</p>
                   <p className="font-medium">{selectedAgency.cnpj || 'Não informado'}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Comissão</p>
-                  <p className="font-medium">{selectedAgency.commission_rate || 10}%</p>
-                </div>
               </div>
+
+              <form
+                className="rounded-lg border p-4 space-y-3"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const form = event.currentTarget;
+                  const commission = parseFloat(
+                    (form.elements.namedItem('commission_rate') as HTMLInputElement).value,
+                  );
+                  const phone = (form.elements.namedItem('contact_phone') as HTMLInputElement).value.trim();
+                  const responsible = (form.elements.namedItem('responsible_name') as HTMLInputElement).value.trim();
+                  const address = (form.elements.namedItem('address') as HTMLInputElement).value.trim();
+                  updateAgencyDetailsMutation.mutate({
+                    id: selectedAgency.id,
+                    commission_rate: Number.isFinite(commission) ? commission : 10,
+                    contact_phone: phone || null,
+                    responsible_name: responsible || null,
+                    address: address || null,
+                  });
+                }}
+              >
+                <p className="font-medium text-sm">Dados operacionais</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="commission_rate">Comissão Guatá (%)</Label>
+                    <Input
+                      id="commission_rate"
+                      name="commission_rate"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.5"
+                      defaultValue={selectedAgency.commission_rate ?? 10}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contact_phone">Telefone</Label>
+                    <Input
+                      id="contact_phone"
+                      name="contact_phone"
+                      defaultValue={selectedAgency.contact_phone || ''}
+                      placeholder="(00) 00000-0000"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="responsible_name">Responsável</Label>
+                    <Input
+                      id="responsible_name"
+                      name="responsible_name"
+                      defaultValue={selectedAgency.responsible_name || ''}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Endereço</Label>
+                    <Input
+                      id="address"
+                      name="address"
+                      defaultValue={selectedAgency.address || ''}
+                    />
+                  </div>
+                </div>
+                <Button type="submit" size="sm" disabled={updateAgencyDetailsMutation.isPending}>
+                  {updateAgencyDetailsMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Salvar dados
+                </Button>
+              </form>
 
               <div>
                 <p className="text-sm text-muted-foreground">Email</p>
@@ -459,32 +562,11 @@ const AdminParceiros = () => {
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground">Telefone</p>
-                <p className="font-medium flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  {selectedAgency.contact_phone || 'Não informado'}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-muted-foreground">Responsável</p>
-                <p className="font-medium">{selectedAgency.responsible_name || 'Não informado'}</p>
-              </div>
-
-              <div>
                 <p className="text-sm text-muted-foreground">Website</p>
                 <p className="font-medium">
                   {selectedAgency.website ? (
                     <a href={selectedAgency.website} target="_blank" rel="noopener noreferrer" className="text-primary underline">{selectedAgency.website}</a>
                   ) : 'Não informado'}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-muted-foreground">Endereço</p>
-                <p className="font-medium flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  {selectedAgency.address || 'Não informado'}
                 </p>
               </div>
 

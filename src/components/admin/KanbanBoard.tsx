@@ -14,8 +14,9 @@ import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { fetchTravelRequests } from '@/lib/fetchTravelRequests';
+import { fetchTravelRequests, updateTravelRequestStatus } from '@/lib/fetchTravelRequests';
 import { fetchProposalRequestIds } from '@/lib/fetchProposals';
+import { getVisibleKanbanStatuses, getServiceType, type ServiceType } from '@/lib/serviceType';
 
 type RequestStatus = Enums<'request_status'>;
 
@@ -28,7 +29,7 @@ interface Column {
 const columns: Column[] = [
   { id: 'pending', title: 'Pendente', color: 'amber' },
   { id: 'in_analysis', title: 'Em Análise', color: 'blue' },
-  { id: 'proposal_sent', title: 'Proposta Enviada', color: 'purple' },
+  { id: 'proposal_sent', title: 'Proposta / Roteiro Enviado', color: 'purple' },
   { id: 'approved', title: 'Aprovada', color: 'green' },
   { id: 'in_operation', title: 'Em Operação', color: 'orange' },
   { id: 'completed', title: 'Concluída', color: 'gray' },
@@ -38,7 +39,7 @@ const columns: Column[] = [
 const statusFilterLabels: Record<RequestStatus, string> = {
   pending: 'Pendente',
   in_analysis: 'Em Análise',
-  proposal_sent: 'Proposta Enviada',
+  proposal_sent: 'Proposta / Roteiro Enviado',
   approved: 'Aprovada',
   in_operation: 'Em Operação',
   completed: 'Concluída',
@@ -53,6 +54,7 @@ export function KanbanBoard() {
   const [selectedRequest, setSelectedRequest] = useState<Tables<'travel_requests'> | null>(null);
   const [filterAgency, setFilterAgency] = useState('all');
   const [filterPayment, setFilterPayment] = useState('all');
+  const [filterServiceType, setFilterServiceType] = useState<'all' | ServiceType>('all');
   const requestedStatus = searchParams.get('status') as RequestStatus | null;
   const requestedDemandId = searchParams.get('demanda');
 
@@ -84,12 +86,7 @@ export function KanbanBoard() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: RequestStatus }) => {
-      const { error } = await supabase
-        .from('travel_requests')
-        .update({ status })
-        .eq('id', id);
-
-      if (error) throw error;
+      await updateTravelRequestStatus(id, status);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['travel_requests', user?.id] });
@@ -146,6 +143,9 @@ export function KanbanBoard() {
 
   const getRequestsByStatus = (status: RequestStatus) => {
     let filtered = requests?.filter((r) => r.status === status) || [];
+    if (filterServiceType !== 'all') {
+      filtered = filtered.filter((r) => getServiceType(r) === filterServiceType);
+    }
     if (filterAgency === 'none') {
       filtered = filtered.filter((r) => !r.assigned_agency_id);
     } else if (filterAgency !== 'all') {
@@ -158,12 +158,16 @@ export function KanbanBoard() {
   };
 
   const visibleColumns = useMemo(() => {
-    if (requestedStatus && columns.some((column) => column.id === requestedStatus)) {
-      return columns.filter((column) => column.id === requestedStatus);
+    let cols = columns.filter((column) =>
+      getVisibleKanbanStatuses(filterServiceType).includes(column.id),
+    );
+
+    if (requestedStatus && cols.some((column) => column.id === requestedStatus)) {
+      return cols.filter((column) => column.id === requestedStatus);
     }
 
-    return columns;
-  }, [requestedStatus]);
+    return cols;
+  }, [requestedStatus, filterServiceType]);
 
   useEffect(() => {
     if (!requestedDemandId || !requests?.length) return;
@@ -250,11 +254,14 @@ export function KanbanBoard() {
           <KanbanFilters
             agencyId={filterAgency}
             paymentStatus={filterPayment}
+            serviceType={filterServiceType}
             onAgencyChange={setFilterAgency}
             onPaymentStatusChange={setFilterPayment}
+            onServiceTypeChange={setFilterServiceType}
             onClear={() => {
               setFilterAgency('all');
               setFilterPayment('all');
+              setFilterServiceType('all');
             }}
           />
           <Badge variant="secondary">{requests?.length ?? 0} demandas</Badge>
@@ -271,6 +278,7 @@ export function KanbanBoard() {
               title={column.title}
               count={columnRequests.length}
               color={column.color}
+              helpStatus={column.id}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
             >

@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SERVICE_TYPE_LABELS, type ServiceType } from '@/lib/serviceType';
 
 export function NewRequestDialog() {
   const [open, setOpen] = useState(false);
@@ -23,10 +25,12 @@ export function NewRequestDialog() {
   const [travelers, setTravelers] = useState('1');
   const [budget, setBudget] = useState('');
   const [notes, setNotes] = useState('');
+  const [serviceType, setServiceType] = useState<ServiceType>('full_package');
 
   const resetForm = () => {
     setName(''); setEmail(''); setPhone(''); setDestination('');
     setTravelers('1'); setBudget(''); setNotes('');
+    setServiceType('full_package');
   };
 
   const createMutation = useMutation({
@@ -40,6 +44,7 @@ export function NewRequestDialog() {
         budget_range: budget || null,
         special_requests: notes || null,
         status: 'pending',
+        service_type: serviceType,
       });
       if (error) throw error;
     },
@@ -105,6 +110,16 @@ export function NewRequestDialog() {
               <Label>Orçamento</Label>
               <Input value={budget} onChange={e => setBudget(e.target.value)} placeholder="Ex: R$ 5.000 - R$ 10.000" />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Tipo de serviço</Label>
+            <Select value={serviceType} onValueChange={(v) => setServiceType(v as ServiceType)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="full_package">{SERVICE_TYPE_LABELS.full_package}</SelectItem>
+                <SelectItem value="consultancy">{SERVICE_TYPE_LABELS.consultancy}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label>Observações</Label>

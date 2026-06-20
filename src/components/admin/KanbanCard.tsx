@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar, Users, MapPin, DollarSign, Route } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
+import { getServiceType, SERVICE_TYPE_SHORT, isConsultancy } from '@/lib/serviceType';
 
 interface KanbanCardProps {
   request: Tables<'travel_requests'>;
@@ -77,6 +78,12 @@ export function KanbanCard({ request, hasProposal, onDragStart, onClick }: Kanba
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge
+            variant={isConsultancy(request) ? 'secondary' : 'outline'}
+            className="text-xs font-normal"
+          >
+            {SERVICE_TYPE_SHORT[getServiceType(request)]}
+          </Badge>
           {request.budget_range && (
             <Badge variant="secondary" className="text-xs font-normal">
               <DollarSign className="h-3 w-3 mr-1" />

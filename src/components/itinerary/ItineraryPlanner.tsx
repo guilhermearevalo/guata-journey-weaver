@@ -35,6 +35,8 @@ import {
 import { invokeItineraryAi } from '@/lib/invokeItineraryAi';
 import { fetchProposalForItinerary, updateProposalItinerary, updateProposalDossier, updateProposalShareToken, extractFunctionError } from '@/lib/fetchProposals';
 import { fetchTravelDocumentsByProposal } from '@/lib/fetchTravelDocuments';
+import type { Enums } from '@/integrations/supabase/types';
+import { markSentOnShare } from '@/lib/travelRequestStatus';
 
 const MAX_ITINERARY_DAYS = 21;
 
@@ -107,7 +109,22 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     travelers_count: number;
     preferences: Record<string, unknown> | null;
     client_name?: string;
+    budget_range?: string | null;
+    special_requests?: string | null;
+    service_type?: 'consultancy' | 'full_package';
+    status?: string;
   } | null;
+
+  const buildAiContext = () => ({
+    client_name: request?.client_name,
+    proposal_title: proposal?.title ?? undefined,
+    proposal_description: proposal?.description ?? undefined,
+    inclusions: Array.isArray(proposal?.inclusions) ? (proposal.inclusions as string[]) : undefined,
+    budget_range: request?.budget_range,
+    special_requests: request?.special_requests,
+    travel_dates: request?.travel_dates,
+    travelers_count: request?.travelers_count,
+  });
 
   const itinerary: ItineraryDay[] = Array.isArray(proposal?.itinerary)
     ? (proposal.itinerary as unknown as ItineraryDay[])
@@ -175,6 +192,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         days: totalDays,
         preferences: JSON.stringify(request?.preferences || {}),
         existing_activities: itinerary,
+        context: buildAiContext(),
       });
       const newDays = data.days;
       if (newDays) {
@@ -202,6 +220,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         day_number: dayNum,
         preferences: JSON.stringify(request?.preferences || {}),
         existing_activities: dayActivities,
+        context: buildAiContext(),
       });
       const suggestedDay = data.days[0];
       if (suggestedDay) {
@@ -285,6 +304,12 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     await saveItinerary.mutateAsync([...itinerary, { day: nextDay, activities: [] }]);
   };
 
+  const notifyItineraryShared = async () => {
+    if (!id || !request?.status) return;
+    await markSentOnShare(id, { status: request.status as Enums<'request_status'> });
+    queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+  };
+
   const generateShareLink = async () => {
     if (!proposal?.id) return;
     setSharing(true);
@@ -300,6 +325,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         },
       );
       const url = buildShareUrl('roteiro', token);
+      await notifyItineraryShared();
       await copyShareLink(url);
       setCopied(true);
       toast({ title: 'Link copiado!', description: 'Envie para quem quiser visualizar o roteiro.' });
@@ -325,6 +351,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         },
       );
       const url = buildShareUrl('roteiro', token);
+      await notifyItineraryShared();
       const message = buildItineraryWhatsAppMessage({
         clientName: request?.client_name,
         destination: request?.destination,

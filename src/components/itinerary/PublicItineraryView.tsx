@@ -10,7 +10,8 @@ import {
 import ImageGalleryCarousel from './ImageGalleryCarousel';
 import type { TravelDocument } from './TravelDocumentsVault';
 import {
-  parseDossier, hasAnyFlight, hasAccommodation, getAccommodationImages, type Dossier,
+  parseDossier, hasAnyFlight, hasAccommodation, getAccommodationImages,
+  getFlightOutboundImage, getFlightInboundImage, getFlightInternalImage, type Dossier,
 } from '@/lib/dossier';
 import {
   type Activity, type ItineraryDay, categoryColors, timeSlotOrder, getActivityImages,
@@ -216,39 +217,51 @@ export default function PublicItineraryView({
               <h2 className="font-display text-2xl font-bold">Voos</h2>
               <p className="mt-1 text-sm text-muted-foreground">Detalhes sobre os trechos aéreos</p>
             </div>
-            {dossier.flight_image && (
-              <ImageGalleryCarousel images={[dossier.flight_image]} alt="Aéreo" />
-            )}
-            {dossier.flight_outbound && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base"><Plane className="h-4 w-4 text-primary" />Voo de ida</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{dossier.flight_outbound}</p>
-                </CardContent>
-              </Card>
-            )}
-            {dossier.flight_internal && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Voo interno</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{dossier.flight_internal}</p>
-                </CardContent>
-              </Card>
-            )}
-            {dossier.flight_inbound && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Voo de volta</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{dossier.flight_inbound}</p>
-                </CardContent>
-              </Card>
-            )}
+            {(() => {
+              const outboundImg = getFlightOutboundImage(dossier);
+              const inboundImg = getFlightInboundImage(dossier);
+              const internalImg = getFlightInternalImage(dossier);
+
+              const renderFlightCard = (
+                title: string,
+                text: string | undefined,
+                image: string | undefined,
+                alt: string,
+                withPlane?: boolean,
+              ) => {
+                if (!text && !image) return null;
+                return (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className={`flex items-center gap-2 text-base${withPlane ? '' : ''}`}>
+                        {withPlane && <Plane className="h-4 w-4 text-primary" />}
+                        {title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {image && (
+                        <img
+                          src={image}
+                          alt={alt}
+                          className="max-h-64 w-full rounded-lg border object-contain bg-muted"
+                        />
+                      )}
+                      {text && (
+                        <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{text}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              };
+
+              return (
+                <>
+                  {renderFlightCard('Voo de ida', dossier.flight_outbound, outboundImg, 'Passagem de ida', true)}
+                  {renderFlightCard('Voo interno', dossier.flight_internal, internalImg, 'Passagem interna')}
+                  {renderFlightCard('Voo de volta', dossier.flight_inbound, inboundImg, 'Passagem de volta')}
+                </>
+              );
+            })()}
             {ticketDocs.length > 0 && onOpenDocument && (
               <div className="space-y-2">
                 <p className="text-sm font-medium">Passagens e vouchers</p>

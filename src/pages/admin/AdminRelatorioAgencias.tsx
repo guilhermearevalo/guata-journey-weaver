@@ -7,9 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Building2, TrendingUp, DollarSign, ClipboardList } from 'lucide-react';
+import { SERVICE_TYPE_LABELS, type ServiceType } from '@/lib/serviceType';
+
+type RevenueMode = 'approved' | 'paid';
 
 const AdminRelatorioAgencias = () => {
   const [period, setPeriod] = useState<string>('all');
+  const [revenueMode, setRevenueMode] = useState<RevenueMode>('paid');
+  const [serviceFilter, setServiceFilter] = useState<'all' | ServiceType>('all');
 
   const { data: agencies, isLoading: loadingAgencies } = useQuery({
     queryKey: ['all-agencies'],
@@ -28,8 +33,7 @@ const AdminRelatorioAgencias = () => {
     queryFn: async () => {
       let query = supabase
         .from('travel_requests')
-        .select('id, assigned_agency_id, status, created_at')
-        .not('assigned_agency_id', 'is', null);
+        .select('id, assigned_agency_id, status, service_type, created_at');
 
       if (period !== 'all') {
         const now = new Date();
@@ -51,7 +55,7 @@ const AdminRelatorioAgencias = () => {
     queryFn: async () => {
       let query = supabase
         .from('proposals')
-        .select('id, agency_id, total_price, is_approved, payment_status, created_at');
+        .select('id, agency_id, request_id, total_price, is_approved, payment_status, created_at');
 
       if (period !== 'all') {
         const now = new Date();
@@ -68,17 +72,31 @@ const AdminRelatorioAgencias = () => {
     },
   });
 
-  // Build agency report including "Guatá (operação própria)" for null agency_id
+  const requestServiceMap = new Map(
+    requests?.map((r) => [r.id, r.service_type ?? 'full_package']) ?? [],
+  );
+
+  const matchesServiceFilter = (requestId: string | null | undefined) => {
+    if (serviceFilter === 'all' || !requestId) return serviceFilter === 'all';
+    return requestServiceMap.get(requestId) === serviceFilter;
+  };
+
   const agencyReport = (() => {
+    const filteredProposals = proposals?.filter((p) => matchesServiceFilter(p.request_id)) ?? [];
+    const filteredRequests = requests?.filter((r) =>
+      serviceFilter === 'all' ? true : r.service_type === serviceFilter,
+    ) ?? [];
+
     const rows = agencies?.map((agency) => {
-      const agencyRequests = requests?.filter(r => r.assigned_agency_id === agency.id) || [];
-      const agencyProposals = proposals?.filter(p => p.agency_id === agency.id) || [];
-      const approvedProposals = agencyProposals.filter(p => p.is_approved);
+      const agencyRequests = filteredRequests.filter((r) => r.assigned_agency_id === agency.id);
+      const agencyProposals = filteredProposals.filter((p) => p.agency_id === agency.id);
+      const approvedProposals = agencyProposals.filter((p) => p.is_approved);
       const totalRevenue = approvedProposals.reduce((sum, p) => sum + (p.total_price || 0), 0);
-      const paidProposals = agencyProposals.filter(p => p.payment_status === 'paid');
+      const paidProposals = agencyProposals.filter((p) => p.payment_status === 'paid');
       const paidRevenue = paidProposals.reduce((sum, p) => sum + (p.total_price || 0), 0);
-      const completedRequests = agencyRequests.filter(r => r.status === 'completed').length;
-      const commission = totalRevenue * ((agency.commission_rate || 10) / 100);
+      const displayRevenue = revenueMode === 'paid' ? paidRevenue : totalRevenue;
+      const completedRequests = agencyRequests.filter((r) => r.status === 'completed').length;
+      const commission = displayRevenue * ((agency.commission_rate || 10) / 100);
 
       return {
         id: agency.id,
@@ -91,18 +109,19 @@ const AdminRelatorioAgencias = () => {
         approvedProposals: approvedProposals.length,
         totalRevenue,
         paidRevenue,
+        displayRevenue,
         commission,
       };
     }) || [];
 
-    // Add Guatá own-operation row
-    const guataRequests = requests?.filter(r => r.assigned_agency_id === null) || [];
-    const guataProposals = proposals?.filter(p => p.agency_id === null) || [];
-    const guataApproved = guataProposals.filter(p => p.is_approved);
+    const guataRequests = filteredRequests.filter((r) => r.assigned_agency_id === null);
+    const guataProposals = filteredProposals.filter((p) => p.agency_id === null);
+    const guataApproved = guataProposals.filter((p) => p.is_approved);
     const guataRevenue = guataApproved.reduce((sum, p) => sum + (p.total_price || 0), 0);
-    const guataPaid = guataProposals.filter(p => p.payment_status === 'paid');
+    const guataPaid = guataProposals.filter((p) => p.payment_status === 'paid');
     const guataPaidRevenue = guataPaid.reduce((sum, p) => sum + (p.total_price || 0), 0);
-    const guataCompleted = guataRequests.filter(r => r.status === 'completed').length;
+    const guataDisplayRevenue = revenueMode === 'paid' ? guataPaidRevenue : guataRevenue;
+    const guataCompleted = guataRequests.filter((r) => r.status === 'completed').length;
 
     rows.unshift({
       id: '__guata__',
@@ -115,6 +134,7 @@ const AdminRelatorioAgencias = () => {
       approvedProposals: guataApproved.length,
       totalRevenue: guataRevenue,
       paidRevenue: guataPaidRevenue,
+      displayRevenue: guataDisplayRevenue,
       commission: 0,
     });
 
@@ -123,12 +143,14 @@ const AdminRelatorioAgencias = () => {
 
   const totals = {
     requests: agencyReport.reduce((s, a) => s + a.totalRequests, 0),
-    revenue: agencyReport.reduce((s, a) => s + a.totalRevenue, 0),
+    revenue: agencyReport.reduce((s, a) => s + a.displayRevenue, 0),
     paid: agencyReport.reduce((s, a) => s + a.paidRevenue, 0),
+    approved: agencyReport.reduce((s, a) => s + a.totalRevenue, 0),
     commission: agencyReport.reduce((s, a) => s + a.commission, 0),
   };
 
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const revenueLabel = revenueMode === 'paid' ? 'Receita Paga' : 'Receita Aprovada';
 
   if (loadingAgencies) {
     return (
@@ -144,36 +166,56 @@ const AdminRelatorioAgencias = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold">Relatório por Agência</h1>
           <p className="text-muted-foreground">Vendas, receita e comissões por agência parceira</p>
         </div>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todo o período</SelectItem>
-            <SelectItem value="30d">Últimos 30 dias</SelectItem>
-            <SelectItem value="90d">Últimos 90 dias</SelectItem>
-            <SelectItem value="12m">Últimos 12 meses</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap gap-2">
+          <Select value={serviceFilter} onValueChange={(v) => setServiceFilter(v as 'all' | ServiceType)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os serviços</SelectItem>
+              <SelectItem value="consultancy">{SERVICE_TYPE_LABELS.consultancy}</SelectItem>
+              <SelectItem value="full_package">{SERVICE_TYPE_LABELS.full_package}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={revenueMode} onValueChange={(v) => setRevenueMode(v as RevenueMode)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="paid">Receita paga (caixa)</SelectItem>
+              <SelectItem value="approved">Receita aprovada</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todo o período</SelectItem>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="90d">Últimos 90 dias</SelectItem>
+              <SelectItem value="12m">Últimos 12 meses</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Summary cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Demandas Atribuídas</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Demandas</CardTitle>
             <ClipboardList className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent><p className="text-2xl font-bold">{totals.requests}</p></CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Receita Total</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{revenueLabel}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent><p className="text-2xl font-bold">{fmt(totals.revenue)}</p></CardContent>
@@ -187,14 +229,13 @@ const AdminRelatorioAgencias = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Comissões Devidas</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Comissões</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent><p className="text-2xl font-bold text-amber-600">{fmt(totals.commission)}</p></CardContent>
         </Card>
       </div>
 
-      {/* Table */}
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -204,7 +245,7 @@ const AdminRelatorioAgencias = () => {
                 <TableHead className="text-center">Demandas</TableHead>
                 <TableHead className="text-center">Concluídas</TableHead>
                 <TableHead className="text-center">Propostas Aprovadas</TableHead>
-                <TableHead className="text-right">Receita</TableHead>
+                <TableHead className="text-right">{revenueLabel}</TableHead>
                 <TableHead className="text-right">Pago</TableHead>
                 <TableHead className="text-right">Comissão (%)</TableHead>
                 <TableHead className="text-right">Comissão (R$)</TableHead>
@@ -227,7 +268,7 @@ const AdminRelatorioAgencias = () => {
                     <TableCell className="text-center">{a.totalRequests}</TableCell>
                     <TableCell className="text-center">{a.completedRequests}</TableCell>
                     <TableCell className="text-center">{a.approvedProposals}</TableCell>
-                    <TableCell className="text-right">{fmt(a.totalRevenue)}</TableCell>
+                    <TableCell className="text-right">{fmt(a.displayRevenue)}</TableCell>
                     <TableCell className="text-right text-green-600">{fmt(a.paidRevenue)}</TableCell>
                     <TableCell className="text-right">{a.commission_rate || 10}%</TableCell>
                     <TableCell className="text-right text-amber-600 font-medium">{fmt(a.commission)}</TableCell>

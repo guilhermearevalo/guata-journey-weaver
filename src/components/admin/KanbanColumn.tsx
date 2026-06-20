@@ -1,11 +1,14 @@
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { StatusHelpIcon } from './StatusHelpIcon';
+import type { RequestStatus } from '@/lib/requestStatusHelp';
 
 interface KanbanColumnProps {
   id: string;
   title: string;
   count: number;
   color: string;
+  helpStatus?: RequestStatus;
   children: ReactNode;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, status: string) => void;
@@ -21,7 +24,7 @@ const colorClasses: Record<string, { bg: string; border: string; text: string }>
   red: { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600' },
 };
 
-export function KanbanColumn({ id, title, count, color, children, onDragOver, onDrop }: KanbanColumnProps) {
+export function KanbanColumn({ id, title, count, color, helpStatus, children, onDragOver, onDrop }: KanbanColumnProps) {
   const colors = colorClasses[color] || colorClasses.gray;
 
   return (
@@ -35,7 +38,10 @@ export function KanbanColumn({ id, title, count, color, children, onDragOver, on
         colors.bg,
         colors.border
       )}>
-        <h3 className={cn("font-semibold text-sm", colors.text)}>{title}</h3>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <h3 className={cn("font-semibold text-sm truncate", colors.text)}>{title}</h3>
+          {helpStatus && <StatusHelpIcon status={helpStatus} />}
+        </div>
         <span className={cn(
           "flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold",
           colors.bg,

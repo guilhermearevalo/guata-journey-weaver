@@ -3,16 +3,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { SERVICE_TYPE_LABELS, type ServiceType } from '@/lib/serviceType';
 
 interface KanbanFiltersProps {
   agencyId: string;
   paymentStatus: string;
+  serviceType: 'all' | ServiceType;
   onAgencyChange: (v: string) => void;
   onPaymentStatusChange: (v: string) => void;
+  onServiceTypeChange: (v: 'all' | ServiceType) => void;
   onClear: () => void;
 }
 
-export function KanbanFilters({ agencyId, paymentStatus, onAgencyChange, onPaymentStatusChange, onClear }: KanbanFiltersProps) {
+export function KanbanFilters({
+  agencyId,
+  paymentStatus,
+  serviceType,
+  onAgencyChange,
+  onPaymentStatusChange,
+  onServiceTypeChange,
+  onClear,
+}: KanbanFiltersProps) {
   const { data: agencies } = useQuery({
     queryKey: ['agencies-filter'],
     queryFn: async () => {
@@ -22,10 +33,21 @@ export function KanbanFilters({ agencyId, paymentStatus, onAgencyChange, onPayme
     },
   });
 
-  const hasFilters = agencyId !== 'all' || paymentStatus !== 'all';
+  const hasFilters = agencyId !== 'all' || paymentStatus !== 'all' || serviceType !== 'all';
 
   return (
     <div className="flex flex-wrap items-center gap-3">
+      <Select value={serviceType} onValueChange={(v) => onServiceTypeChange(v as 'all' | ServiceType)}>
+        <SelectTrigger className="w-[200px]">
+          <SelectValue placeholder="Tipo de serviço" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos os tipos</SelectItem>
+          <SelectItem value="consultancy">{SERVICE_TYPE_LABELS.consultancy}</SelectItem>
+          <SelectItem value="full_package">{SERVICE_TYPE_LABELS.full_package}</SelectItem>
+        </SelectContent>
+      </Select>
+
       <Select value={agencyId} onValueChange={onAgencyChange}>
         <SelectTrigger className="w-[200px]">
           <SelectValue placeholder="Agência" />

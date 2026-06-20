@@ -2,12 +2,24 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { ItineraryDay } from '@/lib/itinerary';
 
+export type ItineraryAiContext = {
+  client_name?: string;
+  proposal_title?: string;
+  proposal_description?: string;
+  inclusions?: string[];
+  budget_range?: string | null;
+  special_requests?: string | null;
+  travel_dates?: { start?: string; end?: string } | null;
+  travelers_count?: number;
+};
+
 export type ItineraryAiBody = {
   destination: string;
   days: number;
   preferences: string;
   existing_activities: unknown;
   day_number?: number;
+  context?: ItineraryAiContext;
 };
 
 export type ItineraryAiResult = { days: ItineraryDay[] };
@@ -36,7 +48,8 @@ export async function invokeItineraryAi(body: ItineraryAiBody): Promise<Itinerar
   const { data, error } = await supabase.functions.invoke('itinerary-ai', { body });
 
   if (error || (data && typeof data === 'object' && 'error' in data)) {
-    throw new Error(await readFunctionError(error, data));
+    const errMsg = await readFunctionError(error, data);
+    throw new Error(errMsg);
   }
 
   if (!data || typeof data !== 'object' || !('days' in data)) {

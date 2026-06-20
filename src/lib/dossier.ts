@@ -7,7 +7,11 @@ export interface Dossier {
   flight_outbound?: string;
   flight_internal?: string;
   flight_inbound?: string;
+  /** @deprecated use flight_outbound_image */
   flight_image?: string;
+  flight_outbound_image?: string;
+  flight_inbound_image?: string;
+  flight_internal_image?: string;
   // Demais seções (texto livre)
   accommodation?: string;
   accommodation_image?: string;
@@ -36,7 +40,27 @@ export function parseDossier(raw: unknown): Dossier {
 }
 
 export function hasAnyFlight(d: Dossier): boolean {
-  return Boolean(d.flight_outbound || d.flight_internal || d.flight_inbound);
+  return Boolean(
+    d.flight_outbound ||
+      d.flight_internal ||
+      d.flight_inbound ||
+      d.flight_outbound_image ||
+      d.flight_inbound_image ||
+      d.flight_internal_image ||
+      d.flight_image,
+  );
+}
+
+export function getFlightOutboundImage(d: Dossier): string | undefined {
+  return d.flight_outbound_image || d.flight_image;
+}
+
+export function getFlightInboundImage(d: Dossier): string | undefined {
+  return d.flight_inbound_image;
+}
+
+export function getFlightInternalImage(d: Dossier): string | undefined {
+  return d.flight_internal_image;
 }
 
 /** Merge legacy single accommodation image with optional gallery. */

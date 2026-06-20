@@ -25,9 +25,16 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Tables } from '@/integrations/supabase/types';
-import { Calendar, Users, MapPin, Mail, Phone, DollarSign, MessageSquare, Route, Building2, Save, Loader2, Trash2 } from 'lucide-react';
+import { Calendar, Users, MapPin, Mail, Phone, DollarSign, MessageSquare, Route, Building2, Save, Loader2, Trash2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fetchProposalByRequest } from '@/lib/fetchProposals';
+import { StatusHelpIcon } from './StatusHelpIcon';
+import type { RequestStatus } from '@/lib/requestStatusHelp';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { updateTravelRequestServiceType } from '@/lib/fetchTravelRequests';
+import { completeConsultancy, canCompleteConsultancy } from '@/lib/travelRequestStatus';
+import { getServiceType, SERVICE_TYPE_LABELS, type ServiceType } from '@/lib/serviceType';
 
 interface RequestDetailDialogProps {
   request: Tables<'travel_requests'> | null;
@@ -90,6 +97,35 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
     },
   });
 
+  const updateServiceTypeMutation = useMutation({
+    mutationFn: async (serviceType: ServiceType) => {
+      if (!request) return;
+      await updateTravelRequestServiceType(request.id, serviceType);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+      toast({ title: 'Tipo de serviço atualizado' });
+    },
+    onError: () => {
+      toast({ title: 'Erro ao atualizar tipo', variant: 'destructive' });
+    },
+  });
+
+  const completeConsultancyMutation = useMutation({
+    mutationFn: async () => {
+      if (!request) return;
+      await completeConsultancy(request.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+      toast({ title: 'Consultoria concluída!' });
+      onOpenChange(false);
+    },
+    onError: () => {
+      toast({ title: 'Erro ao concluir', variant: 'destructive' });
+    },
+  });
+
   // Check whether a proposal already exists for this request
   const { data: existingProposal } = useQuery({
     queryKey: ['proposal-exists', request?.id],
@@ -133,9 +169,12 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
     <Dialog open={open} onOpenChange={(o) => { if (!o) setNotesInitialized(false); onOpenChange(o); }}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <DialogTitle className="font-display text-xl">Demanda de {request.client_name}</DialogTitle>
-            <Badge variant={status.variant}>{status.label}</Badge>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Badge variant={status.variant}>{status.label}</Badge>
+              <StatusHelpIcon status={request.status as RequestStatus} />
+            </div>
           </div>
           <DialogDescription>Criada em {new Date(request.created_at).toLocaleDateString('pt-BR')}</DialogDescription>
         </DialogHeader>
@@ -158,6 +197,28 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
           </div>
 
           <Separator />
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-muted-foreground">Tipo de serviço</Label>
+            <Select
+              value={getServiceType(request)}
+              onValueChange={(v) => updateServiceTypeMutation.mutate(v as ServiceType)}
+              disabled={updateServiceTypeMutation.isPending}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="consultancy">{SERVICE_TYPE_LABELS.consultancy}</SelectItem>
+                <SelectItem value="full_package">{SERVICE_TYPE_LABELS.full_package}</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Consultoria: entrega de roteiro sem reservas. Pacote: aprovação, pagamento e operação.
+            </p>
+          </div>
 
           <div className="space-y-2">
             <h4 className="text-sm font-semibold text-muted-foreground">Detalhes da Viagem</h4>
@@ -256,7 +317,23 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
           )}
 
           <Separator />
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
+            {canCompleteConsultancy(request) && (
+              <Button
+                className="w-full"
+                variant="default"
+                onClick={() => completeConsultancyMutation.mutate()}
+                disabled={completeConsultancyMutation.isPending}
+              >
+                {completeConsultancyMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                )}
+                Concluir consultoria
+              </Button>
+            )}
+            <div className="flex gap-2">
             <Button
               className="flex-1"
               onClick={() => {
@@ -279,6 +356,7 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
                 Planejar Roteiro
               </Button>
             )}
+            </div>
           </div>
 
           {existingProposal && (
