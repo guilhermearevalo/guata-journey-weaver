@@ -26,3 +26,8 @@ dist-ssr
 *.sw?
 .vercel
 .env*.local
+
+# Artefatos acidentais de shell (nunca commitar)
+$env
+cd
+node

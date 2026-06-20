@@ -1,20 +1,22 @@
 /**
  * Simula upload do admin (publishable/anon + login), igual ao browser.
  *
- * CMD:
- *   set SUPABASE_PUBLISHABLE_KEY=sb_publishable_...   (ou anon eyJ...)
- *   set ADMIN_EMAIL=guilhermearevalo27@gmail.com
- *   set ADMIN_PASSWORD=sua_senha
- *   node scripts/test-storage-upload-as-admin.mjs
+ * Nunca commite credenciais. Use variáveis de ambiente locais:
  *
  * PowerShell:
- *   $env:SUPABASE_PUBLISHABLE_KEY = "..."
- *   $env:ADMIN_EMAIL = "guilhermearevalo27@gmail.com"
- *   $env:ADMIN_PASSWORD = "..."
+ *   $env:SUPABASE_PUBLISHABLE_KEY = "sb_publishable_..."
+ *   $env:ADMIN_EMAIL = "seu-email@exemplo.com"
+ *   $env:ADMIN_PASSWORD = "sua-senha-local"
+ *   node scripts/test-storage-upload-as-admin.mjs
+ *
+ * CMD:
+ *   set SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+ *   set ADMIN_EMAIL=seu-email@exemplo.com
+ *   set ADMIN_PASSWORD=sua-senha-local
  *   node scripts/test-storage-upload-as-admin.mjs
  */
 
-const PROJECT_REF = 'ojpgobftvomqxyvrqxma';
+const PROJECT_REF = process.env.SUPABASE_PROJECT_REF?.trim() || 'ojpgobftvomqxyvrqxma';
 const SUPABASE_URL = `https://${PROJECT_REF}.supabase.co`;
 
 const apiKey = process.env.SUPABASE_PUBLISHABLE_KEY?.trim()
@@ -27,7 +29,7 @@ if (!apiKey) {
   process.exit(1);
 }
 if (!email || !password) {
-  console.error('❌ Defina ADMIN_EMAIL e ADMIN_PASSWORD');
+  console.error('❌ Defina ADMIN_EMAIL e ADMIN_PASSWORD (somente no terminal, nunca no código)');
   process.exit(1);
 }
 
