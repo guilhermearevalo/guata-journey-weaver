@@ -9,6 +9,11 @@ const corsHeaders = {
 
 const PUBLIC_BUCKETS = new Set(["site-assets", "testimonials"]);
 
+function isSafeStoragePath(path: string): boolean {
+  if (!path || path.startsWith("/") || path.includes("..")) return false;
+  return true;
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -26,6 +31,9 @@ serve(async (req) => {
     }
     if (!PUBLIC_BUCKETS.has(bucket)) {
       return json({ error: "Bucket not allowed" }, 403);
+    }
+    if (!isSafeStoragePath(path)) {
+      return json({ error: "Invalid path" }, 400);
     }
 
     const admin = createClient(

@@ -973,6 +973,7 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      client_approve_proposal: { Args: { p_proposal_id: string }; Returns: undefined }
       partner_insert_external_sale: {
         Args: {
           _client_name?: string

@@ -25,7 +25,6 @@ export default function PropostaPublica() {
     destination: string;
     travel_dates: { start?: string; end?: string } | null;
     travelers_count: number;
-    client_name: string;
   } | null;
 
   const paymentLinks = proposal?.payment_links as { manual_link?: string } | null;
@@ -76,7 +75,7 @@ export default function PropostaPublica() {
   return (
     <>
       <Seo
-        title={request?.client_name ? `Proposta — ${request.client_name}` : `Proposta — ${proposal.title}`}
+        title={`Proposta — ${proposal.title}`}
         description={`Proposta de viagem${request?.destination ? ` para ${request.destination}` : ''}.`}
         path={`/proposta/${token}`}
         rawTitle

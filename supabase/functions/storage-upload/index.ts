@@ -22,9 +22,7 @@ async function canUpload(
 ): Promise<boolean> {
   if (bucket === "site-assets" || bucket === "testimonials") {
     const { data, error } = await admin.rpc("is_staff", { _user_id: userId });
-    if (!error && data === true) return true;
-    if (bucket === "testimonials") return true;
-    return false;
+    return !error && data === true;
   }
   if (bucket === "travel-documents") {
     const { data: staff } = await admin.rpc("is_staff", { _user_id: userId });

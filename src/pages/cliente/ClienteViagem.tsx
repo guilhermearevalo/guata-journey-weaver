@@ -92,15 +92,10 @@ export default function ClienteViagem() {
 
   const approveProposal = useMutation({
     mutationFn: async (proposalId: string) => {
-      const { error } = await supabase
-        .from('proposals')
-        .update({ is_approved: true })
-        .eq('id', proposalId);
+      const { error } = await supabase.rpc('client_approve_proposal', {
+        p_proposal_id: proposalId,
+      });
       if (error) throw error;
-      await supabase
-        .from('travel_requests')
-        .update({ status: 'approved' })
-        .eq('id', id!);
     },
     onSuccess: () => {
       toast({ title: 'Proposta aprovada!', description: 'Nossa equipe entrará em contato para os próximos passos.' });

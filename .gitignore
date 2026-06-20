@@ -26,6 +26,7 @@ dist-ssr
 *.sw?
 .vercel
 .env*.local
+supabase/.temp/
 
 # Artefatos acidentais de shell (nunca commitar)
 $env

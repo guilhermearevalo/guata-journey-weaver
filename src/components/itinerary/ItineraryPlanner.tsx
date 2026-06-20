@@ -135,10 +135,10 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   const dossier: Dossier = parseDossier((proposal as any)?.dossier);
 
   useEffect(() => {
-    if (!proposal?.id) return;
+    if (!proposal?.id || dossierDirty) return;
     setLocalDossier(parseDossier((proposal as any)?.dossier));
     setDossierDirty(false);
-  }, [proposal?.id, (proposal as any)?.dossier]);
+  }, [proposal?.id, (proposal as any)?.dossier, dossierDirty]);
 
   const { data: travelDocuments = [] } = useQuery({
     queryKey: ['travel-documents', proposal?.id],
