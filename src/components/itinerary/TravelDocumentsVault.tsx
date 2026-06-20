@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FileArchive, FileCheck, Upload, Download, Trash2, Loader2, ShieldCheck } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { insertTravelDocument, updateTravelDocument, deleteTravelDocument } from '@/lib/fetchTravelDocuments';
 
 export interface TravelDocument {
   id: string;
@@ -104,8 +105,7 @@ export default function TravelDocumentsVault({ proposalId, requestId, documents,
         uploaded_by: user?.id || null,
       } as any;
 
-      const { error } = await supabase.from('travel_documents' as any).insert(payload);
-      if (error) throw error;
+      await insertTravelDocument(payload);
     },
     onSuccess: () => {
       setTitle('');
@@ -114,13 +114,16 @@ export default function TravelDocumentsVault({ proposalId, requestId, documents,
       refresh();
       toast({ title: mode === 'client' ? 'Documento enviado para revisão!' : 'Documento adicionado!' });
     },
-    onError: () => toast({ title: 'Erro ao salvar documento', variant: 'destructive' }),
+    onError: (err) => toast({
+      title: 'Erro ao salvar documento',
+      description: err instanceof Error ? err.message : 'Rode docs/fix_travel_documents_and_delete.sql no Supabase.',
+      variant: 'destructive',
+    }),
   });
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from('travel_documents' as any).update({ status }).eq('id', id);
-      if (error) throw error;
+      await updateTravelDocument(id, { status });
     },
     onSuccess: refresh,
   });
@@ -129,8 +132,7 @@ export default function TravelDocumentsVault({ proposalId, requestId, documents,
     mutationFn: async ({ id, visible }: { id: string; visible: boolean }) => {
       const payload: Record<string, unknown> = { visible_in_public: visible };
       if (visible) payload.status = 'sent';
-      const { error } = await supabase.from('travel_documents' as any).update(payload).eq('id', id);
-      if (error) throw error;
+      await updateTravelDocument(id, payload as { visible_in_public: boolean; status?: string });
     },
     onSuccess: () => {
       refresh();
@@ -142,8 +144,7 @@ export default function TravelDocumentsVault({ proposalId, requestId, documents,
   const removeDocument = useMutation({
     mutationFn: async (doc: TravelDocument) => {
       if (doc.file_path) await supabase.storage.from('travel-documents').remove([doc.file_path]);
-      const { error } = await supabase.from('travel_documents' as any).delete().eq('id', doc.id);
-      if (error) throw error;
+      await deleteTravelDocument(doc.id);
     },
     onSuccess: () => { refresh(); toast({ title: 'Documento removido' }); },
   });

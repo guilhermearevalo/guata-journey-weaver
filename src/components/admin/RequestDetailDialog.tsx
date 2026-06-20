@@ -34,6 +34,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { updateTravelRequestServiceType } from '@/lib/fetchTravelRequests';
 import { completeConsultancy, canCompleteConsultancy } from '@/lib/travelRequestStatus';
+import { deleteProposalById, deleteTravelRequestById } from '@/lib/fetchTravelDocuments';
 import { getServiceType, SERVICE_TYPE_LABELS, type ServiceType } from '@/lib/serviceType';
 
 interface RequestDetailDialogProps {
@@ -136,19 +137,42 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
   const deleteProposalMutation = useMutation({
     mutationFn: async () => {
       if (!existingProposal?.id) return;
-      // Remove travel documents linked to this proposal first
-      await supabase.from('travel_documents' as any).delete().eq('proposal_id', existingProposal.id);
-      const { error } = await supabase.from('proposals').delete().eq('id', existingProposal.id);
-      if (error) throw error;
+      await deleteProposalById(existingProposal.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proposal-exists', request?.id] });
       queryClient.invalidateQueries({ queryKey: ['proposal-request-ids'] });
       queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
-      toast({ title: 'Proposta excluída', description: 'O roteiro foi removido. Você pode criar uma nova proposta.' });
+      toast({
+        title: 'Proposta excluída',
+        description: 'O roteiro foi removido. A demanda voltou para Em Análise.',
+      });
     },
-    onError: () => {
-      toast({ title: 'Erro ao excluir', description: 'Não foi possível excluir a proposta.', variant: 'destructive' });
+    onError: (err) => {
+      toast({
+        title: 'Erro ao excluir',
+        description: err instanceof Error ? err.message : 'Rode docs/fix_travel_documents_and_delete.sql no Supabase.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteRequestMutation = useMutation({
+    mutationFn: async () => {
+      if (!request?.id) return;
+      await deleteTravelRequestById(request.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+      toast({ title: 'Demanda excluída', description: 'A demanda e todos os dados vinculados foram removidos.' });
+      onOpenChange(false);
+    },
+    onError: (err) => {
+      toast({
+        title: 'Erro ao excluir demanda',
+        description: err instanceof Error ? err.message : 'Rode docs/fix_travel_documents_and_delete.sql no Supabase.',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -371,7 +395,7 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
                 <AlertDialogHeader>
                   <AlertDialogTitle>Excluir esta proposta?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    A proposta e o roteiro vinculados a esta demanda serão removidos permanentemente. Esta ação não pode ser desfeita. A demanda continua existindo e você poderá criar uma nova proposta.
+                    A proposta, roteiro e documentos serão removidos. A demanda continua no Kanban e volta para <strong>Em Análise</strong>.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -380,12 +404,38 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     onClick={() => deleteProposalMutation.mutate()}
                   >
-                    Excluir
+                    Excluir proposta
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           )}
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Excluir demanda inteira
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir demanda de {request.client_name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Remove a demanda, proposta, roteiro e documentos permanentemente. Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => deleteRequestMutation.mutate()}
+                >
+                  Excluir tudo
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </DialogContent>
     </Dialog>

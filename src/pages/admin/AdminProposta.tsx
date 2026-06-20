@@ -21,6 +21,9 @@ import {
 } from '@/lib/share-proposal';
 import { fetchProposalByRequest } from '@/lib/fetchProposals';
 import { markSentOnShare, markInOperationOnPaid } from '@/lib/travelRequestStatus';
+import { getServiceType, isConsultancy, SERVICE_TYPE_LABELS } from '@/lib/serviceType';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function AdminProposta() {
   const { id: requestId } = useParams<{ id: string }>();
@@ -134,6 +137,13 @@ export default function AdminProposta() {
   });
 
   const travelDates = request?.travel_dates as { start?: string; end?: string } | null;
+  const consultancy = isConsultancy(request);
+  const willMoveToOperation =
+    !consultancy &&
+    paymentStatus === 'paid' &&
+    existingProposal?.payment_status !== 'paid' &&
+    request &&
+    !['in_operation', 'completed'].includes(request.status);
 
   const markProposalSentIfNeeded = async () => {
     if (!requestId || !request) return;
@@ -214,7 +224,10 @@ export default function AdminProposta() {
       {/* Request summary */}
       <Card>
         <CardHeader><CardTitle className="text-base">Resumo da Demanda</CardTitle></CardHeader>
-        <CardContent className="flex flex-wrap gap-4 text-sm">
+        <CardContent className="flex flex-wrap gap-4 text-sm items-center">
+          <Badge variant={consultancy ? 'secondary' : 'outline'}>
+            {SERVICE_TYPE_LABELS[getServiceType(request)]}
+          </Badge>
           {request?.destination && (
             <span className="flex items-center gap-1"><MapPin className="h-4 w-4 text-muted-foreground" />{request.destination}</span>
           )}
@@ -287,27 +300,38 @@ export default function AdminProposta() {
             <Switch checked={shareEnabled} onCheckedChange={setShareEnabled} />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <Label>Exibir link de pagamento</Label>
-              <p className="text-xs text-muted-foreground">
-                Quando ativado, o cliente verá o link de pagamento (PIX / outro) na proposta pública.
-              </p>
-            </div>
-            <Switch checked={paymentEnabled} onCheckedChange={setPaymentEnabled} />
-          </div>
+          {consultancy ? (
+            <Alert>
+              <AlertDescription className="text-sm">
+                <strong>Consultoria / Roteiro:</strong> o cliente recebe o roteiro pelo link compartilhado.
+                Pagamento costuma ser por PIX/WhatsApp fora do sistema — use o valor total acima e marque o status abaixo só para controle interno e relatório.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label>Exibir link de pagamento</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Quando ativado, o cliente verá o link de pagamento (PIX / outro) na proposta pública.
+                  </p>
+                </div>
+                <Switch checked={paymentEnabled} onCheckedChange={setPaymentEnabled} />
+              </div>
 
-          <div className="space-y-2">
-            <Label>Link de pagamento (PIX, PagSeguro, etc.)</Label>
-            <Input
-              value={manualPaymentLink}
-              onChange={(e) => setManualPaymentLink(e.target.value)}
-              placeholder="https://pag.ae/exemplo ou link PIX"
-            />
-            <p className="text-xs text-muted-foreground">
-              Obrigatório para exibir pagamento na proposta pública. Marque como Pago após confirmar o recebimento.
-            </p>
-          </div>
+              <div className="space-y-2">
+                <Label>Link de pagamento (PIX, PagSeguro, etc.)</Label>
+                <Input
+                  value={manualPaymentLink}
+                  onChange={(e) => setManualPaymentLink(e.target.value)}
+                  placeholder="https://pag.ae/exemplo ou link PIX"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Cole aqui o link PIX ou PagSeguro. O sistema não detecta pagamento automaticamente — confirme manualmente abaixo.
+                </p>
+              </div>
+            </>
+          )}
 
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
@@ -329,11 +353,23 @@ export default function AdminProposta() {
             <Select value={paymentStatus} onValueChange={setPaymentStatus}>
               <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="partial">Parcial</SelectItem>
-                <SelectItem value="paid">Pago</SelectItem>
+                <SelectItem value="pending">Pendente — ainda não recebeu</SelectItem>
+                <SelectItem value="partial">Parcial — sinal/entrada recebida</SelectItem>
+                <SelectItem value="paid">Pago — valor confirmado no caixa</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              {consultancy
+                ? 'Controle interno e relatório. Não move o Kanban automaticamente.'
+                : 'Marque Pago após confirmar o PIX/transferência. Ao salvar, a demanda vai para Em Operação (reservas).'}
+            </p>
+            {willMoveToOperation && (
+              <Alert>
+                <AlertDescription className="text-sm">
+                  Ao salvar, a demanda será movida para <strong>Em Operação</strong> para iniciar reservas.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4 flex-wrap">

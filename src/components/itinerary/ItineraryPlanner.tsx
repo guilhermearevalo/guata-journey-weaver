@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +34,7 @@ import {
 } from '@/lib/share-proposal';
 import { invokeItineraryAi } from '@/lib/invokeItineraryAi';
 import { fetchProposalForItinerary, updateProposalItinerary, updateProposalDossier, updateProposalShareToken, extractFunctionError } from '@/lib/fetchProposals';
-import { fetchTravelDocumentsByProposal } from '@/lib/fetchTravelDocuments';
+import { fetchTravelDocumentsByProposal, deleteProposalById } from '@/lib/fetchTravelDocuments';
 import type { Enums } from '@/integrations/supabase/types';
 import { markSentOnShare } from '@/lib/travelRequestStatus';
 
@@ -88,6 +88,8 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [templateMode, setTemplateMode] = useState<'save' | 'load'>('save');
+  const [localDossier, setLocalDossier] = useState<Dossier>({});
+  const [dossierDirty, setDossierDirty] = useState(false);
 
   // Activity form state
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
@@ -132,6 +134,12 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
 
   const dossier: Dossier = parseDossier((proposal as any)?.dossier);
 
+  useEffect(() => {
+    if (!proposal?.id) return;
+    setLocalDossier(parseDossier((proposal as any)?.dossier));
+    setDossierDirty(false);
+  }, [proposal?.id, (proposal as any)?.dossier]);
+
   const { data: travelDocuments = [] } = useQuery({
     queryKey: ['travel-documents', proposal?.id],
     queryFn: () => fetchTravelDocumentsByProposal(proposal!.id),
@@ -171,6 +179,8 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
       queryClient.setQueryData(['proposal-itinerary', id], (old: typeof proposal) =>
         old ? { ...old, dossier: next } : old,
       );
+      setDossierDirty(false);
+      toast({ title: 'Dossiê salvo!' });
     },
     onError: (err) => {
       toast({ title: 'Erro ao salvar', description: extractFunctionError(err), variant: 'destructive' });
@@ -178,10 +188,15 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   });
 
   const setDayTitle = (dayNum: number, title: string) => {
-    const titles = { ...(dossier.day_titles || {}) };
+    const titles = { ...(localDossier.day_titles || {}) };
     if (title.trim()) titles[String(dayNum)] = title;
     else delete titles[String(dayNum)];
-    saveDossier.mutate({ ...dossier, day_titles: titles });
+    setLocalDossier({ ...localDossier, day_titles: titles });
+    setDossierDirty(true);
+  };
+
+  const handleSaveDossier = () => {
+    saveDossier.mutate(localDossier);
   };
 
   const generateFullItinerary = async () => {
@@ -389,9 +404,9 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         travelersCount: request?.travelers_count,
         brandName,
         logoUrl,
-        coverImage: dossier.cover_image || logoUrl,
+        coverImage: localDossier.cover_image || logoUrl,
         itinerary,
-        dossier,
+        dossier: localDossier,
       });
       toast({ title: 'PDF gerado!', description: 'O download deve iniciar automaticamente.' });
     } catch (err) {
@@ -405,16 +420,19 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   const deleteProposal = useMutation({
     mutationFn: async () => {
       if (!proposal?.id) throw new Error('Sem proposta');
-      await supabase.from('travel_documents' as any).delete().eq('proposal_id', proposal.id);
-      const { error } = await supabase.from('proposals').delete().eq('id', proposal.id);
-      if (error) throw error;
+      await deleteProposalById(proposal.id);
     },
     onSuccess: () => {
-      toast({ title: 'Proposta excluída', description: 'O roteiro foi removido.' });
+      toast({ title: 'Proposta excluída', description: 'A demanda voltou para Em Análise.' });
       queryClient.invalidateQueries({ queryKey: ['proposal-request-ids'] });
+      queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
       navigate(backLink);
     },
-    onError: () => toast({ title: 'Erro ao excluir', variant: 'destructive' }),
+    onError: (err) => toast({
+      title: 'Erro ao excluir',
+      description: err instanceof Error ? err.message : 'Rode docs/fix_travel_documents_and_delete.sql no Supabase.',
+      variant: 'destructive',
+    }),
   });
 
   const totalCost = itinerary.reduce((sum, day) => sum + day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0), 0);
@@ -528,7 +546,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                     </div>
                     <Input
                       className="mt-2 print:hidden"
-                      defaultValue={dossier.day_titles?.[String(day.day)] || ''}
+                      defaultValue={localDossier.day_titles?.[String(day.day)] || ''}
                       placeholder={`Título do dia (ex: Chegada em Roma)`}
                       onBlur={(e) => setDayTitle(day.day, e.target.value)}
                     />
@@ -642,7 +660,35 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
       )}
 
       {/* Seções do dossiê (opcionais) */}
-      <DossierEditor dossier={dossier} onChange={(next) => saveDossier.mutate(next)} />
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
+          <p className="text-sm text-muted-foreground">
+            Voos, hotel e demais seções — edite e clique em Salvar dossiê.
+          </p>
+          <Button
+            onClick={handleSaveDossier}
+            disabled={!dossierDirty || saveDossier.isPending}
+            variant={dossierDirty ? 'default' : 'outline'}
+          >
+            {saveDossier.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Salvar dossiê
+            {dossierDirty && !saveDossier.isPending && (
+              <span className="ml-2 text-xs opacity-80">(alterações não salvas)</span>
+            )}
+          </Button>
+        </div>
+        <DossierEditor
+          dossier={localDossier}
+          onChange={(next) => {
+            setLocalDossier(next);
+            setDossierDirty(true);
+          }}
+        />
+      </div>
 
       {/* Travel Documents */}
       <TravelDocumentsVault
