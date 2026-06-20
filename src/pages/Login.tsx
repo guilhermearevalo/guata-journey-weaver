@@ -88,7 +88,14 @@ export default function Login() {
       toast({ title: 'Bem-vindo de volta!', description: 'Login realizado com sucesso.' });
 
       if (isStaff) navigate('/admin');
-      else if (role === 'partner') navigate('/partner');
+      else if (role === 'partner') {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('must_change_password')
+          .eq('user_id', userId)
+          .maybeSingle();
+        navigate(profile?.must_change_password ? '/partner/conta' : '/partner');
+      }
       else navigate('/minha-conta');
     } else {
       navigate('/minha-conta');

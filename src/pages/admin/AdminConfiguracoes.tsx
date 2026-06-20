@@ -11,6 +11,8 @@ import { uploadStorageFile, isStorageSchemaError } from '@/lib/uploadStorageFile
 import { StorageImage } from '@/components/ui/StorageImage';
 import { Upload, Loader2, Image as ImageIcon, Trash2, Film, X, LayoutDashboard, MessageCircle, Save, ShieldCheck } from 'lucide-react';
 import type { HomepageSections } from '@/hooks/useHomepageSections';
+import ChangePasswordForm from '@/components/auth/ChangePasswordForm';
+import { useAuth } from '@/lib/auth';
 
 interface Slide {
   type: 'image' | 'video';
@@ -19,6 +21,7 @@ interface Slide {
 
 const AdminConfiguracoes = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [slides, setSlides] = useState<Slide[]>([]);
@@ -144,6 +147,21 @@ const AdminConfiguracoes = () => {
         <h1 className="font-display text-3xl font-bold">Configurações</h1>
         <p className="text-muted-foreground">Configurações gerais da plataforma</p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5" />
+            Segurança da conta
+          </CardTitle>
+          <CardDescription>
+            Altere sua senha de administrador ({user?.email})
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChangePasswordForm email={user?.email} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

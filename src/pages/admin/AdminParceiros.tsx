@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Building2, Mail, Phone, MapPin, Check, X, Eye, MoreHorizontal, UserPlus, Copy, Loader2, Save, Image as ImageIcon } from 'lucide-react';
+import { Search, Building2, Mail, Phone, MapPin, Check, X, Eye, MoreHorizontal, UserPlus, Copy, Loader2, Save, Image as ImageIcon, Plus, KeyRound } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -44,6 +45,17 @@ const AdminParceiros = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
   const [inviteResult, setInviteResult] = useState<{ email: string; temporary_password: string } | null>(null);
+  const [newAgencyOpen, setNewAgencyOpen] = useState(false);
+  const [newAgencyForm, setNewAgencyForm] = useState({
+    name: '',
+    contact_email: '',
+    responsible_name: '',
+    contact_phone: '',
+    cnpj: '',
+    createLogin: true,
+  });
+  const [resetAgency, setResetAgency] = useState<PartnerAgency | null>(null);
+  const [resetResult, setResetResult] = useState<{ email: string; temporary_password: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -57,6 +69,15 @@ const AdminParceiros = () => {
 
       if (error) throw error;
       return data as PartnerAgency[];
+    },
+  });
+
+  const { data: agencyLoginIds = new Set<string>() } = useQuery({
+    queryKey: ['partner-agency-logins'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('partner_users').select('agency_id');
+      if (error) throw error;
+      return new Set(data.map((row) => row.agency_id));
     },
   });
 
@@ -88,14 +109,14 @@ const AdminParceiros = () => {
 
   const inviteMutation = useMutation({
     mutationFn: async ({ agency_id, email, full_name }: { agency_id: string; email: string; full_name: string }) => {
-      const { data, error } = await (supabase.rpc as any)('create_partner_access', {
+      const { data, error } = await supabase.rpc('create_partner_access', {
         p_agency_id: agency_id,
         p_email: email,
         p_full_name: full_name,
       });
 
       if (error) throw error;
-      const result = data as unknown as { email?: string; temporary_password?: string; error?: string } | null;
+      const result = data as unknown as { email?: string; temporary_password?: string } | null;
       if (!result?.email || !result?.temporary_password) {
         throw new Error('Resposta inválida ao criar conta');
       }
@@ -103,6 +124,7 @@ const AdminParceiros = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['partner-agencies'] });
+      queryClient.invalidateQueries({ queryKey: ['partner-agency-logins'] });
       setInviteResult({ email: data.email!, temporary_password: data.temporary_password! });
       toast({
         title: 'Conta criada com sucesso!',
@@ -115,6 +137,86 @@ const AdminParceiros = () => {
         description: error.message,
         variant: 'destructive',
       });
+    },
+  });
+
+  const createAgencyMutation = useMutation({
+    mutationFn: async (form: typeof newAgencyForm) => {
+      const { data: agency, error } = await supabase
+        .from('partner_agencies')
+        .insert({
+          name: form.name.trim(),
+          contact_email: form.contact_email.trim(),
+          responsible_name: form.responsible_name.trim(),
+          contact_phone: form.contact_phone.trim() || null,
+          cnpj: form.cnpj.trim() || null,
+          is_active: false,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (form.createLogin) {
+        const { data, error: rpcError } = await supabase.rpc('create_partner_access', {
+          p_agency_id: agency.id,
+          p_email: form.contact_email.trim(),
+          p_full_name: form.responsible_name.trim(),
+        });
+        if (rpcError) throw rpcError;
+        const result = data as unknown as { email?: string; temporary_password?: string } | null;
+        if (!result?.email || !result?.temporary_password) {
+          throw new Error('Agência criada, mas falhou ao gerar login');
+        }
+        return { credentials: { email: result.email, temporary_password: result.temporary_password } };
+      }
+
+      return { credentials: null as null };
+    },
+    onSuccess: ({ credentials }) => {
+      queryClient.invalidateQueries({ queryKey: ['partner-agencies'] });
+      queryClient.invalidateQueries({ queryKey: ['partner-agency-logins'] });
+      setNewAgencyOpen(false);
+      setNewAgencyForm({
+        name: '',
+        contact_email: '',
+        responsible_name: '',
+        contact_phone: '',
+        cnpj: '',
+        createLogin: true,
+      });
+      if (credentials) {
+        setInviteAgency(null);
+        setInviteResult(credentials);
+        toast({
+          title: 'Agência e login criados!',
+          description: 'Envie as credenciais temporárias ao parceiro.',
+        });
+      } else {
+        toast({ title: 'Agência cadastrada!', description: 'Crie o login quando quiser pelo menu da agência.' });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Erro ao cadastrar agência', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (agencyId: string) => {
+      const { data, error } = await supabase.rpc('reset_partner_password', { p_agency_id: agencyId });
+      if (error) throw error;
+      const result = data as unknown as { email?: string; temporary_password?: string } | null;
+      if (!result?.email || !result?.temporary_password) {
+        throw new Error('Resposta inválida ao resetar senha');
+      }
+      return result;
+    },
+    onSuccess: (data) => {
+      setResetResult({ email: data.email!, temporary_password: data.temporary_password! });
+      toast({ title: 'Senha redefinida', description: 'Nova senha temporária gerada.' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Erro ao resetar senha', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -214,7 +316,12 @@ const AdminParceiros = () => {
   const handleApproveWithInvite = (agency: PartnerAgency) => {
     setInviteAgency(agency);
     setInviteEmail(agency.contact_email);
-    setInviteName('');
+    setInviteName(agency.responsible_name || '');
+  };
+
+  const handleCloseReset = () => {
+    setResetAgency(null);
+    setResetResult(null);
   };
 
   const activeAgencies = agencies?.filter((a) => a.is_active) || [];
@@ -232,7 +339,10 @@ const AdminParceiros = () => {
       agency.contact_email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const AgencyRow = ({ agency }: { agency: PartnerAgency }) => (
+  const AgencyRow = ({ agency }: { agency: PartnerAgency }) => {
+    const hasLogin = agencyLoginIds.has(agency.id);
+
+    return (
     <TableRow>
       <TableCell>
         <div className="flex items-center gap-3">
@@ -291,6 +401,21 @@ const AdminParceiros = () => {
               <Building2 className="mr-2 h-4 w-4" />
               {agency.is_external ? 'Remover marca externa' : 'Marcar como externa'}
             </DropdownMenuItem>
+            {!hasLogin && (
+              <DropdownMenuItem
+                onClick={() => handleApproveWithInvite(agency)}
+                className="text-green-600"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Criar login
+              </DropdownMenuItem>
+            )}
+            {hasLogin && (
+              <DropdownMenuItem onClick={() => setResetAgency(agency)}>
+                <KeyRound className="mr-2 h-4 w-4" />
+                Resetar senha
+              </DropdownMenuItem>
+            )}
             {agency.is_active ? (
               <DropdownMenuItem
                 onClick={() => setConfirmAction({ type: 'deactivate', agency })}
@@ -299,20 +424,21 @@ const AdminParceiros = () => {
                 <X className="mr-2 h-4 w-4" />
                 Desativar
               </DropdownMenuItem>
-            ) : (
+            ) : !hasLogin ? null : (
               <DropdownMenuItem
-                onClick={() => handleApproveWithInvite(agency)}
+                onClick={() => setConfirmAction({ type: 'activate', agency })}
                 className="text-green-600"
               >
-                <UserPlus className="mr-2 h-4 w-4" />
-                Aprovar e Criar Login
+                <Check className="mr-2 h-4 w-4" />
+                Reativar
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
       </TableCell>
     </TableRow>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -368,6 +494,10 @@ const AdminParceiros = () => {
             className="pl-10"
           />
         </div>
+        <Button onClick={() => setNewAgencyOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nova agência
+        </Button>
       </div>
 
       {/* Tabs */}
@@ -700,16 +830,18 @@ const AdminParceiros = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Invite Partner Dialog */}
-      <Dialog open={!!inviteAgency} onOpenChange={(open) => !open && handleCloseInvite()}>
+      {/* Invite / credentials dialog */}
+      <Dialog open={!!inviteAgency || !!inviteResult} onOpenChange={(open) => !open && handleCloseInvite()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5 text-primary" />
-              Aprovar e Criar Login
+              {inviteResult ? 'Credenciais de acesso' : 'Criar login do parceiro'}
             </DialogTitle>
             <DialogDescription>
-              Aprovar a agência <strong>{inviteAgency?.name}</strong> e criar automaticamente o acesso ao portal do parceiro.
+              {inviteResult
+                ? 'Copie e envie ao responsável. No primeiro acesso, será obrigatório definir nova senha.'
+                : <>Criar acesso ao portal para <strong>{inviteAgency?.name}</strong>.</>}
             </DialogDescription>
           </DialogHeader>
 
@@ -770,10 +902,152 @@ const AdminParceiros = () => {
                   disabled={!inviteEmail || !inviteName || inviteMutation.isPending}
                 >
                   {inviteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Aprovar e Criar Conta
+                  Criar login
                 </Button>
               </DialogFooter>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Nova agência manual */}
+      <Dialog open={newAgencyOpen} onOpenChange={setNewAgencyOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cadastrar agência manualmente</DialogTitle>
+            <DialogDescription>
+              Use para parceiros que não passaram pelo formulário &quot;Seja Parceiro&quot;.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-agency-name">Nome da agência *</Label>
+              <Input
+                id="new-agency-name"
+                value={newAgencyForm.name}
+                onChange={(e) => setNewAgencyForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-agency-responsible">Responsável *</Label>
+              <Input
+                id="new-agency-responsible"
+                value={newAgencyForm.responsible_name}
+                onChange={(e) => setNewAgencyForm((f) => ({ ...f, responsible_name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-agency-email">Email *</Label>
+              <Input
+                id="new-agency-email"
+                type="email"
+                value={newAgencyForm.contact_email}
+                onChange={(e) => setNewAgencyForm((f) => ({ ...f, contact_email: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-agency-phone">Telefone</Label>
+              <Input
+                id="new-agency-phone"
+                value={newAgencyForm.contact_phone}
+                onChange={(e) => setNewAgencyForm((f) => ({ ...f, contact_phone: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-agency-cnpj">CNPJ</Label>
+              <Input
+                id="new-agency-cnpj"
+                value={newAgencyForm.cnpj}
+                onChange={(e) => setNewAgencyForm((f) => ({ ...f, cnpj: e.target.value }))}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="new-agency-login"
+                checked={newAgencyForm.createLogin}
+                onCheckedChange={(checked) =>
+                  setNewAgencyForm((f) => ({ ...f, createLogin: checked === true }))
+                }
+              />
+              <Label htmlFor="new-agency-login" className="font-normal cursor-pointer">
+                Criar login com senha temporária agora
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewAgencyOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => createAgencyMutation.mutate(newAgencyForm)}
+              disabled={
+                !newAgencyForm.name.trim() ||
+                !newAgencyForm.contact_email.trim() ||
+                !newAgencyForm.responsible_name.trim() ||
+                createAgencyMutation.isPending
+              }
+            >
+              {createAgencyMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset senha parceiro */}
+      <Dialog open={!!resetAgency || !!resetResult} onOpenChange={(open) => !open && handleCloseReset()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              {resetResult ? 'Nova senha temporária' : 'Resetar senha do parceiro'}
+            </DialogTitle>
+            <DialogDescription>
+              {resetResult
+                ? 'O parceiro precisará definir nova senha no próximo login.'
+                : <>Gerar nova senha temporária para <strong>{resetAgency?.name}</strong>.</>}
+            </DialogDescription>
+          </DialogHeader>
+
+          {resetResult ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-3">
+                <div>
+                  <Label className="text-xs text-green-700">Email</Label>
+                  <p className="font-mono text-sm">{resetResult.email}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-green-700">Senha temporária</Label>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 rounded bg-white px-3 py-2 text-sm font-mono border">
+                      {resetResult.temporary_password}
+                    </code>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(resetResult.temporary_password);
+                        toast({ title: 'Senha copiada!' });
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleCloseReset}>Fechar</Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <DialogFooter>
+              <Button variant="outline" onClick={handleCloseReset}>Cancelar</Button>
+              <Button
+                onClick={() => resetAgency && resetPasswordMutation.mutate(resetAgency.id)}
+                disabled={!resetAgency || resetPasswordMutation.isPending}
+              >
+                {resetPasswordMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Gerar nova senha
+              </Button>
+            </DialogFooter>
           )}
         </DialogContent>
       </Dialog>

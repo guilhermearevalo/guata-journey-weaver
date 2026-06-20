@@ -614,6 +614,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          must_change_password: boolean
           phone: string | null
           preferences: Json | null
           updated_at: string
@@ -625,6 +626,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          must_change_password?: boolean
           phone?: string | null
           preferences?: Json | null
           updated_at?: string
@@ -636,6 +638,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          must_change_password?: boolean
           phone?: string | null
           preferences?: Json | null
           updated_at?: string
@@ -974,6 +977,11 @@ export type Database = {
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       client_approve_proposal: { Args: { p_proposal_id: string }; Returns: undefined }
+      create_partner_access: {
+        Args: { p_agency_id: string; p_email: string; p_full_name: string }
+        Returns: Json
+      }
+      reset_partner_password: { Args: { p_agency_id: string }; Returns: Json }
       partner_insert_external_sale: {
         Args: {
           _client_name?: string

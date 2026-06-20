@@ -55,6 +55,8 @@ import PartnerExperiencias from "./pages/partner/PartnerExperiencias";
 import PartnerRoteiro from "./pages/partner/PartnerRoteiro";
 import PartnerAjuda from "./pages/partner/PartnerAjuda";
 import PartnerFinanceiro from "./pages/partner/PartnerFinanceiro";
+import PartnerConta from "./pages/partner/PartnerConta";
+import RedefinirSenha from "./pages/RedefinirSenha";
 
 // Cliente imports
 import { ProtectedClienteRoute } from "./components/cliente/ProtectedClienteRoute";
@@ -125,6 +127,7 @@ const App = () => (
               <Route path="proposta/:id/roteiro" element={<PartnerRoteiro />} />
               <Route path="experiencias" element={<PartnerExperiencias />} />
               <Route path="financeiro" element={<PartnerFinanceiro />} />
+              <Route path="conta" element={<PartnerConta />} />
               <Route path="ajuda" element={<PartnerAjuda />} />
             </Route>
             
@@ -146,6 +149,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+            <Route path="/redefinir-senha" element={<RedefinirSenha />} />
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
