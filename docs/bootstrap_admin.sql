@@ -53,12 +53,8 @@ DELETE FROM public.user_roles
 WHERE user_id = (SELECT id FROM auth.users WHERE email = 'guilhermearevalo27@gmail.com')
   AND role <> 'admin'::public.app_role;
 
--- 4) (Opcional) Recria/atualiza os papéis das contas de demonstração
---    Mantém o fluxo "Login de Demonstração" funcionando.
-SELECT public.update_demo_roles();
-
 -- ============================================================
--- Verificação
+-- Verificação (descomente e rode se quiser confirmar)
 -- ============================================================
 -- SELECT u.email, r.role
 -- FROM auth.users u

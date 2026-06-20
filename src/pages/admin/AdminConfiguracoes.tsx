@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { uploadStorageFile, isStorageSchemaError } from '@/lib/uploadStorageFile';
+import { StorageImage } from '@/components/ui/StorageImage';
 import { Upload, Loader2, Image as ImageIcon, Trash2, Film, X, LayoutDashboard, MessageCircle, Save, ShieldCheck } from 'lucide-react';
 import type { HomepageSections } from '@/hooks/useHomepageSections';
-import { isStorageUploadEnabled, storageUploadDisabledMessage } from '@/lib/storageUploads';
 
 interface Slide {
   type: 'image' | 'video';
@@ -66,12 +67,6 @@ const AdminConfiguracoes = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!isStorageUploadEnabled) {
-      toast({ title: 'Use URL', description: storageUploadDisabledMessage, variant: 'destructive' });
-      e.target.value = '';
-      return;
-    }
-
     const isVideo = file.type.startsWith('video/');
     const isImage = file.type.startsWith('image/');
     if (!isImage && !isVideo) {
@@ -89,23 +84,25 @@ const AdminConfiguracoes = () => {
       const ext = file.name.split('.').pop();
       const fileName = `hero-${Date.now()}.${ext}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('site-assets')
-        .upload(fileName, file, { upsert: true });
+      const { publicUrl } = await uploadStorageFile('site-assets', fileName, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('site-assets')
-        .getPublicUrl(fileName);
-
-      const newSlide: Slide = { type: isVideo ? 'video' : 'image', url: urlData.publicUrl };
+      const newSlide: Slide = { type: isVideo ? 'video' : 'image', url: publicUrl };
       const newSlides = [...slides, newSlide];
       await saveSlides(newSlides);
       toast({ title: 'Mídia adicionada!', description: `${isVideo ? 'Vídeo' : 'Imagem'} adicionado(a) ao carrossel.` });
     } catch (err) {
-      console.error(err);
-      toast({ title: 'Erro no upload', description: 'Não foi possível enviar o arquivo.', variant: 'destructive' });
+      const supa = err as { message?: string; statusCode?: string };
+      let message = supa.message || 'Não foi possível enviar o arquivo.';
+      if (message.includes('row-level security') || supa.statusCode === '403') {
+        message = 'Sem permissão. Faça login como admin e rode docs/ensure_site_assets_storage.sql no Supabase.';
+      } else if (message.includes('Bucket not found')) {
+        message = 'Bucket site-assets não existe. Crie em Storage → New bucket (público).';
+      } else if (isStorageSchemaError(message, supa.statusCode)) {
+        message =
+          'Upload via servidor indisponível. Confirme que a Edge Function storage-upload está deployada — ou use URL abaixo temporariamente.';
+      }
+      console.error('Erro no upload hero:', err);
+      toast({ title: 'Erro no upload', description: message, variant: 'destructive' });
     } finally {
       setUploading(false);
       // Reset input
@@ -218,7 +215,7 @@ const AdminConfiguracoes = () => {
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Input
-              placeholder="ou cole a URL da imagem/vídeo (https://...)"
+              placeholder="URL alternativa (se o upload falhar): https://..."
               value={heroUrlInput}
               onChange={(e) => setHeroUrlInput(e.target.value)}
               className="flex-1"
@@ -228,7 +225,7 @@ const AdminConfiguracoes = () => {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Imagens: JPG, PNG, WEBP. Vídeos: MP4, WEBM (máx. 30MB). Ou use Adicionar por URL.
+            Envie pelo botão acima (recomendado). URL é só alternativa se o Storage falhar.
           </p>
         </CardContent>
       </Card>
@@ -450,6 +447,36 @@ function CadasturConfigCard() {
   const [certificateImageUrl, setCertificateImageUrl] = useState('');
   const [agencyLogoUrl, setAgencyLogoUrl] = useState('');
 
+  type CadasturValue = {
+    number: string;
+    validity: string;
+    description: string;
+    certificate_image_url: string;
+    agency_logo_url: string;
+  };
+
+  const saveCadastur = async (value: CadasturValue, successMessage = 'Cadastur atualizado!') => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          key: 'cadastur_config',
+          value: value as unknown as import('@/integrations/supabase/types').Json,
+          updated_at: new Date().toISOString(),
+        });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['site-setting', 'cadastur_config'] });
+      toast({ title: successMessage });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Não foi possível salvar no banco.';
+      toast({ title: 'Erro ao salvar', description: message, variant: 'destructive' });
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  };
+
   useEffect(() => {
     if (config) {
       setNumber(config.number);
@@ -462,18 +489,11 @@ function CadasturConfigCard() {
 
   const handleUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    setUrl: (url: string) => void,
     setLoading: (v: boolean) => void,
     prefix: string
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!isStorageUploadEnabled) {
-      toast({ title: 'Use URL', description: storageUploadDisabledMessage, variant: 'destructive' });
-      e.target.value = '';
-      return;
-    }
 
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
@@ -485,13 +505,25 @@ function CadasturConfigCard() {
     try {
       const ext = file.name.split('.').pop();
       const fileName = `${prefix}-${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from('site-assets')
-        .upload(fileName, file, { upsert: true, contentType: file.type || undefined });
-      if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(fileName);
-      setUrl(urlData.publicUrl);
-      toast({ title: 'Imagem enviada!' });
+      const { publicUrl } = await uploadStorageFile('site-assets', fileName, file, {
+        upsert: true,
+        contentType: file.type || undefined,
+      });
+
+      const isLogo = prefix.startsWith('agency-logo');
+      if (isLogo) setAgencyLogoUrl(publicUrl);
+      else setCertificateImageUrl(publicUrl);
+
+      await saveCadastur(
+        {
+          number,
+          validity,
+          description,
+          certificate_image_url: isLogo ? certificateImageUrl : publicUrl,
+          agency_logo_url: isLogo ? publicUrl : agencyLogoUrl,
+        },
+        isLogo ? 'Logo enviada e salva!' : 'Certificado enviado e salvo!',
+      );
     } catch (err) {
       const supa = err as { message?: string; statusCode?: string };
       let message = supa.message || 'Erro desconhecido.';
@@ -499,9 +531,9 @@ function CadasturConfigCard() {
         message = 'Sem permissão. Confirme que seu usuário tem papel admin no Supabase.';
       } else if (message.includes('Bucket not found')) {
         message = 'Bucket site-assets não existe. Crie em Storage → New bucket (público).';
-      } else if (message.includes('database schema is invalid') || message.includes('schema is out of sync')) {
+      } else if (isStorageSchemaError(message, supa.statusCode)) {
         message =
-          'Storage incompatível. Rode docs/repair_storage_schema.sql no Supabase — ou cole a URL da imagem no campo abaixo.';
+          'Upload via servidor indisponível. Deploy: npx supabase functions deploy storage-upload — ou cole a URL da imagem abaixo.';
       }
       console.error('Erro no upload Cadastur:', err);
       toast({ title: 'Erro no upload', description: message, variant: 'destructive' });
@@ -512,23 +544,13 @@ function CadasturConfigCard() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('site_settings')
-        .upsert({
-          key: 'cadastur_config',
-          value: { number, validity, description, certificate_image_url: certificateImageUrl, agency_logo_url: agencyLogoUrl } as unknown as import('@/integrations/supabase/types').Json,
-          updated_at: new Date().toISOString(),
-        });
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['site-setting', 'cadastur_config'] });
-      toast({ title: 'Cadastur atualizado!' });
-    } catch {
-      toast({ title: 'Erro ao salvar', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
+    await saveCadastur({
+      number,
+      validity,
+      description,
+      certificate_image_url: certificateImageUrl,
+      agency_logo_url: agencyLogoUrl,
+    });
   };
 
   return (
@@ -580,7 +602,7 @@ function CadasturConfigCard() {
           <Label>Imagem do Certificado</Label>
           <div className="flex items-center gap-4">
             {certificateImageUrl && (
-              <img src={certificateImageUrl} alt="Certificado" className="h-20 w-auto rounded-md border object-contain" />
+              <StorageImage src={certificateImageUrl} alt="Certificado" className="h-20 w-auto rounded-md border object-contain" />
             )}
             <div>
               <Label
@@ -595,13 +617,13 @@ function CadasturConfigCard() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => handleUpload(e, setCertificateImageUrl, setUploadingCert, 'cadastur-cert')}
+                onChange={(e) => handleUpload(e, setUploadingCert, 'cadastur-cert')}
                 disabled={uploadingCert}
               />
             </div>
           </div>
           <Input
-            placeholder="ou cole a URL da imagem (https://...)"
+            placeholder="URL alternativa (https://...)"
             value={certificateImageUrl}
             onChange={(e) => setCertificateImageUrl(e.target.value)}
           />
@@ -612,7 +634,7 @@ function CadasturConfigCard() {
           <Label>Logo da Agência (página Sobre)</Label>
           <div className="flex items-center gap-4">
             {agencyLogoUrl && (
-              <img src={agencyLogoUrl} alt="Logo" className="h-20 w-auto rounded-md border object-contain" />
+              <StorageImage src={agencyLogoUrl} alt="Logo" className="h-20 w-auto rounded-md border object-contain" />
             )}
             <div>
               <Label
@@ -627,18 +649,18 @@ function CadasturConfigCard() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => handleUpload(e, setAgencyLogoUrl, setUploadingLogo, 'agency-logo')}
+                onChange={(e) => handleUpload(e, setUploadingLogo, 'agency-logo')}
                 disabled={uploadingLogo}
               />
             </div>
           </div>
           <Input
-            placeholder="ou cole a URL da logo (https://...)"
+            placeholder="URL alternativa (https://...)"
             value={agencyLogoUrl}
             onChange={(e) => setAgencyLogoUrl(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            A logo será exibida ao lado do certificado na página &quot;Sobre Nós&quot;. Se o upload falhar, cole a URL acima.
+            Upload salva automaticamente. Use &quot;Salvar Credenciais&quot; para número, validade e descrição.
           </p>
         </div>
 

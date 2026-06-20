@@ -8,11 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Loader2 } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
 
 export function NewRequestDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -43,6 +45,10 @@ export function NewRequestDialog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['recent-requests'] });
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: ['travel_requests', user.id] });
+      }
       toast({ title: 'Demanda criada com sucesso!' });
       resetForm();
       setOpen(false);

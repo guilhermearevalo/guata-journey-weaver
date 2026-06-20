@@ -23,8 +23,8 @@ CREATE POLICY "Authenticated users can submit testimonials" ON public.testimonia
 CREATE POLICY "Staff can manage testimonials" ON public.testimonials
   FOR ALL TO authenticated USING (is_staff(auth.uid()));
 
--- Storage bucket for testimonial photos
-INSERT INTO storage.buckets (id, name, public) VALUES ('testimonials', 'testimonials', true);
+-- Bucket testimonials — crie via Dashboard/API (docs/MIGRAR_STORAGE.md)
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('testimonials', 'testimonials', true);
 
 CREATE POLICY "Anyone can view testimonial photos" ON storage.objects
   FOR SELECT TO anon, authenticated USING (bucket_id = 'testimonials');

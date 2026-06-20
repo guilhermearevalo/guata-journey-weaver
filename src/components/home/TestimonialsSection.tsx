@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { uploadStorageFile } from '@/lib/uploadStorageFile';
 import { useAuth } from '@/lib/auth';
 
 export function TestimonialsSection() {
@@ -62,10 +63,8 @@ export function TestimonialsSection() {
       if (photo) {
         const ext = photo.name.split('.').pop();
         const path = `${user.id}/${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage.from('testimonials').upload(path, photo);
-        if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('testimonials').getPublicUrl(path);
-        photoUrl = urlData.publicUrl;
+        const { publicUrl } = await uploadStorageFile('testimonials', path, photo, { upsert: true });
+        photoUrl = publicUrl;
       }
 
       const { error } = await supabase.from('testimonials').insert({

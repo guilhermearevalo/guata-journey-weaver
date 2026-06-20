@@ -102,9 +102,10 @@ USING (
   )
 );
 
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('travel-documents', 'travel-documents', false)
-ON CONFLICT (id) DO NOTHING;
+-- Bucket travel-documents — crie via Dashboard/API (docs/MIGRAR_STORAGE.md)
+-- INSERT INTO storage.buckets (id, name, public)
+-- VALUES ('travel-documents', 'travel-documents', false)
+-- ON CONFLICT (id) DO NOTHING;
 
 CREATE POLICY "Staff can manage travel document files"
 ON storage.objects

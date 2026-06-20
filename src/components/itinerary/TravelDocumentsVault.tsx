@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { uploadStorageFile } from '@/lib/uploadStorageFile';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,10 +86,8 @@ export default function TravelDocumentsVault({ proposalId, requestId, documents,
       if (file) {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
         filePath = `${user?.id || 'system'}/${proposalId}/${crypto.randomUUID()}-${safeName}`;
-        const { error: uploadError } = await supabase.storage.from('travel-documents').upload(filePath, file, { upsert: false });
-        if (uploadError) throw uploadError;
-        const { data } = supabase.storage.from('travel-documents').getPublicUrl(filePath);
-        fileUrl = data.publicUrl;
+        const { publicUrl } = await uploadStorageFile('travel-documents', filePath, file, { upsert: false });
+        fileUrl = publicUrl;
       }
 
       const payload = {

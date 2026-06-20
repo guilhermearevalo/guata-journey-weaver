@@ -27,6 +27,7 @@ import {
 import { Tables } from '@/integrations/supabase/types';
 import { Calendar, Users, MapPin, Mail, Phone, DollarSign, MessageSquare, Route, Building2, Save, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { fetchProposalByRequest } from '@/lib/fetchProposals';
 
 interface RequestDetailDialogProps {
   request: Tables<'travel_requests'> | null;
@@ -92,14 +93,7 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
   // Check whether a proposal already exists for this request
   const { data: existingProposal } = useQuery({
     queryKey: ['proposal-exists', request?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('proposals')
-        .select('id')
-        .eq('request_id', request!.id)
-        .maybeSingle();
-      return data;
-    },
+    queryFn: () => fetchProposalByRequest(request!.id),
     enabled: !!request?.id,
   });
 
@@ -113,6 +107,7 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proposal-exists', request?.id] });
+      queryClient.invalidateQueries({ queryKey: ['proposal-request-ids'] });
       queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
       toast({ title: 'Proposta excluída', description: 'O roteiro foi removido. Você pode criar uma nova proposta.' });
     },
@@ -132,7 +127,6 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
   };
 
   const status = statusLabels[request.status] || { label: request.status, variant: 'outline' as const };
-  const showItinerary = ['approved', 'in_operation', 'completed'].includes(request.status);
   const isExternalAgency = agency?.is_external;
 
   return (
@@ -272,7 +266,7 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
             >
               Ver / Criar Proposta
             </Button>
-            {showItinerary && (
+            {existingProposal && (
               <Button
                 variant="secondary"
                 className="flex-1"
@@ -282,7 +276,7 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
                 }}
               >
                 <Route className="mr-2 h-4 w-4" />
-                Roteiro com IA
+                Planejar Roteiro
               </Button>
             )}
           </div>

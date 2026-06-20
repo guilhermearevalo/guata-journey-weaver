@@ -17,8 +17,8 @@ CREATE POLICY "Staff can manage site settings"
   ON public.site_settings FOR ALL
   USING (is_staff(auth.uid()));
 
--- 2. Create site-assets storage bucket
-INSERT INTO storage.buckets (id, name, public) VALUES ('site-assets', 'site-assets', true);
+-- 2. Bucket site-assets — crie via Dashboard/API (docs/MIGRAR_STORAGE.md)
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('site-assets', 'site-assets', true);
 
 -- Storage RLS policies
 CREATE POLICY "Anyone can view site assets"

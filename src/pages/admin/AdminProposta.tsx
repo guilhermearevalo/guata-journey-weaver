@@ -19,6 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import {
   buildShareUrl, buildProposalWhatsAppMessage, copyShareLink, openWhatsAppShare, ensureShareToken,
 } from '@/lib/share-proposal';
+import { fetchProposalByRequest } from '@/lib/fetchProposals';
 
 export default function AdminProposta() {
   const { id: requestId } = useParams<{ id: string }>();
@@ -65,15 +66,7 @@ export default function AdminProposta() {
 
   const { data: existingProposal, isLoading: proposalLoading } = useQuery({
     queryKey: ['admin-proposal', requestId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('proposals')
-        .select('*')
-        .eq('request_id', requestId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchProposalByRequest(requestId!),
     enabled: !!requestId,
   });
 
@@ -111,18 +104,21 @@ export default function AdminProposta() {
         agency_id: agencyId === 'none' ? null : agencyId,
       } as any;
 
-      if (existingProposal) {
-        const { error } = await supabase.from('proposals').update(payload).eq('id', existingProposal.id);
+      const current = existingProposal ?? (await fetchProposalByRequest(requestId!));
+
+      if (current) {
+        const { error } = await supabase.from('proposals').update(payload).eq('id', current.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('proposals').insert(payload);
         if (error) throw error;
-        // Update request status
         await supabase.from('travel_requests').update({ status: 'proposal_sent' }).eq('id', requestId!);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-proposal', requestId] });
+      queryClient.invalidateQueries({ queryKey: ['proposal-exists', requestId] });
+      queryClient.invalidateQueries({ queryKey: ['proposal-request-ids'] });
       toast({ title: 'Proposta salva com sucesso!' });
     },
     onError: () => {

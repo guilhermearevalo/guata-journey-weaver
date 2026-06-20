@@ -6,11 +6,12 @@ import { Tables } from '@/integrations/supabase/types';
 
 interface KanbanCardProps {
   request: Tables<'travel_requests'>;
+  hasProposal?: boolean;
   onDragStart: (e: React.DragEvent, requestId: string) => void;
   onClick: () => void;
 }
 
-export function KanbanCard({ request, onDragStart, onClick }: KanbanCardProps) {
+export function KanbanCard({ request, hasProposal, onDragStart, onClick }: KanbanCardProps) {
   const travelDates = request.travel_dates as { start?: string; end?: string } | null;
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return null;
@@ -82,7 +83,7 @@ export function KanbanCard({ request, onDragStart, onClick }: KanbanCardProps) {
               {request.budget_range}
             </Badge>
           )}
-          {['approved', 'in_operation', 'completed'].includes(request.status) && (
+          {hasProposal && (
             <Badge variant="outline" className="text-xs font-normal text-primary">
               <Route className="h-3 w-3 mr-1" />
               Roteiro

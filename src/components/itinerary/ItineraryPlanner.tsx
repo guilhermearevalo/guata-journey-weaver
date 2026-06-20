@@ -32,6 +32,29 @@ import { type Activity, type ItineraryDay, getActivityImages } from '@/lib/itine
 import {
   buildShareUrl, buildItineraryWhatsAppMessage, copyShareLink, openWhatsAppShare, ensureShareToken,
 } from '@/lib/share-proposal';
+import { invokeItineraryAi } from '@/lib/invokeItineraryAi';
+import { fetchProposalForItinerary, updateProposalItinerary, updateProposalDossier, updateProposalShareToken, extractFunctionError } from '@/lib/fetchProposals';
+import { fetchTravelDocumentsByProposal } from '@/lib/fetchTravelDocuments';
+
+const MAX_ITINERARY_DAYS = 21;
+
+function computeTripDays(
+  travelDates: { start?: string; end?: string } | null | undefined,
+  fallback: number,
+): number {
+  let days = Math.max(1, fallback || 3);
+
+  if (travelDates?.start && travelDates?.end) {
+    const start = new Date(travelDates.start);
+    const end = new Date(travelDates.end);
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+      const diff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      if (diff > 0 && diff <= 365) days = diff;
+    }
+  }
+
+  return Math.min(days, MAX_ITINERARY_DAYS);
+}
 
 const categoryColors: Record<string, string> = {
   gastronomia: 'bg-orange-500/10 text-orange-600',
@@ -72,16 +95,10 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
 
   const { data: proposal, isLoading } = useQuery({
     queryKey: ['proposal-itinerary', id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('proposals')
-        .select('*, travel_requests!inner(destination, travel_dates, travelers_count, preferences, client_name)')
-        .eq('request_id', id!)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchProposalForItinerary(id!),
     enabled: !!id,
+    staleTime: 30_000,
+    retry: 1,
   });
 
   const request = proposal?.travel_requests as unknown as {
@@ -100,45 +117,47 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
 
   const { data: travelDocuments = [] } = useQuery({
     queryKey: ['travel-documents', proposal?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('travel_documents' as any)
-        .select('*')
-        .eq('proposal_id', proposal!.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as unknown as TravelDocument[];
-    },
+    queryFn: () => fetchTravelDocumentsByProposal(proposal!.id),
     enabled: !!proposal?.id,
+    staleTime: 30_000,
+    retry: 1,
   });
 
   const travelDates = request?.travel_dates;
-  const totalDays = travelDates?.start && travelDates?.end
-    ? Math.max(1, Math.ceil((new Date(travelDates.end).getTime() - new Date(travelDates.start).getTime()) / (1000 * 60 * 60 * 24)) + 1)
-    : itinerary.length || 3;
+  const totalDays = computeTripDays(travelDates, itinerary.length || 3);
 
   const saveItinerary = useMutation({
     mutationFn: async (newItinerary: ItineraryDay[]) => {
       if (!proposal?.id) throw new Error('Sem proposta');
-      const { error } = await supabase
-        .from('proposals')
-        .update({ itinerary: JSON.parse(JSON.stringify(newItinerary)) })
-        .eq('id', proposal.id);
-      if (error) throw error;
+      await updateProposalItinerary(proposal.id, newItinerary);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] }),
+    onSuccess: (_result, newItinerary) => {
+      queryClient.setQueryData(['proposal-itinerary', id], (old: typeof proposal) =>
+        old ? { ...old, itinerary: newItinerary } : old,
+      );
+    },
+    onError: (err) => {
+      toast({
+        title: 'Erro ao salvar roteiro',
+        description: extractFunctionError(err),
+        variant: 'destructive',
+      });
+    },
   });
 
   const saveDossier = useMutation({
     mutationFn: async (next: Dossier) => {
       if (!proposal?.id) throw new Error('Sem proposta');
-      const { error } = await supabase
-        .from('proposals')
-        .update({ dossier: JSON.parse(JSON.stringify(next)) } as any)
-        .eq('id', proposal.id);
-      if (error) throw error;
+      await updateProposalDossier(proposal.id, next);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] }),
+    onSuccess: (_result, next) => {
+      queryClient.setQueryData(['proposal-itinerary', id], (old: typeof proposal) =>
+        old ? { ...old, dossier: next } : old,
+      );
+    },
+    onError: (err) => {
+      toast({ title: 'Erro ao salvar', description: extractFunctionError(err), variant: 'destructive' });
+    },
   });
 
   const setDayTitle = (dayNum: number, title: string) => {
@@ -151,12 +170,13 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   const generateFullItinerary = async () => {
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('itinerary-ai', {
-        body: { destination: request?.destination || 'Brasil', days: totalDays, preferences: JSON.stringify(request?.preferences || {}), existing_activities: itinerary },
+      const data = await invokeItineraryAi({
+        destination: request?.destination || 'Brasil',
+        days: totalDays,
+        preferences: JSON.stringify(request?.preferences || {}),
+        existing_activities: itinerary,
       });
-      if (error) throw error;
-      if (data?.error) { toast({ title: 'Erro', description: data.error, variant: 'destructive' }); return; }
-      const newDays = data?.days as ItineraryDay[] | undefined;
+      const newDays = data.days;
       if (newDays) {
         const merged = newDays.map(d => ({ ...d, activities: d.activities.map(a => ({ ...a, is_suggestion: true })) }));
         await saveItinerary.mutateAsync(merged);
@@ -164,7 +184,11 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
       }
     } catch (err) {
       console.error(err);
-      toast({ title: 'Erro ao gerar roteiro', description: 'Tente novamente.', variant: 'destructive' });
+      toast({
+        title: 'Erro ao gerar roteiro',
+        description: err instanceof Error ? err.message : extractFunctionError(err),
+        variant: 'destructive',
+      });
     } finally { setGenerating(false); }
   };
 
@@ -172,12 +196,14 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     setGeneratingDay(dayNum);
     try {
       const dayActivities = itinerary.find(d => d.day === dayNum)?.activities || [];
-      const { data, error } = await supabase.functions.invoke('itinerary-ai', {
-        body: { destination: request?.destination || 'Brasil', days: 1, day_number: dayNum, preferences: JSON.stringify(request?.preferences || {}), existing_activities: dayActivities },
+      const data = await invokeItineraryAi({
+        destination: request?.destination || 'Brasil',
+        days: 1,
+        day_number: dayNum,
+        preferences: JSON.stringify(request?.preferences || {}),
+        existing_activities: dayActivities,
       });
-      if (error) throw error;
-      if (data?.error) { toast({ title: 'Erro', description: data.error, variant: 'destructive' }); return; }
-      const suggestedDay = (data?.days as ItineraryDay[] | undefined)?.[0];
+      const suggestedDay = data.days[0];
       if (suggestedDay) {
         const updated = [...itinerary];
         const existingIdx = updated.findIndex(d => d.day === dayNum);
@@ -188,7 +214,10 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         await saveItinerary.mutateAsync(updated);
         toast({ title: 'Sugestões adicionadas!' });
       }
-    } catch (err) { console.error(err); toast({ title: 'Erro', variant: 'destructive' }); }
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Erro', description: err instanceof Error ? err.message : extractFunctionError(err), variant: 'destructive' });
+    }
     finally { setGeneratingDay(null); }
   };
 
@@ -264,9 +293,10 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         proposal.id,
         proposal.share_token as string | null,
         async (newToken) => {
-          const { error } = await supabase.from('proposals').update({ share_token: newToken } as any).eq('id', proposal.id);
-          if (error) throw error;
-          queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] });
+          await updateProposalShareToken(proposal.id, newToken);
+          queryClient.setQueryData(['proposal-itinerary', id], (old: typeof proposal) =>
+            old ? { ...old, share_token: newToken } : old,
+          );
         },
       );
       const url = buildShareUrl('roteiro', token);
@@ -288,9 +318,10 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         proposal.id,
         proposal.share_token as string | null,
         async (newToken) => {
-          const { error } = await supabase.from('proposals').update({ share_token: newToken } as any).eq('id', proposal.id);
-          if (error) throw error;
-          queryClient.invalidateQueries({ queryKey: ['proposal-itinerary', id] });
+          await updateProposalShareToken(proposal.id, newToken);
+          queryClient.setQueryData(['proposal-itinerary', id], (old: typeof proposal) =>
+            old ? { ...old, share_token: newToken } : old,
+          );
         },
       );
       const url = buildShareUrl('roteiro', token);
@@ -353,6 +384,7 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     },
     onSuccess: () => {
       toast({ title: 'Proposta excluída', description: 'O roteiro foi removido.' });
+      queryClient.invalidateQueries({ queryKey: ['proposal-request-ids'] });
       navigate(backLink);
     },
     onError: () => toast({ title: 'Erro ao excluir', variant: 'destructive' }),

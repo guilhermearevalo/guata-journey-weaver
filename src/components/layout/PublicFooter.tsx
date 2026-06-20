@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
 import { useContactInfo } from '@/hooks/useContactInfo';
+import { useCadasturConfig } from '@/hooks/useCadasturConfig';
+import { StorageImage } from '@/components/ui/StorageImage';
 import logo from '@/assets/logo-guata.png';
 
 function NewsletterForm() {
@@ -67,18 +68,8 @@ function NewsletterForm() {
 }
 
 export function PublicFooter() {
-  const { data: cadasturConfig } = useQuery({
-    queryKey: ['site-setting', 'cadastur_config'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'cadastur_config')
-        .maybeSingle();
-      if (error) throw error;
-      return data?.value as unknown as { number?: string } | null;
-    },
-  });
+  const { data: cadasturConfig } = useCadasturConfig();
+  const agencyLogo = cadasturConfig?.agency_logo_url;
 
   const { data: contact } = useContactInfo();
   const cadasturNumber = cadasturConfig?.number || '64.677.632/0001-77';
@@ -89,7 +80,11 @@ export function PublicFooter() {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
           <div className="space-y-4">
-            <img src={logo} alt="Guatá Travel Experience" className="h-16 w-auto brightness-0 invert" />
+            {agencyLogo ? (
+              <StorageImage src={agencyLogo} alt="Guatá Travel Experience" className="h-16 w-auto" />
+            ) : (
+              <img src={logo} alt="Guatá Travel Experience" className="h-16 w-auto brightness-0 invert" />
+            )}
             <p className="text-sm text-secondary-foreground/80">
               Experiências de viagem únicas e personalizadas. 
               Descubra o Brasil e o mundo com quem entende de curadoria turística.

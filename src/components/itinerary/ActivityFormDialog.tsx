@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImagePlus, X, Upload, Loader2, Crop } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { uploadStorageFile } from '@/lib/uploadStorageFile';
 import { useToast } from '@/hooks/use-toast';
 import ImageCropper from './ImageCropper';
 import { type Activity, MAX_ACTIVITY_IMAGES, normalizeActivityImages, getActivityImages } from '@/lib/itinerary';
@@ -65,19 +65,18 @@ export default function ActivityFormDialog({ open, onOpenChange, onSave, initial
     setUploading(true);
     try {
       const fileName = `activity-${Date.now()}.jpg`;
-      const { error } = await supabase.storage
-        .from('site-assets')
-        .upload(fileName, blob, { upsert: true, contentType: 'image/jpeg' });
-      if (error) throw error;
-      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+      const { publicUrl } = await uploadStorageFile('site-assets', fileName, blob, {
+        upsert: true,
+        contentType: 'image/jpeg',
+      });
       setImageUrls(prev => {
         if (replaceIndex != null && replaceIndex >= 0 && replaceIndex < prev.length) {
           const next = [...prev];
-          next[replaceIndex] = data.publicUrl;
+          next[replaceIndex] = publicUrl;
           return next;
         }
         if (prev.length >= MAX_ACTIVITY_IMAGES) return prev;
-        return [...prev, data.publicUrl];
+        return [...prev, publicUrl];
       });
       toast({ title: 'Imagem enviada!' });
     } catch {

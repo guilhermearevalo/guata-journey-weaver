@@ -20,6 +20,8 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useCadasturConfig } from '@/hooks/useCadasturConfig';
+import { StorageImage } from '@/components/ui/StorageImage';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo-guata.png';
 import {
@@ -39,6 +41,8 @@ import {
 
 const AdminSidebar = () => {
   const { data: userRole } = useUserRole();
+  const { data: cadasturConfig } = useCadasturConfig();
+  const agencyLogo = cadasturConfig?.agency_logo_url;
   const navigate = useNavigate();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
@@ -132,14 +136,19 @@ const AdminSidebar = () => {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <img 
-            src={logo} 
-            alt="Guatá" 
-            className={cn(
-              "h-10 w-auto transition-all",
-              collapsed && "h-8"
-            )}
-          />
+          {agencyLogo ? (
+            <StorageImage
+              src={agencyLogo}
+              alt="Guatá"
+              className={cn('h-10 w-auto transition-all', collapsed && 'h-8')}
+            />
+          ) : (
+            <img
+              src={logo}
+              alt="Guatá"
+              className={cn('h-10 w-auto transition-all', collapsed && 'h-8')}
+            />
+          )}
           {!collapsed && (
             <div>
               <p className="font-display font-semibold text-sm text-sidebar-foreground">Guatá Admin</p>

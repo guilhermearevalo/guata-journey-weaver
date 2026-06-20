@@ -11,12 +11,16 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/lib/auth';
 import { useHomepageSections } from '@/hooks/useHomepageSections';
+import { useCadasturConfig } from '@/hooks/useCadasturConfig';
+import { StorageImage } from '@/components/ui/StorageImage';
 import logo from '@/assets/logo-guata.png';
 
 export function PublicHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut, isStaff, hasRole } = useAuth();
   const { data: sections } = useHomepageSections();
+  const { data: cadasturConfig } = useCadasturConfig();
+  const agencyLogo = cadasturConfig?.agency_logo_url;
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -35,7 +39,11 @@ export function PublicHeader() {
       <nav className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Guatá Travel Experience" className="h-12 w-auto" />
+          {agencyLogo ? (
+            <StorageImage src={agencyLogo} alt="Guatá Travel Experience" className="h-12 w-auto" />
+          ) : (
+            <img src={logo} alt="Guatá Travel Experience" className="h-12 w-auto" />
+          )}
         </Link>
 
         {/* Desktop Navigation */}

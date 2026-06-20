@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { uploadStorageFile } from '@/lib/uploadStorageFile';
 
 interface Trip {
   id: string;
@@ -120,13 +121,14 @@ export default function AdminViagensRealizadas() {
   const uploadFile = async (file: File, prefix: string): Promise<string | null> => {
     const ext = file.name.split('.').pop();
     const fileName = `${prefix}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true });
-    if (error) {
-      toast({ title: 'Erro no upload', description: error.message, variant: 'destructive' });
+    try {
+      const { publicUrl } = await uploadStorageFile('site-assets', fileName, file, { upsert: true });
+      return publicUrl;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro no upload';
+      toast({ title: 'Erro no upload', description: message, variant: 'destructive' });
       return null;
     }
-    const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
-    return data.publicUrl;
   };
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

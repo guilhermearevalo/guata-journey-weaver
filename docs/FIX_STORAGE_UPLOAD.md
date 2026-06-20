@@ -7,87 +7,58 @@ StorageApiError: The database schema is invalid or incompatible.
 POST .../storage/v1/object/site-assets/... 400
 ```
 
-## Causa
+## Causa (confirmado — Lovable + Supabase)
 
-Os buckets `site-assets` e `testimonials` foram criados via **INSERT SQL** nas migrações. No **Storage v3**, isso deixa o bucket inválido.
+As **migrações internas do Storage** (`storage.migrations`) **não rodaram por completo** no projeto dedicado `ojpgobftvomqxyvrqxma`. A tabela `storage.objects` fica sem colunas/triggers que a versão atual do `storage-api` espera → erro PostgreSQL **42P17**.
 
-**Não é bug do app nem da Vercel.**
+**Não é causado por** `INSERT INTO storage.buckets` nas migrações do app (isso é suportado).
+
+**Não é bug do app nem da Vercel.** Tabelas `storage.*` pertencem a `supabase_storage_admin` — reparo só via **Supabase Support** ou ações de plataforma no dashboard.
 
 ---
 
-## ✅ Reparo manual (Dashboard — recomendado)
+## ✅ O que fazer (só você — projeto Guatá)
 
-### Passo 1 — Diagnóstico (opcional)
+### 1. Diagnóstico
 
 SQL Editor: https://supabase.com/dashboard/project/ojpgobftvomqxyvrqxma/sql/new
 
-Execute **`docs/repair_storage_bucket.sql`** (só SELECT — seguro).
+Execute **`docs/repair_storage_diagnostic.sql`** e copie todo o resultado.
 
-### Passo 2 — Apagar bucket quebrado pela UI
+### 2. Ticket Supabase Support
 
-1. https://supabase.com/dashboard/project/ojpgobftvomqxyvrqxma/storage/buckets
-2. Se existir `site-assets`, clique **⋯** → **Delete bucket**
-3. Repita para `testimonials` se existir
+https://supabase.com/dashboard/support/new
 
-> **Não** use `DELETE FROM storage.buckets` no SQL Editor — o Supabase retorna erro 42501 (*Direct deletion from storage tables is not allowed*).
+Use o texto em **`docs/SUPABASE_STORAGE_SUPPORT_TICKET.md`**.
 
-### Passo 3 — Criar bucket novo pela UI
+### 3. Enquanto aguarda
 
-1. **New bucket**
-2. Nome: `site-assets`
-3. Marque **Public bucket**
-4. **Create**
+Admin → Configurações → cole **URL** da imagem → **Salvar Credenciais**.
 
-### Passo 4 — Políticas RLS
+### 4. Depois que corrigirem
 
-No SQL Editor, execute **`docs/ensure_site_assets_storage.sql`**.
-
-### Passo 5 — Testar
-
-Admin → https://agenciaguata.com/admin/configuracoes → envie uma imagem.
+1. Confirme bucket **site-assets** (público)  
+2. Execute **`docs/ensure_site_assets_storage.sql`**  
+3. Teste upload no admin  
 
 ---
 
-## Reparo automático (script)
+## O que NÃO resolve
 
-### Teste rápido (confirma se o problema é no Supabase)
-
-1. https://supabase.com/dashboard/project/ojpgobftvomqxyvrqxma/settings/api  
-2. Copie a **secret key** (`sb_secret_...` / service_role)  
-3. No terminal do projeto:
-
-```powershell
-$env:SUPABASE_SERVICE_ROLE_KEY = "sb_secret_..."
-node scripts/test-storage-upload.mjs
-```
-
-- **Se falhar** com o mesmo erro → schema interno quebrado; só o **Supabase Support** repara. Rode `docs/repair_storage_diagnostic.sql` e abra ticket.  
-- **Se passar** → rode `docs/ensure_site_assets_storage.sql` e teste no admin.
-
-### Reparo completo
-
-```powershell
-$env:SUPABASE_SERVICE_ROLE_KEY = "sb_secret_..."
-node scripts/repair-storage.mjs
-# Depois: docs/ensure_site_assets_storage.sql no SQL Editor
-```
+| Ação | Por quê |
+|------|---------|
+| Recriar bucket na UI | Schema interno continua incompleto |
+| `repair_storage_schema.sql` no SQL Editor | 42501 — sem permissão |
+| Redeploy Vercel | Não altera `storage.migrations` |
+| Lovable | Sem acesso ao projeto `ojpgobftvomqxyvrqxma` |
 
 ---
 
-## Se ainda falhar
+## Escopo dos projetos
 
-Rode **`docs/repair_storage_diagnostic.sql`** e abra ticket: https://supabase.com/dashboard/support/new
+| Projeto | Ref | Storage |
+|---------|-----|---------|
+| Lovable Cloud | `xddzshslltdxstqpwvzr` | OK (Lovable gerencia) |
+| Produção Guatá | `ojpgobftvomqxyvrqxma` | Quebrado — ticket Supabase |
 
-Não rode `repair_storage_schema.sql` no SQL Editor (erro 42501).
-
----
-
-## Checklist
-
-| Ação | Onde |
-|------|------|
-| `repair_storage_bucket.sql` | SQL Editor (só leitura) ✅ |
-| Apagar bucket | Storage UI ou script ✅ |
-| Criar `site-assets` | Storage UI ✅ |
-| `ensure_site_assets_storage.sql` | SQL Editor ✅ |
-| `DELETE FROM storage.buckets` | ❌ Bloqueado pelo Supabase |
+Guia completo: **`docs/MIGRAR_STORAGE.md`** · FAQ: **`docs/STORAGE_FAQ_LOVABLE.md`**

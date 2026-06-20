@@ -6,6 +6,7 @@ import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { StorageImage } from '@/components/ui/StorageImage';
 
 // Conteúdo padrão caso o CMS esteja vazio
 const defaultContent = {
@@ -101,7 +102,7 @@ const Sobre = () => {
             {hero?.subtitle || 'Conheça nossa história e missão'}
           </p>
           {agencyLogo && (
-            <img
+            <StorageImage
               src={agencyLogo}
               alt="Logo da Agência"
               className="mx-auto mt-8 max-w-[220px] rounded-lg"
@@ -162,7 +163,7 @@ const Sobre = () => {
           </div>
           <div className="mx-auto max-w-5xl flex flex-col md:flex-row items-center gap-8 rounded-2xl border-2 border-primary/20 bg-primary/5 p-8">
             <div className="flex-shrink-0 md:w-1/2">
-              <img
+              <StorageImage
                 src={certImage}
                 alt="Certificado Cadastur - Ministério do Turismo"
                 className="w-full rounded-lg shadow-lg"

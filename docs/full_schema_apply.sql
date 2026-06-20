@@ -1,4 +1,4 @@
-﻿-- ========== 20260126052543_87929e16-45d9-4aac-84bd-230e61bbbf29.sql ==========
+-- ========== 20260126052543_87929e16-45d9-4aac-84bd-230e61bbbf29.sql ==========
 -- 1. Create enum for user roles
 CREATE TYPE public.app_role AS ENUM ('client', 'consultant', 'manager', 'admin', 'partner');
 
@@ -771,8 +771,8 @@ CREATE POLICY "Staff can manage site settings"
   ON public.site_settings FOR ALL
   USING (is_staff(auth.uid()));
 
--- 2. Create site-assets storage bucket
-INSERT INTO storage.buckets (id, name, public) VALUES ('site-assets', 'site-assets', true);
+-- 2. Bucket site-assets — crie via Dashboard/API (docs/MIGRAR_STORAGE.md)
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('site-assets', 'site-assets', true);
 
 -- Storage RLS policies
 CREATE POLICY "Anyone can view site assets"
@@ -972,8 +972,8 @@ CREATE POLICY "Authenticated users can submit testimonials" ON public.testimonia
 CREATE POLICY "Staff can manage testimonials" ON public.testimonials
   FOR ALL TO authenticated USING (is_staff(auth.uid()));
 
--- Storage bucket for testimonial photos
-INSERT INTO storage.buckets (id, name, public) VALUES ('testimonials', 'testimonials', true);
+-- Bucket testimonials — crie via Dashboard/API (docs/MIGRAR_STORAGE.md)
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('testimonials', 'testimonials', true);
 
 CREATE POLICY "Anyone can view testimonial photos" ON storage.objects
   FOR SELECT TO anon, authenticated USING (bucket_id = 'testimonials');
@@ -1152,9 +1152,10 @@ USING (
   )
 );
 
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('travel-documents', 'travel-documents', false)
-ON CONFLICT (id) DO NOTHING;
+-- Bucket travel-documents — crie via Dashboard/API (docs/MIGRAR_STORAGE.md)
+-- INSERT INTO storage.buckets (id, name, public)
+-- VALUES ('travel-documents', 'travel-documents', false)
+-- ON CONFLICT (id) DO NOTHING;
 
 CREATE POLICY "Staff can manage travel document files"
 ON storage.objects
@@ -1367,15 +1368,61 @@ CREATE TRIGGER settlements_updated_at
   BEFORE UPDATE ON public.monthly_settlements
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
--- 4. RLS extra para parceiros lanÃ§arem vendas externas em commission_payments
-CREATE POLICY "Partners insert external sales"
-  ON public.commission_payments FOR INSERT TO authenticated
-  WITH CHECK (
-    has_role(auth.uid(), 'partner'::app_role)
-    AND agency_id = get_user_agency(auth.uid())
-    AND source = 'external'
-    AND proposal_id IS NULL
-  );
+-- 4. Vendas externas de parceiros: RPC server-side (migration 20260617011706)
+-- Parceiros informam só o valor bruto; comissão e repasse são calculados no servidor.
+CREATE OR REPLACE FUNCTION public.partner_insert_external_sale(
+  _gross_amount numeric,
+  _client_name text DEFAULT NULL,
+  _destination text DEFAULT NULL,
+  _sale_date date DEFAULT CURRENT_DATE,
+  _notes text DEFAULT NULL
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_agency uuid;
+  v_rate numeric := 10.00;
+  v_commission numeric;
+  v_partner numeric;
+  v_id uuid;
+BEGIN
+  IF NOT has_role(auth.uid(), 'partner') THEN
+    RAISE EXCEPTION 'Not authorized';
+  END IF;
+
+  IF _gross_amount IS NULL OR _gross_amount <= 0 THEN
+    RAISE EXCEPTION 'Invalid gross amount';
+  END IF;
+
+  v_agency := get_user_agency(auth.uid());
+  IF v_agency IS NULL THEN
+    RAISE EXCEPTION 'Partner is not linked to an agency';
+  END IF;
+
+  SELECT COALESCE(commission_rate, 10.00) INTO v_rate
+  FROM partner_agencies WHERE id = v_agency;
+  v_rate := COALESCE(v_rate, 10.00);
+
+  v_commission := round(_gross_amount * v_rate / 100.0, 2);
+  v_partner := _gross_amount - v_commission;
+
+  INSERT INTO public.commission_payments (
+    agency_id, proposal_id, gross_amount, guata_commission, partner_amount,
+    stripe_fee, status, source, sale_date, client_name, destination, notes, created_by
+  ) VALUES (
+    v_agency, NULL, _gross_amount, v_commission, v_partner,
+    0, 'pending', 'external', _sale_date, _client_name, _destination, _notes, auth.uid()
+  )
+  RETURNING id INTO v_id;
+
+  RETURN v_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.partner_insert_external_sale(numeric, text, text, date, text) TO authenticated;
 
 CREATE POLICY "Partners update own pending notes"
   ON public.commission_payments FOR UPDATE TO authenticated
@@ -1615,10 +1662,23 @@ ON CONFLICT (slug) DO UPDATE SET
 
 
 -- ========== 20260601130000_ensure_site_assets_bucket.sql ==========
--- Garante bucket site-assets (nÃ£o corrige schema interno do Storage; sÃ³ cria o bucket se faltar)
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('site-assets', 'site-assets', true)
-ON CONFLICT (id) DO UPDATE SET public = true;
+-- Bucket site-assets — crie via Dashboard/API (docs/MIGRAR_STORAGE.md)
+-- INSERT INTO storage.buckets (id, name, public)
+-- VALUES ('site-assets', 'site-assets', true)
+-- ON CONFLICT (id) DO UPDATE SET public = true;
+SELECT 1;
 
+
+-- ========== 20260617011706_partner_realtime_security.sql ==========
+DROP POLICY IF EXISTS "Partners insert external sales" ON public.commission_payments;
+
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Deny realtime broadcast and presence" ON realtime.messages;
+CREATE POLICY "Deny realtime broadcast and presence"
+  ON realtime.messages
+  FOR SELECT
+  TO authenticated
+  USING (false);
 
 

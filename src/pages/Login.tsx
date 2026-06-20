@@ -1,33 +1,35 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, UserCog, Users, Briefcase, User } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { isOnerWidgetProductionHost } from '@/lib/site';
 import logo from '@/assets/logo-guata.png';
 
-const DEMO_ACCESS_PASSWORD = '9212361701040';
-
-interface DemoAccount {
-  label: string;
-  email: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  redirectTo: string;
+function loginErrorMessage(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes('invalid login credentials') || lower.includes('invalid credentials')) {
+    return 'Email ou senha incorretos. Se acabou de criar o usuário no Supabase, confira a senha em Authentication → Users.';
+  }
+  if (lower.includes('email not confirmed')) {
+    return 'E-mail ainda não confirmado. No Supabase, marque o usuário como confirmado ou use Recuperar senha.';
+  }
+  if (lower.includes('invalid api key') || lower.includes('apikey')) {
+    return 'Chave do Supabase inválida no .env (VITE_SUPABASE_PUBLISHABLE_KEY). Copie a anon key em Settings → API.';
+  }
+  return message;
 }
 
-const demoAccounts: DemoAccount[] = [
-  { label: 'Admin', email: 'admin@guata.test', icon: UserCog, color: 'bg-red-500/10 text-red-600 hover:bg-red-500/20', redirectTo: '/admin' },
-  { label: 'Consultor', email: 'consultor@guata.test', icon: Users, color: 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20', redirectTo: '/admin' },
-  { label: 'Parceiro', email: 'parceiro@guata.test', icon: Briefcase, color: 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20', redirectTo: '/partner' },
-  { label: 'Cliente', email: 'cliente@guata.test', icon: User, color: 'bg-green-500/10 text-green-600 hover:bg-green-500/20', redirectTo: '/minha-conta' },
-];
+function isSupabaseConfigured(): boolean {
+  const url = import.meta.env.VITE_SUPABASE_URL?.trim();
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+  return Boolean(url && key);
+}
 
 export default function Login() {
   const [tab, setTab] = useState<'signin' | 'signup'>('signin');
@@ -35,12 +37,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState<string | null>(null);
-  const [demoPassword, setDemoPassword] = useState('');
 
-  const showDemoPanel = !isOnerWidgetProductionHost();
-
-  // Signup state
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
@@ -53,14 +50,24 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isSupabaseConfigured()) {
+      toast({
+        title: 'Supabase não configurado',
+        description: 'Crie o arquivo .env com VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY (veja .env.example).',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
 
-    const { error, data } = await signIn(email, password);
+    const { error, data } = await signIn(email.trim(), password);
 
     if (error) {
       toast({
         title: 'Erro ao entrar',
-        description: 'Email ou senha incorretos. Tente novamente.',
+        description: loginErrorMessage(error.message),
         variant: 'destructive',
       });
       setLoading(false);
@@ -101,48 +108,20 @@ export default function Login() {
       return;
     }
     setSignupLoading(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
+    const { error } = await signUp(signupEmail.trim(), signupPassword, signupName.trim());
     if (error) {
       toast({ title: 'Erro ao criar conta', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: 'Conta criada!', description: 'Verifique seu e-mail para confirmar o cadastro.' });
       setTab('signin');
-      setEmail(signupEmail);
+      setEmail(signupEmail.trim());
     }
     setSignupLoading(false);
   };
 
-  const handleDemoLogin = async (account: DemoAccount) => {
-    if (demoPassword !== DEMO_ACCESS_PASSWORD) {
-      toast({
-        title: 'Senha incorreta',
-        description: 'Informe a senha de demonstração para acessar as contas de teste.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setDemoLoading(account.email);
-
-    const { error } = await signIn(account.email, DEMO_ACCESS_PASSWORD);
-
-    if (error) {
-      toast({
-        title: 'Erro ao entrar',
-        description: 'Conta de demonstração indisponível. Verifique se as contas demo existem no Supabase.',
-        variant: 'destructive',
-      });
-    } else {
-      await supabase.rpc('update_demo_roles');
-      toast({ title: `Logado como ${account.label}`, description: 'Redirecionando...' });
-      navigate(account.redirectTo);
-    }
-    setDemoLoading(null);
-  };
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-md">
         <Card>
           <CardHeader className="space-y-4 text-center">
             <Link to="/" className="mx-auto block">
@@ -164,7 +143,7 @@ export default function Login() {
                 <CardContent className="space-y-4 pt-6">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -172,7 +151,7 @@ export default function Login() {
                       <Link to="/recuperar-senha" className="text-sm text-primary hover:underline">Esqueceu a senha?</Link>
                     </div>
                     <div className="relative">
-                      <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                      <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
                       <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
                         {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                       </Button>
@@ -225,41 +204,6 @@ export default function Login() {
             </TabsContent>
           </Tabs>
         </Card>
-
-        {showDemoPanel && (
-        <Card className="border-dashed">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-medium">Login de Demonstração</CardTitle>
-            <CardDescription className="text-xs">
-              Disponível apenas em ambiente de desenvolvimento. Informe a senha de demonstração.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="demo-password">Senha de demonstração</Label>
-              <Input
-                id="demo-password"
-                type="password"
-                placeholder="Senha de acesso"
-                value={demoPassword}
-                onChange={(e) => setDemoPassword(e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-            {demoAccounts.map((account) => {
-              const Icon = account.icon;
-              const isLoading = demoLoading === account.email;
-              return (
-                <Button key={account.email} type="button" variant="ghost" className={`h-auto flex-col gap-1 py-3 ${account.color}`} onClick={() => handleDemoLogin(account)} disabled={demoLoading !== null}>
-                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Icon className="h-5 w-5" />}
-                  <span className="text-xs font-medium">{account.label}</span>
-                </Button>
-              );
-            })}
-            </div>
-          </CardContent>
-        </Card>
-        )}
       </div>
     </div>
   );

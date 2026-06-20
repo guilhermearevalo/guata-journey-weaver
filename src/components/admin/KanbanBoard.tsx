@@ -14,6 +14,8 @@ import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
+import { fetchTravelRequests } from '@/lib/fetchTravelRequests';
+import { fetchProposalRequestIds } from '@/lib/fetchProposals';
 
 type RequestStatus = Enums<'request_status'>;
 
@@ -54,19 +56,11 @@ export function KanbanBoard() {
   const requestedStatus = searchParams.get('status') as RequestStatus | null;
   const requestedDemandId = searchParams.get('demanda');
 
-  const { data: requests, isLoading } = useQuery({
+  const { data: requests, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['travel_requests', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('travel_requests')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Tables<'travel_requests'>[];
-    },
+    queryFn: fetchTravelRequests,
     enabled: !!user && !authLoading,
-    refetchOnMount: 'always',
+    staleTime: 30_000,
   });
 
   useEffect(() => {
@@ -128,6 +122,13 @@ export function KanbanBoard() {
       updateStatusMutation.mutate({ id: requestId, status: status as RequestStatus });
     }
   };
+
+  const { data: proposalRequestIds } = useQuery({
+    queryKey: ['proposal-request-ids'],
+    queryFn: fetchProposalRequestIds,
+    enabled: !!user && !authLoading,
+    staleTime: 30_000,
+  });
 
   const { data: proposalMap } = useQuery({
     queryKey: ['proposals-payment-map'],
@@ -210,6 +211,24 @@ export function KanbanBoard() {
     );
   }
 
+  if (isError) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Erro ao carregar demandas. Rode docs/fix_travel_requests_500.sql no Supabase.';
+    return (
+      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center space-y-3">
+        <p className="text-sm text-destructive">{message}</p>
+        <p className="text-xs text-muted-foreground">
+          SQL Editor → execute <strong>docs/fix_travel_requests_500.sql</strong>
+        </p>
+        <Button type="button" variant="outline" onClick={() => void refetch()}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <>
       {requestedStatus && columns.some((column) => column.id === requestedStatus) && (
@@ -227,16 +246,19 @@ export function KanbanBoard() {
         </div>
       )}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <KanbanFilters
-          agencyId={filterAgency}
-          paymentStatus={filterPayment}
-          onAgencyChange={setFilterAgency}
-          onPaymentStatusChange={setFilterPayment}
-          onClear={() => {
-            setFilterAgency('all');
-            setFilterPayment('all');
-          }}
-        />
+        <div className="flex items-center gap-3 flex-wrap">
+          <KanbanFilters
+            agencyId={filterAgency}
+            paymentStatus={filterPayment}
+            onAgencyChange={setFilterAgency}
+            onPaymentStatusChange={setFilterPayment}
+            onClear={() => {
+              setFilterAgency('all');
+              setFilterPayment('all');
+            }}
+          />
+          <Badge variant="secondary">{requests?.length ?? 0} demandas</Badge>
+        </div>
         <NewRequestDialog />
       </div>
       <div className="flex gap-4 overflow-x-auto pb-4 mt-4">
@@ -256,6 +278,7 @@ export function KanbanBoard() {
                 <KanbanCard
                   key={request.id}
                   request={request}
+                  hasProposal={proposalRequestIds?.has(request.id) ?? false}
                   onDragStart={handleDragStart}
                   onClick={() => handleSelectRequest(request)}
                 />

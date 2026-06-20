@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCmsPage, CmsPageContent } from '@/hooks/useCmsPage';
 import { supabase } from '@/integrations/supabase/client';
+import { uploadStorageFile, isStorageSchemaError } from '@/lib/uploadStorageFile';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,11 +20,6 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft, Save, Plus, Trash2, GripVertical, Eye, FileUp, Loader2, X, FileText as FileTextIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const isStorageSchemaError = (message: string, statusCode?: string) =>
-  message.includes('database schema is invalid') ||
-  message.includes('schema is out of sync') ||
-  statusCode === '503';
 
 const isValidPdfUrl = (value: string) => {
   try {
@@ -69,26 +65,11 @@ const AdminCMSEditor = () => {
         return;
       }
       const fileName = `legal/${slug}-${Date.now()}.pdf`;
-
-      // Tenta o upload com pequenas re-tentativas para cobrir indisponibilidade
-      // transitória do storage (ex.: 503 / "schema out of sync").
-      let lastError: { message?: string; statusCode?: string } | null = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const { error } = await supabase.storage
-          .from('site-assets')
-          .upload(fileName, file, { upsert: true, contentType: 'application/pdf' });
-        if (!error) {
-          lastError = null;
-          break;
-        }
-        lastError = error as { message?: string; statusCode?: string };
-        if (!isStorageSchemaError(lastError.message || '', lastError.statusCode)) break;
-        await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
-      }
-      if (lastError) throw lastError;
-
-      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
-      setContent((prev) => ({ ...prev, pdf_url: data.publicUrl }));
+      const { publicUrl } = await uploadStorageFile('site-assets', fileName, file, {
+        upsert: true,
+        contentType: 'application/pdf',
+      });
+      setContent((prev) => ({ ...prev, pdf_url: publicUrl }));
       toast({ title: 'PDF enviado!', description: 'Lembre-se de salvar a página.' });
     } catch (err) {
       const supa = err as { message?: string; statusCode?: string; error?: string };

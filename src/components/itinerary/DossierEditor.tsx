@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { uploadStorageFile } from '@/lib/uploadStorageFile';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -41,10 +41,8 @@ export default function DossierEditor({ dossier, onChange }: DossierEditorProps)
     try {
       const ext = file.name.split('.').pop();
       const fileName = `${prefix}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
-      onChange({ ...dossier, [key]: data.publicUrl });
+      const { publicUrl } = await uploadStorageFile('site-assets', fileName, file, { upsert: true });
+      onChange({ ...dossier, [key]: publicUrl });
       toast({ title: 'Imagem enviada!' });
     } catch {
       toast({ title: 'Erro no upload', variant: 'destructive' });
@@ -65,10 +63,8 @@ export default function DossierEditor({ dossier, onChange }: DossierEditorProps)
     try {
       const ext = file.name.split('.').pop();
       const fileName = `accommodation-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('site-assets').upload(fileName, file, { upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
-      onChange(setAccommodationImages(dossier, [...current, data.publicUrl]));
+      const { publicUrl } = await uploadStorageFile('site-assets', fileName, file, { upsert: true });
+      onChange(setAccommodationImages(dossier, [...current, publicUrl]));
       toast({ title: 'Foto adicionada!' });
     } catch {
       toast({ title: 'Erro no upload', variant: 'destructive' });

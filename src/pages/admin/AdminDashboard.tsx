@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchTravelRequests } from '@/lib/fetchTravelRequests';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClipboardList, Compass, Users, Building2, TrendingUp, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -162,14 +163,14 @@ const RecentRequests = () => {
   const { data: requests, isLoading } = useQuery({
     queryKey: ['recent-requests'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('travel_requests')
-        .select('id, client_name, destination, status, created_at')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-      return data;
+      const all = await fetchTravelRequests();
+      return all.slice(0, 5).map((r) => ({
+        id: r.id,
+        client_name: r.client_name,
+        destination: r.destination,
+        status: r.status,
+        created_at: r.created_at,
+      }));
     },
   });
 
