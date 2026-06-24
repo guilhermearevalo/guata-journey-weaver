@@ -1,0 +1,182 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const DEFAULT_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-2.5-pro",
+];
+
+function resolveModels(): string[] {
+  const envModel = Deno.env.get("GEMINI_MODEL")?.trim();
+  return [...new Set([envModel, ...DEFAULT_MODELS].filter(Boolean))];
+}
+
+function jsonError(message: string, status = 500) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function parseGeminiError(text: string): string {
+  try {
+    const parsed = JSON.parse(text);
+    return parsed?.error?.message ?? text.slice(0, 300);
+  } catch {
+    return text.slice(0, 300);
+  }
+}
+
+async function callGemini(
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+): Promise<{ days: unknown[] }> {
+  const url =
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: 0.7,
+      },
+    }),
+  });
+
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`[${model}] ${response.status}: ${parseGeminiError(text)}`);
+  }
+
+  const data = JSON.parse(text);
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!rawText) {
+    throw new Error(`[${model}] resposta vazia da IA`);
+  }
+
+  const itinerary = JSON.parse(rawText);
+  if (!Array.isArray(itinerary?.days)) {
+    throw new Error(`[${model}] JSON sem campo days`);
+  }
+
+  return itinerary;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return jsonError("Unauthorized", 401);
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const {
+      data: { user },
+      error: userError,
+    } = await userClient.auth.getUser();
+    if (userError || !user) {
+      return jsonError("Unauthorized", 401);
+    }
+
+    const admin = createClient(supabaseUrl, serviceRoleKey);
+    const { data: isStaff, error: staffError } = await admin.rpc("is_staff", {
+      _user_id: user.id,
+    });
+    if (staffError || isStaff !== true) {
+      return jsonError("Forbidden", 403);
+    }
+
+    const { destination, days, preferences, existing_activities, day_number, context } = await req.json();
+    const apiKey = Deno.env.get("GEMINI_API_KEY")?.trim();
+    if (!apiKey) {
+      return jsonError("GEMINI_API_KEY não configurada nos secrets da Edge Function.");
+    }
+
+    if (!apiKey.startsWith("AIza")) {
+      return jsonError(
+        "Chave inválida para Gemini API. Crie uma chave em https://aistudio.google.com/apikey (formato AIza...). Chaves AQ... não funcionam neste endpoint.",
+        400,
+      );
+    }
+
+    const dayCount = Math.min(Math.max(1, Number(days) || 3), 21);
+
+    const ctx = context && typeof context === 'object' ? context as Record<string, unknown> : {};
+    const contextBlock = [
+      ctx.client_name ? `Cliente: ${ctx.client_name}` : '',
+      ctx.proposal_title ? `Pacote: ${ctx.proposal_title}` : '',
+      ctx.proposal_description ? `Descrição da proposta: ${ctx.proposal_description}` : '',
+      Array.isArray(ctx.inclusions) && ctx.inclusions.length
+        ? `Inclusões: ${(ctx.inclusions as string[]).join('; ')}`
+        : '',
+      ctx.budget_range ? `Orçamento: ${ctx.budget_range}` : '',
+      ctx.special_requests ? `Pedidos especiais: ${ctx.special_requests}` : '',
+      ctx.travelers_count ? `Viajantes: ${ctx.travelers_count}` : '',
+      ctx.travel_dates && typeof ctx.travel_dates === 'object'
+        ? `Datas: ${JSON.stringify(ctx.travel_dates)}`
+        : '',
+    ].filter(Boolean).join('\n');
+
+    const systemPrompt = `Você é um planejador de roteiros de viagem no Brasil e no mundo.
+Responda APENAS com JSON válido: {"days":[{"day":1,"activities":[...]}]}
+Cada atividade: name, description, category (gastronomia|cultura|aventura|natureza|compras|transporte|hospedagem), estimated_cost (número BRL), time_slot (manhã|tarde|noite).
+Use o contexto da proposta e da demanda para alinhar sugestões ao pacote vendido.`;
+
+    const contextSection = contextBlock ? `\nContexto da proposta:\n${contextBlock}\n` : '';
+
+    const userPrompt = day_number
+      ? `Sugira 3-4 atividades para o Dia ${day_number} em ${destination}.
+Preferências: ${preferences || "nenhuma"}.${contextSection}
+Já planejado: ${JSON.stringify(existing_activities || [])}.
+Retorne só o dia ${day_number}.`
+      : `Roteiro de ${dayCount} dia(s) para ${destination}.
+Preferências: ${preferences || "nenhuma"}.${contextSection}
+3-5 atividades por dia (manhã, tarde, noite).
+Já existente: ${JSON.stringify(existing_activities || [])}.`;
+
+    const uniqueModels = resolveModels();
+    const errors: string[] = [];
+
+    for (const model of uniqueModels) {
+      try {
+        const itinerary = await callGemini(apiKey, model, systemPrompt, userPrompt);
+        return new Response(JSON.stringify(itinerary), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        errors.push(msg);
+        console.error("Gemini attempt failed:", msg);
+      }
+    }
+
+    return jsonError(
+      `Erro Gemini (${errors.length} modelos): ${errors.join(" | ")}`,
+    );
+  } catch (e) {
+    console.error("itinerary-ai error:", e);
+    return jsonError(e instanceof Error ? e.message : "Unknown error");
+  }
+});

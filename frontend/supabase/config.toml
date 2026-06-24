@@ -1,0 +1,10 @@
+project_id = "ojpgobftvomqxyvrqxma"
+
+[functions.itinerary-ai]
+verify_jwt = true
+
+[functions.storage-upload]
+verify_jwt = true
+
+[functions.storage-sign-url]
+verify_jwt = false

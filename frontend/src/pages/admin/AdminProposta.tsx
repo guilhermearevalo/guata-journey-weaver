@@ -1,0 +1,402 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, Save, Loader2, MapPin, Users, Calendar, Route, Share2, Check, Lock, MessageCircle } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Link } from 'react-router-dom';
+import { Switch } from '@/components/ui/switch';
+import {
+  buildShareUrl, buildProposalWhatsAppMessage, copyShareLink, openWhatsAppShare, ensureShareToken,
+} from '@/lib/share-proposal';
+import { fetchProposalByRequest } from '@/lib/fetchProposals';
+import { markSentOnShare, markInOperationOnPaid } from '@/lib/travelRequestStatus';
+import { getServiceType, isConsultancy, SERVICE_TYPE_LABELS } from '@/lib/serviceType';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+export default function AdminProposta() {
+  const { id: requestId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [totalPrice, setTotalPrice] = useState('');
+  const [inclusions, setInclusions] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState('pending');
+  const [agencyId, setAgencyId] = useState<string>('none');
+  const [paymentEnabled, setPaymentEnabled] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
+  const [manualPaymentLink, setManualPaymentLink] = useState('');
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareEnabled, setShareEnabled] = useState(true);
+
+  const { data: request, isLoading: requestLoading } = useQuery({
+    queryKey: ['travel-request', requestId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('travel_requests')
+        .select('*')
+        .eq('id', requestId!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!requestId,
+  });
+
+  const { data: agencies } = useQuery({
+    queryKey: ['agencies-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('partner_agencies').select('id, name').eq('is_active', true).order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: existingProposal, isLoading: proposalLoading } = useQuery({
+    queryKey: ['admin-proposal', requestId],
+    queryFn: () => fetchProposalByRequest(requestId!),
+    enabled: !!requestId,
+  });
+
+  useEffect(() => {
+    if (existingProposal) {
+      setTitle(existingProposal.title || '');
+      setDescription(existingProposal.description || '');
+      setTotalPrice(existingProposal.total_price?.toString() || '');
+      setInclusions(existingProposal.inclusions?.join('\n') || '');
+      setPaymentStatus(existingProposal.payment_status || 'pending');
+      setAgencyId(existingProposal.agency_id || 'none');
+      setPaymentEnabled((existingProposal as any).payment_enabled || false);
+      setAccessCode((existingProposal as any).access_code || '');
+      const pl = existingProposal.payment_links as Record<string, any> | null;
+      setManualPaymentLink(pl?.manual_link || '');
+      setShareEnabled((existingProposal as any).share_enabled !== false);
+    }
+  }, [existingProposal]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const existingPaymentLinks = (existingProposal?.payment_links as Record<string, any>) || {};
+      const payload = {
+        request_id: requestId!,
+        title,
+        description,
+        total_price: totalPrice ? parseFloat(totalPrice) : null,
+        inclusions: inclusions.split('\n').filter(Boolean),
+        payment_status: paymentStatus,
+        payment_enabled: paymentEnabled,
+        access_code: accessCode.trim() || null,
+        share_enabled: shareEnabled,
+        payment_links: { ...existingPaymentLinks, manual_link: manualPaymentLink.trim() || null },
+        created_by: user?.id,
+        agency_id: agencyId === 'none' ? null : agencyId,
+      } as any;
+
+      const current = existingProposal ?? (await fetchProposalByRequest(requestId!));
+      const wasPaid = current?.payment_status === 'paid';
+
+      if (current) {
+        const { error } = await supabase.from('proposals').update(payload).eq('id', current.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('proposals').insert(payload);
+        if (error) throw error;
+      }
+
+      if (paymentStatus === 'paid' && !wasPaid && request) {
+        await markInOperationOnPaid(requestId!, request);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-proposal', requestId] });
+      queryClient.invalidateQueries({ queryKey: ['proposal-exists', requestId] });
+      queryClient.invalidateQueries({ queryKey: ['proposal-request-ids'] });
+      queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['travel-request', requestId] });
+      toast({ title: 'Proposta salva com sucesso!' });
+    },
+    onError: () => {
+      toast({ title: 'Erro ao salvar', variant: 'destructive' });
+    },
+  });
+
+  const travelDates = request?.travel_dates as { start?: string; end?: string } | null;
+  const consultancy = isConsultancy(request);
+  const willMoveToOperation =
+    !consultancy &&
+    paymentStatus === 'paid' &&
+    existingProposal?.payment_status !== 'paid' &&
+    request &&
+    !['in_operation', 'completed'].includes(request.status);
+
+  const markProposalSentIfNeeded = async () => {
+    if (!requestId || !request) return;
+    await markSentOnShare(requestId, request);
+    queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
+    queryClient.invalidateQueries({ queryKey: ['travel-request', requestId] });
+  };
+
+  const handleShareProposal = async () => {
+    if (!existingProposal) return;
+    setShareLoading(true);
+    try {
+      const token = await ensureShareToken(
+        existingProposal.id,
+        existingProposal.share_token as string | null,
+        async (newToken) => {
+          const { error } = await supabase.from('proposals').update({ share_token: newToken } as any).eq('id', existingProposal.id);
+          if (error) throw error;
+          queryClient.invalidateQueries({ queryKey: ['admin-proposal', requestId] });
+        },
+      );
+      const url = buildShareUrl('proposta', token);
+      await markProposalSentIfNeeded();
+      await copyShareLink(url);
+      setShareCopied(true);
+      toast({ title: 'Link copiado!', description: 'Envie por WhatsApp, email ou redes sociais.' });
+      setTimeout(() => setShareCopied(false), 3000);
+    } catch {
+      toast({ title: 'Erro ao gerar link', variant: 'destructive' });
+    } finally { setShareLoading(false); }
+  };
+
+  const handleShareProposalWhatsApp = async () => {
+    if (!existingProposal || !request) return;
+    setShareLoading(true);
+    try {
+      const token = await ensureShareToken(
+        existingProposal.id,
+        existingProposal.share_token as string | null,
+        async (newToken) => {
+          const { error } = await supabase.from('proposals').update({ share_token: newToken } as any).eq('id', existingProposal.id);
+          if (error) throw error;
+          queryClient.invalidateQueries({ queryKey: ['admin-proposal', requestId] });
+        },
+      );
+      const url = buildShareUrl('proposta', token);
+      await markProposalSentIfNeeded();
+      openWhatsAppShare(buildProposalWhatsAppMessage({
+        clientName: request.client_name,
+        destination: request.destination,
+        url,
+      }));
+    } catch {
+      toast({ title: 'Erro ao compartilhar', variant: 'destructive' });
+    } finally { setShareLoading(false); }
+  };
+
+  if (requestLoading || proposalLoading) {
+    return <div className="space-y-4"><Skeleton className="h-8 w-64" /><Skeleton className="h-64" /></div>;
+  }
+
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin/demandas')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="font-display text-2xl font-bold">
+            {existingProposal ? 'Editar Proposta' : 'Criar Proposta'}
+          </h1>
+          <p className="text-muted-foreground">
+            Demanda de {request?.client_name} — {request?.destination || 'Destino não definido'}
+          </p>
+        </div>
+      </div>
+
+      {/* Request summary */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Resumo da Demanda</CardTitle></CardHeader>
+        <CardContent className="flex flex-wrap gap-4 text-sm items-center">
+          <Badge variant={consultancy ? 'secondary' : 'outline'}>
+            {SERVICE_TYPE_LABELS[getServiceType(request)]}
+          </Badge>
+          {request?.destination && (
+            <span className="flex items-center gap-1"><MapPin className="h-4 w-4 text-muted-foreground" />{request.destination}</span>
+          )}
+          {request?.travelers_count && (
+            <span className="flex items-center gap-1"><Users className="h-4 w-4 text-muted-foreground" />{request.travelers_count} viajante(s)</span>
+          )}
+          {travelDates?.start && (
+            <span className="flex items-center gap-1"><Calendar className="h-4 w-4 text-muted-foreground" />{format(new Date(travelDates.start), 'dd/MM/yyyy')}</span>
+          )}
+          {request?.budget_range && (
+            <span className="text-muted-foreground">Orçamento: {request.budget_range}</span>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Proposal form */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Dados da Proposta</CardTitle>
+          <CardDescription>Preencha os detalhes da proposta de viagem</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Título</Label>
+              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Pacote Fernando de Noronha 5 dias" />
+            </div>
+            <div className="space-y-2">
+              <Label>Valor Total (R$)</Label>
+              <Input type="number" value={totalPrice} onChange={e => setTotalPrice(e.target.value)} placeholder="0.00" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Agência Responsável</Label>
+            <Select value={agencyId} onValueChange={setAgencyId}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Guatá (operação própria)</SelectItem>
+                {agencies?.map(a => (
+                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Descrição</Label>
+            <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} placeholder="Descreva os detalhes da proposta..." />
+            <p className="text-xs text-muted-foreground">
+              Usada na proposta pública e enviada à IA ao gerar o roteiro — descreva o pacote, hotel, regime e diferenciais.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Inclusões (uma por linha)</Label>
+            <Textarea value={inclusions} onChange={e => setInclusions(e.target.value)} rows={4} placeholder="Hospedagem 4 noites&#10;Transfer aeroporto&#10;Passeio de barco" />
+            <p className="text-xs text-muted-foreground">
+              Cada linha vira um item na proposta e orienta a IA sobre o que já está contratado (não sugira o que já está incluso).
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label>Link público ativo</Label>
+              <p className="text-xs text-muted-foreground">
+                Desligue para impedir que o cliente acesse o link compartilhado da proposta/roteiro. Religar reativa sem gerar novo link.
+              </p>
+            </div>
+            <Switch checked={shareEnabled} onCheckedChange={setShareEnabled} />
+          </div>
+
+          {consultancy ? (
+            <Alert>
+              <AlertDescription className="text-sm">
+                <strong>Consultoria / Roteiro:</strong> o cliente recebe o roteiro pelo link compartilhado.
+                Pagamento costuma ser por PIX/WhatsApp fora do sistema — use o valor total acima e marque o status abaixo só para controle interno e relatório.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label>Exibir link de pagamento</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Quando ativado, o cliente verá o link de pagamento (PIX / outro) na proposta pública.
+                  </p>
+                </div>
+                <Switch checked={paymentEnabled} onCheckedChange={setPaymentEnabled} />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Link de pagamento (PIX, PagSeguro, etc.)</Label>
+                <Input
+                  value={manualPaymentLink}
+                  onChange={(e) => setManualPaymentLink(e.target.value)}
+                  placeholder="https://pag.ae/exemplo ou link PIX"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Cole aqui o link PIX ou PagSeguro. O sistema não detecta pagamento automaticamente — confirme manualmente abaixo.
+                </p>
+              </div>
+            </>
+          )}
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5" />Código de Acesso ao Roteiro
+            </Label>
+            <Input
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+              placeholder="Ex: NORONHA2026 (deixe vazio para acesso livre)"
+              maxLength={20}
+            />
+            <p className="text-xs text-muted-foreground">
+              Se definido, o cliente precisará informar este código para visualizar o roteiro.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Status do Pagamento</Label>
+            <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+              <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pendente — ainda não recebeu</SelectItem>
+                <SelectItem value="partial">Parcial — sinal/entrada recebida</SelectItem>
+                <SelectItem value="paid">Pago — valor confirmado no caixa</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {consultancy
+                ? 'Controle interno e relatório. Não move o Kanban automaticamente.'
+                : 'Marque Pago após confirmar o PIX/transferência. Ao salvar, a demanda vai para Em Operação (reservas).'}
+            </p>
+            {willMoveToOperation && (
+              <Alert>
+                <AlertDescription className="text-sm">
+                  Ao salvar, a demanda será movida para <strong>Em Operação</strong> para iniciar reservas.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <div className="flex gap-3 pt-4 flex-wrap">
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !title}>
+              {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {existingProposal ? 'Salvar Alterações' : 'Criar Proposta'}
+            </Button>
+            {existingProposal && (
+              <>
+                <Button variant="outline" asChild>
+                  <Link to={`/admin/demandas/${requestId}/roteiro`}>
+                    <Route className="mr-2 h-4 w-4" />
+                    Planejar Roteiro com IA
+                  </Link>
+                </Button>
+                <Button variant="outline" onClick={handleShareProposal} disabled={shareLoading}>
+                  {shareCopied ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
+                  {shareCopied ? 'Link Copiado!' : 'Copiar link'}
+                </Button>
+                <Button variant="outline" onClick={handleShareProposalWhatsApp} disabled={shareLoading}>
+                  <MessageCircle className="mr-2 h-4 w-4" />WhatsApp
+                </Button>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -1,0 +1,242 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Guatá Travel Experience Design System
+   Modern, technological agency with welcoming Brazilian essence
+   Colors extracted from logo: Brown (#4A2C2A), Teal (#0B5D5D), Cream/Beige
+*/
+
+@layer base {
+  :root {
+    /* Primary - Deep Teal from logo */
+    --primary: 174 82% 20%;
+    --primary-foreground: 45 30% 96%;
+    
+    /* Secondary - Warm Brown from logo */
+    --secondary: 4 28% 23%;
+    --secondary-foreground: 45 30% 96%;
+    
+    /* Background - Warm cream/off-white */
+    --background: 40 30% 98%;
+    --foreground: 4 28% 15%;
+    
+    /* Card - Slightly warmer than background */
+    --card: 40 25% 99%;
+    --card-foreground: 4 28% 15%;
+    
+    /* Popover */
+    --popover: 40 25% 99%;
+    --popover-foreground: 4 28% 15%;
+    
+    /* Muted - Soft beige */
+    --muted: 35 20% 93%;
+    --muted-foreground: 4 15% 45%;
+    
+    /* Accent - Lighter teal */
+    --accent: 174 50% 92%;
+    --accent-foreground: 174 82% 20%;
+    
+    /* Destructive */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Success */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Warning */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    
+    /* Border and Input */
+    --border: 35 25% 88%;
+    --input: 35 25% 88%;
+    --ring: 174 82% 20%;
+    
+    /* Radius */
+    --radius: 0.75rem;
+    
+    /* Sidebar - deep teal brand with light, legible text */
+    --sidebar-background: 174 78% 13%;
+    --sidebar-foreground: 45 35% 92%;
+    --sidebar-primary: 38 92% 60%;
+    --sidebar-primary-foreground: 174 82% 13%;
+    --sidebar-accent: 174 55% 22%;
+    --sidebar-accent-foreground: 45 40% 96%;
+    --sidebar-border: 174 45% 22%;
+    --sidebar-ring: 38 92% 60%;
+
+    /* Custom Guatá colors */
+    --guata-teal: 174 82% 20%;
+    --guata-teal-light: 174 60% 40%;
+    --guata-brown: 4 28% 23%;
+    --guata-brown-light: 4 20% 35%;
+    --guata-cream: 40 30% 96%;
+    --guata-sand: 35 25% 90%;
+    --guata-gold: 42 55% 54%;
+  }
+
+  .dark {
+    --primary: 174 70% 50%;
+    --primary-foreground: 4 28% 10%;
+    
+    --secondary: 4 20% 30%;
+    --secondary-foreground: 45 30% 96%;
+    
+    --background: 4 25% 8%;
+    --foreground: 45 20% 95%;
+    
+    --card: 4 22% 12%;
+    --card-foreground: 45 20% 95%;
+    
+    --popover: 4 22% 12%;
+    --popover-foreground: 45 20% 95%;
+    
+    --muted: 4 18% 18%;
+    --muted-foreground: 35 15% 65%;
+    
+    --accent: 174 40% 15%;
+    --accent-foreground: 174 70% 50%;
+    
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 4 18% 20%;
+    --input: 4 18% 20%;
+    --ring: 174 70% 50%;
+    
+    --sidebar-background: 4 28% 6%;
+    --sidebar-foreground: 45 30% 96%;
+    --sidebar-primary: 174 70% 50%;
+    --sidebar-primary-foreground: 4 28% 10%;
+    --sidebar-accent: 4 22% 15%;
+    --sidebar-accent-foreground: 45 30% 96%;
+    --sidebar-border: 4 18% 15%;
+    --sidebar-ring: 174 70% 50%;
+
+    --guata-teal: 174 70% 50%;
+    --guata-teal-light: 174 60% 60%;
+    --guata-brown: 4 20% 30%;
+    --guata-brown-light: 4 15% 45%;
+    --guata-cream: 40 15% 15%;
+    --guata-sand: 35 15% 20%;
+    --guata-gold: 42 60% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: 'Playfair Display', serif;
+  }
+  
+  .font-body {
+    font-family: 'Inter', sans-serif;
+  }
+
+  .gradient-hero {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--guata-teal)) 0%,
+      hsl(var(--guata-teal-light)) 50%,
+      hsl(var(--guata-brown-light)) 100%
+    );
+  }
+
+  .gradient-card {
+    background: linear-gradient(
+      180deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--guata-sand)) 100%
+    );
+  }
+
+  .text-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--guata-teal)) 0%,
+      hsl(var(--guata-brown)) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+@layer utilities {
+  .hero-text-shadow {
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.4s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+/* Print styles for itinerary export */
+@media print {
+  body { background: white !important; }
+  .print\:hidden { display: none !important; }
+  .print\:block { display: block !important; }
+  .print\:flex-col { flex-direction: column !important; }
+  .print\:gap-2 { gap: 0.5rem !important; }
+  nav, header, footer, [data-sidebar], .sidebar { display: none !important; }
+  main { padding: 0 !important; margin: 0 !important; }
+  @page { margin: 1.5cm; }
+}

@@ -1,0 +1,286 @@
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Building2, TrendingUp, DollarSign, ClipboardList } from 'lucide-react';
+import { SERVICE_TYPE_LABELS, type ServiceType } from '@/lib/serviceType';
+
+type RevenueMode = 'approved' | 'paid';
+
+const AdminRelatorioAgencias = () => {
+  const [period, setPeriod] = useState<string>('all');
+  const [revenueMode, setRevenueMode] = useState<RevenueMode>('paid');
+  const [serviceFilter, setServiceFilter] = useState<'all' | ServiceType>('all');
+
+  const { data: agencies, isLoading: loadingAgencies } = useQuery({
+    queryKey: ['all-agencies'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('partner_agencies')
+        .select('id, name, commission_rate, is_active')
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: requests } = useQuery({
+    queryKey: ['all-requests-report', period],
+    queryFn: async () => {
+      let query = supabase
+        .from('travel_requests')
+        .select('id, assigned_agency_id, status, service_type, created_at');
+
+      if (period !== 'all') {
+        const now = new Date();
+        const start = new Date();
+        if (period === '30d') start.setDate(now.getDate() - 30);
+        else if (period === '90d') start.setDate(now.getDate() - 90);
+        else if (period === '12m') start.setMonth(now.getMonth() - 12);
+        query = query.gte('created_at', start.toISOString());
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: proposals } = useQuery({
+    queryKey: ['all-proposals-report', period],
+    queryFn: async () => {
+      let query = supabase
+        .from('proposals')
+        .select('id, agency_id, request_id, total_price, is_approved, payment_status, created_at');
+
+      if (period !== 'all') {
+        const now = new Date();
+        const start = new Date();
+        if (period === '30d') start.setDate(now.getDate() - 30);
+        else if (period === '90d') start.setDate(now.getDate() - 90);
+        else if (period === '12m') start.setMonth(now.getMonth() - 12);
+        query = query.gte('created_at', start.toISOString());
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const requestServiceMap = new Map(
+    requests?.map((r) => [r.id, r.service_type ?? 'full_package']) ?? [],
+  );
+
+  const matchesServiceFilter = (requestId: string | null | undefined) => {
+    if (serviceFilter === 'all' || !requestId) return serviceFilter === 'all';
+    return requestServiceMap.get(requestId) === serviceFilter;
+  };
+
+  const agencyReport = (() => {
+    const filteredProposals = proposals?.filter((p) => matchesServiceFilter(p.request_id)) ?? [];
+    const filteredRequests = requests?.filter((r) =>
+      serviceFilter === 'all' ? true : r.service_type === serviceFilter,
+    ) ?? [];
+
+    const rows = agencies?.map((agency) => {
+      const agencyRequests = filteredRequests.filter((r) => r.assigned_agency_id === agency.id);
+      const agencyProposals = filteredProposals.filter((p) => p.agency_id === agency.id);
+      const approvedProposals = agencyProposals.filter((p) => p.is_approved);
+      const totalRevenue = approvedProposals.reduce((sum, p) => sum + (p.total_price || 0), 0);
+      const paidProposals = agencyProposals.filter((p) => p.payment_status === 'paid');
+      const paidRevenue = paidProposals.reduce((sum, p) => sum + (p.total_price || 0), 0);
+      const displayRevenue = revenueMode === 'paid' ? paidRevenue : totalRevenue;
+      const completedRequests = agencyRequests.filter((r) => r.status === 'completed').length;
+      const commission = displayRevenue * ((agency.commission_rate || 10) / 100);
+
+      return {
+        id: agency.id,
+        name: agency.name,
+        is_active: agency.is_active,
+        commission_rate: agency.commission_rate,
+        totalRequests: agencyRequests.length,
+        completedRequests,
+        totalProposals: agencyProposals.length,
+        approvedProposals: approvedProposals.length,
+        totalRevenue,
+        paidRevenue,
+        displayRevenue,
+        commission,
+      };
+    }) || [];
+
+    const guataRequests = filteredRequests.filter((r) => r.assigned_agency_id === null);
+    const guataProposals = filteredProposals.filter((p) => p.agency_id === null);
+    const guataApproved = guataProposals.filter((p) => p.is_approved);
+    const guataRevenue = guataApproved.reduce((sum, p) => sum + (p.total_price || 0), 0);
+    const guataPaid = guataProposals.filter((p) => p.payment_status === 'paid');
+    const guataPaidRevenue = guataPaid.reduce((sum, p) => sum + (p.total_price || 0), 0);
+    const guataDisplayRevenue = revenueMode === 'paid' ? guataPaidRevenue : guataRevenue;
+    const guataCompleted = guataRequests.filter((r) => r.status === 'completed').length;
+
+    rows.unshift({
+      id: '__guata__',
+      name: 'Guatá (operação própria)',
+      is_active: true,
+      commission_rate: 0,
+      totalRequests: guataRequests.length,
+      completedRequests: guataCompleted,
+      totalProposals: guataProposals.length,
+      approvedProposals: guataApproved.length,
+      totalRevenue: guataRevenue,
+      paidRevenue: guataPaidRevenue,
+      displayRevenue: guataDisplayRevenue,
+      commission: 0,
+    });
+
+    return rows;
+  })();
+
+  const totals = {
+    requests: agencyReport.reduce((s, a) => s + a.totalRequests, 0),
+    revenue: agencyReport.reduce((s, a) => s + a.displayRevenue, 0),
+    paid: agencyReport.reduce((s, a) => s + a.paidRevenue, 0),
+    approved: agencyReport.reduce((s, a) => s + a.totalRevenue, 0),
+    commission: agencyReport.reduce((s, a) => s + a.commission, 0),
+  };
+
+  const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const revenueLabel = revenueMode === 'paid' ? 'Receita Paga' : 'Receita Aprovada';
+
+  if (loadingAgencies) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28" />)}
+        </div>
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-bold">Relatório por Agência</h1>
+          <p className="text-muted-foreground">Vendas, receita e comissões por agência parceira</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Select value={serviceFilter} onValueChange={(v) => setServiceFilter(v as 'all' | ServiceType)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os serviços</SelectItem>
+              <SelectItem value="consultancy">{SERVICE_TYPE_LABELS.consultancy}</SelectItem>
+              <SelectItem value="full_package">{SERVICE_TYPE_LABELS.full_package}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={revenueMode} onValueChange={(v) => setRevenueMode(v as RevenueMode)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="paid">Receita paga (caixa)</SelectItem>
+              <SelectItem value="approved">Receita aprovada</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todo o período</SelectItem>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="90d">Últimos 90 dias</SelectItem>
+              <SelectItem value="12m">Últimos 12 meses</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Demandas</CardTitle>
+            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent><p className="text-2xl font-bold">{totals.requests}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">{revenueLabel}</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent><p className="text-2xl font-bold">{fmt(totals.revenue)}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Receita Paga</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent><p className="text-2xl font-bold text-green-600">{fmt(totals.paid)}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Comissões</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent><p className="text-2xl font-bold text-amber-600">{fmt(totals.commission)}</p></CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Agência</TableHead>
+                <TableHead className="text-center">Demandas</TableHead>
+                <TableHead className="text-center">Concluídas</TableHead>
+                <TableHead className="text-center">Propostas Aprovadas</TableHead>
+                <TableHead className="text-right">{revenueLabel}</TableHead>
+                <TableHead className="text-right">Pago</TableHead>
+                <TableHead className="text-right">Comissão (%)</TableHead>
+                <TableHead className="text-right">Comissão (R$)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {agencyReport.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    Nenhuma agência cadastrada
+                  </TableCell>
+                </TableRow>
+              ) : (
+                agencyReport.map((a) => (
+                  <TableRow key={a.id}>
+                    <TableCell className="font-medium">
+                      {a.name}
+                      {!a.is_active && <Badge variant="outline" className="ml-2 text-xs">Inativa</Badge>}
+                    </TableCell>
+                    <TableCell className="text-center">{a.totalRequests}</TableCell>
+                    <TableCell className="text-center">{a.completedRequests}</TableCell>
+                    <TableCell className="text-center">{a.approvedProposals}</TableCell>
+                    <TableCell className="text-right">{fmt(a.displayRevenue)}</TableCell>
+                    <TableCell className="text-right text-green-600">{fmt(a.paidRevenue)}</TableCell>
+                    <TableCell className="text-right">{a.commission_rate || 10}%</TableCell>
+                    <TableCell className="text-right text-amber-600 font-medium">{fmt(a.commission)}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default AdminRelatorioAgencias;
