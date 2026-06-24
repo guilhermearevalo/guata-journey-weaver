@@ -41,7 +41,7 @@ export default function RedefinirSenha() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
           <Link to="/" className="mx-auto block">
-            <img src={logo} alt="Guatá Viagens e Turismo" className="mx-auto h-16 w-auto" />
+            <img src={logo} alt="Guatá Travel Experience" className="mx-auto h-16 w-auto" />
           </Link>
           <div>
             <CardTitle className="font-display text-2xl">Redefinir senha</CardTitle>
