@@ -40,9 +40,9 @@ export function PublicHeader() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           {agencyLogo ? (
-            <StorageImage src={agencyLogo} alt="Guatá Travel Experience" className="h-12 w-auto" />
+            <StorageImage src={agencyLogo} alt="Guatá Viagens e Turismo" className="h-12 w-auto" />
           ) : (
-            <img src={logo} alt="Guatá Travel Experience" className="h-12 w-auto" />
+            <img src={logo} alt="Guatá Viagens e Turismo" className="h-12 w-auto" />
           )}
         </Link>
 

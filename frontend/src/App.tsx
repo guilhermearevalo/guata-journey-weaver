@@ -35,6 +35,7 @@ import AdminDemandas from "./pages/admin/AdminDemandas";
 import AdminExperiencias from "./pages/admin/AdminExperiencias";
 import AdminClientes from "./pages/admin/AdminClientes";
 import AdminParceiros from "./pages/admin/AdminParceiros";
+import AdminMensagens from "./pages/admin/AdminMensagens";
 import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminRelatorioAgencias from "./pages/admin/AdminRelatorioAgencias";
@@ -105,6 +106,7 @@ const App = () => (
               <Route path="experiencias" element={<AdminExperiencias />} />
               <Route path="clientes" element={<AdminClientes />} />
               <Route path="parceiros" element={<AdminParceiros />} />
+              <Route path="mensagens" element={<AdminMensagens />} />
               <Route path="equipe" element={<AdminEquipe />} />
               <Route path="configuracoes" element={<AdminConfiguracoes />} />
               <Route path="cms" element={<AdminCMS />} />

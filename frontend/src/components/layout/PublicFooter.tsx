@@ -81,9 +81,9 @@ export function PublicFooter() {
           {/* Brand Column */}
           <div className="space-y-4">
             {agencyLogo ? (
-              <StorageImage src={agencyLogo} alt="Guatá Travel Experience" className="h-16 w-auto" />
+              <StorageImage src={agencyLogo} alt="Guatá Viagens e Turismo" className="h-16 w-auto" />
             ) : (
-              <img src={logo} alt="Guatá Travel Experience" className="h-16 w-auto brightness-0 invert" />
+              <img src={logo} alt="Guatá Viagens e Turismo" className="h-16 w-auto brightness-0 invert" />
             )}
             <p className="text-sm text-secondary-foreground/80">
               Experiências de viagem únicas e personalizadas. 
@@ -222,7 +222,7 @@ export function PublicFooter() {
             <ShieldCheck className="h-5 w-5 text-primary" />
             <span>Agência regularizada pelo Ministério do Turismo — Cadastur Nº {cadasturNumber}</span>
           </a>
-          <p>© {new Date().getFullYear()} Guatá Travel Experience. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} Guatá Viagens e Turismo. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

@@ -343,7 +343,7 @@ const AdminParceiros = () => {
     const hasLogin = agencyLoginIds.has(agency.id);
 
     return (
-    <TableRow>
+    <TableRow className={!agency.is_active ? 'bg-amber-50/60 hover:bg-amber-50' : undefined} data-testid={`agency-row-${agency.id}`}>
       <TableCell>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
@@ -501,13 +501,21 @@ const AdminParceiros = () => {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="active" className="space-y-4">
+      <Tabs defaultValue={pendingAgencies.length > 0 ? 'pending' : 'active'} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="active">
+          <TabsTrigger value="active" data-testid="tab-active">
             Ativos ({activeAgencies.length})
           </TabsTrigger>
-          <TabsTrigger value="pending">
+          <TabsTrigger value="pending" data-testid="tab-pending" className="relative">
             Pendentes ({pendingAgencies.length})
+            {pendingAgencies.length > 0 && (
+              <span
+                data-testid="pending-badge"
+                className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white"
+              >
+                {pendingAgencies.length}
+              </span>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -596,7 +604,7 @@ const AdminParceiros = () => {
 
       {/* Agency Detail Dialog */}
       <Dialog open={!!selectedAgency} onOpenChange={(open) => !open && setSelectedAgency(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="agency-detail-dialog">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <Building2 className="h-6 w-6 text-primary" />

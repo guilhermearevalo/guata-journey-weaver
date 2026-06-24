@@ -12,11 +12,13 @@ import {
   BarChart3,
   DollarSign,
   HelpCircle,
+  Mail,
   MessageSquareQuote,
   Newspaper,
   Camera
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -52,6 +54,32 @@ const AdminSidebar = () => {
     navigate('/');
   };
 
+  const { data: pendingPartnersCount = 0 } = useQuery({
+    queryKey: ['admin-pending-partners-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('partner_agencies')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', false);
+      if (error) return 0;
+      return count ?? 0;
+    },
+    refetchInterval: 30000,
+  });
+
+  const { data: unreadMessagesCount = 0 } = useQuery({
+    queryKey: ['admin-unread-messages-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('contact_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_read', false);
+      if (error) return 0;
+      return count ?? 0;
+    },
+    refetchInterval: 30000,
+  });
+
   const menuItems = [
     { 
       icon: LayoutDashboard, 
@@ -77,7 +105,14 @@ const AdminSidebar = () => {
     { 
       icon: Building2, 
       label: 'Parceiros', 
-      href: '/admin/parceiros' 
+      href: '/admin/parceiros',
+      badge: pendingPartnersCount,
+    }, 
+    {
+      icon: Mail,
+      label: 'Mensagens',
+      href: '/admin/mensagens',
+      badge: unreadMessagesCount,
     },
     { 
       icon: FileText, 
@@ -178,7 +213,15 @@ const AdminSidebar = () => {
                       }
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span>{item.label}</span>}
+                      {!collapsed && <span className="flex-1">{item.label}</span>}
+                      {!collapsed && (item as any).badge > 0 && (
+                        <span
+                          data-testid={`sidebar-badge-${item.href}`}
+                          className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white"
+                        >
+                          {(item as any).badge}
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

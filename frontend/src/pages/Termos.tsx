@@ -12,7 +12,7 @@ const defaultContent = {
     {
       title: '1. Aceitação dos Termos',
       content:
-        'Ao acessar e utilizar o site da Guatá Travel Experience, você concorda integralmente com estes Termos de Uso e com a Política de Privacidade abaixo. Caso não concorde, recomendamos que não utilize a plataforma.',
+        'Ao acessar e utilizar o site da Guatá Viagens e Turismo, você concorda integralmente com estes Termos de Uso e com a Política de Privacidade abaixo. Caso não concorde, recomendamos que não utilize a plataforma.',
     },
     {
       title: '2. Sobre a Plataforma',
@@ -52,12 +52,12 @@ const defaultContent = {
     {
       title: 'Política de Privacidade',
       content:
-        'A partir desta seção, descrevemos como a Guatá Travel Experience e suas agências parceiras coletam, utilizam e protegem os seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).',
+        'A partir desta seção, descrevemos como a Guatá Viagens e Turismo e suas agências parceiras coletam, utilizam e protegem os seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).',
     },
     {
       title: '1. Quem somos',
       content:
-        'A Guatá Travel Experience, juntamente com suas agências parceiras, é responsável pelo tratamento dos dados pessoais coletados durante o atendimento e a operação das viagens.',
+        'A Guatá Viagens e Turismo, juntamente com suas agências parceiras, é responsável pelo tratamento dos dados pessoais coletados durante o atendimento e a operação das viagens.',
     },
     {
       title: '2. Dados que coletamos',
