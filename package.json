@@ -1,0 +1,13 @@
+{
+  "name": "guata-root",
+  "private": true,
+  "scripts": {
+    "install:app": "cd frontend && npm install --legacy-peer-deps",
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "build:dev": "cd frontend && npm run build:dev",
+    "preview": "cd frontend && npm run preview",
+    "lint": "cd frontend && npm run lint",
+    "test": "cd frontend && npm run test"
+  }
+}

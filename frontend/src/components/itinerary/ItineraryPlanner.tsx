@@ -97,9 +97,15 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   const [editingDayIdx, setEditingDayIdx] = useState<number>(0);
   const [editingActIdx, setEditingActIdx] = useState<number | null>(null);
 
-  const { data: proposal, isLoading } = useQuery({
+  const { data: proposal, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['proposal-itinerary', id],
-    queryFn: () => fetchProposalForItinerary(id!),
+    queryFn: async () => {
+      // Guard against a hung backend request so the screen never spins forever.
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Tempo limite ao carregar a proposta.')), 15000),
+      );
+      return Promise.race([fetchProposalForItinerary(id!), timeout]);
+    },
     enabled: !!id,
     staleTime: 30_000,
     retry: 1,
@@ -438,6 +444,22 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   const totalCost = itinerary.reduce((sum, day) => sum + day.activities.reduce((s, a) => s + (a.estimated_cost || 0), 0), 0);
 
   if (isLoading) return <div className="space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-64 w-full" /></div>;
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <p className="text-lg font-medium">Não foi possível carregar a proposta</p>
+        <p className="text-sm text-muted-foreground mt-1">Verifique sua conexão e tente novamente.</p>
+        <div className="mt-4 flex gap-2">
+          <Button variant="outline" asChild><Link to={backLink}>{backLabel}</Link></Button>
+          <Button onClick={() => refetch()} disabled={isFetching}>
+            {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (!proposal) {
     return (

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, User, Mail, Shield, MoreHorizontal, UserPlus } from 'lucide-react';
+import { Search, User, Mail, Shield, MoreHorizontal, UserPlus, KeyRound, Copy, Check, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -35,8 +36,58 @@ const AdminEquipe = () => {
   const [search, setSearch] = useState('');
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [roleChangeDialog, setRoleChangeDialog] = useState<{ member: TeamMember; newRole: 'consultant' | 'manager' | 'admin' } | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState<{ full_name: string; email: string; role: 'consultant' | 'manager' | 'admin' }>({ full_name: '', email: '', role: 'consultant' });
+  const [credResult, setCredResult] = useState<{ email: string; temporary_password: string; title: string } | null>(null);
+  const [copied, setCopied] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const createStaffMutation = useMutation({
+    mutationFn: async (payload: { full_name: string; email: string; role: 'consultant' | 'manager' | 'admin' }) => {
+      const { data, error } = await supabase.rpc('create_staff_access' as never, {
+        p_email: payload.email.trim(),
+        p_full_name: payload.full_name.trim(),
+        p_role: payload.role,
+      } as never);
+      if (error) throw error;
+      const result = data as unknown as { email?: string; temporary_password?: string } | null;
+      if (!result?.email || !result?.temporary_password) throw new Error('Resposta inválida do servidor');
+      return { email: result.email, temporary_password: result.temporary_password };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-team'] });
+      setCreateOpen(false);
+      setCreateForm({ full_name: '', email: '', role: 'consultant' });
+      setCredResult({ ...result, title: 'Membro criado' });
+    },
+    onError: (err: unknown) => {
+      toast({ title: 'Erro ao criar membro', description: err instanceof Error ? err.message : 'Tente novamente.', variant: 'destructive' });
+    },
+  });
+
+  const resetStaffMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.rpc('reset_staff_password' as never, { p_user_id: userId } as never);
+      if (error) throw error;
+      const result = data as unknown as { email?: string; temporary_password?: string } | null;
+      if (!result?.email || !result?.temporary_password) throw new Error('Resposta inválida do servidor');
+      return { email: result.email, temporary_password: result.temporary_password };
+    },
+    onSuccess: (result) => {
+      setCredResult({ ...result, title: 'Senha redefinida' });
+    },
+    onError: (err: unknown) => {
+      toast({ title: 'Erro ao redefinir senha', description: err instanceof Error ? err.message : 'Tente novamente.', variant: 'destructive' });
+    },
+  });
+
+  const copyPassword = () => {
+    if (!credResult) return;
+    navigator.clipboard.writeText(credResult.temporary_password);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const { data: teamMembers, isLoading } = useQuery({
     queryKey: ['admin-team'],
@@ -172,6 +223,10 @@ const AdminEquipe = () => {
             className="pl-10"
           />
         </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Adicionar membro
+        </Button>
       </div>
 
       {/* Table */}
@@ -263,6 +318,11 @@ const AdminEquipe = () => {
                             <Shield className="mr-2 h-4 w-4 text-destructive" />
                             Definir como Admin
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => resetStaffMutation.mutate(member.user_id)}>
+                            <KeyRound className="mr-2 h-4 w-4" />
+                            Redefinir senha
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -348,6 +408,97 @@ const AdminEquipe = () => {
             >
               Confirmar
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Member Dialog */}
+      <Dialog open={createOpen} onOpenChange={(open) => { if (!open) setCreateOpen(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar membro da equipe</DialogTitle>
+            <DialogDescription>
+              Cria um login com senha temporária. O membro deverá trocar a senha no primeiro acesso.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="staff-name">Nome completo *</Label>
+              <Input
+                id="staff-name"
+                value={createForm.full_name}
+                onChange={(e) => setCreateForm((f) => ({ ...f, full_name: e.target.value }))}
+                placeholder="Ex: Maria Silva"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="staff-email">Email *</Label>
+              <Input
+                id="staff-email"
+                type="email"
+                value={createForm.email}
+                onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                placeholder="maria@exemplo.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Função *</Label>
+              <Select
+                value={createForm.role}
+                onValueChange={(v) => setCreateForm((f) => ({ ...f, role: v as 'consultant' | 'manager' | 'admin' }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="consultant">Consultor</SelectItem>
+                  <SelectItem value="manager">Gestor</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => createStaffMutation.mutate(createForm)}
+              disabled={createStaffMutation.isPending || !createForm.full_name.trim() || !createForm.email.trim()}
+            >
+              {createStaffMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Criar membro
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credentials Result Dialog */}
+      <Dialog open={!!credResult} onOpenChange={(open) => { if (!open) setCredResult(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{credResult?.title}</DialogTitle>
+            <DialogDescription>
+              Copie e envie estas credenciais ao membro. A senha temporária não será exibida novamente.
+            </DialogDescription>
+          </DialogHeader>
+          {credResult && (
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-mono text-sm">{credResult.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Senha temporária</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 rounded bg-muted px-3 py-2 font-mono text-sm">{credResult.temporary_password}</code>
+                  <Button variant="outline" size="icon" onClick={copyPassword}>
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setCredResult(null)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
