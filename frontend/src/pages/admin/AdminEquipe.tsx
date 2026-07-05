@@ -223,6 +223,10 @@ const AdminEquipe = () => {
             className="pl-10"
           />
         </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Adicionar membro
+        </Button>
       </div>
 
       {/* Table */}
