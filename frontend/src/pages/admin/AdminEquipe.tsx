@@ -318,6 +318,11 @@ const AdminEquipe = () => {
                             <Shield className="mr-2 h-4 w-4 text-destructive" />
                             Definir como Admin
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => resetStaffMutation.mutate(member.user_id)}>
+                            <KeyRound className="mr-2 h-4 w-4" />
+                            Redefinir senha
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
