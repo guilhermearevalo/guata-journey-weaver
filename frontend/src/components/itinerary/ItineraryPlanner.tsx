@@ -445,6 +445,22 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
 
   if (isLoading) return <div className="space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-64 w-full" /></div>;
 
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <p className="text-lg font-medium">Não foi possível carregar a proposta</p>
+        <p className="text-sm text-muted-foreground mt-1">Verifique sua conexão e tente novamente.</p>
+        <div className="mt-4 flex gap-2">
+          <Button variant="outline" asChild><Link to={backLink}>{backLabel}</Link></Button>
+          <Button onClick={() => refetch()} disabled={isFetching}>
+            {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!proposal) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
