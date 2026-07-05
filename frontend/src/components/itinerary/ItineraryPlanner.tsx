@@ -97,9 +97,15 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
   const [editingDayIdx, setEditingDayIdx] = useState<number>(0);
   const [editingActIdx, setEditingActIdx] = useState<number | null>(null);
 
-  const { data: proposal, isLoading } = useQuery({
+  const { data: proposal, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['proposal-itinerary', id],
-    queryFn: () => fetchProposalForItinerary(id!),
+    queryFn: async () => {
+      // Guard against a hung backend request so the screen never spins forever.
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Tempo limite ao carregar a proposta.')), 15000),
+      );
+      return Promise.race([fetchProposalForItinerary(id!), timeout]);
+    },
     enabled: !!id,
     staleTime: 30_000,
     retry: 1,
