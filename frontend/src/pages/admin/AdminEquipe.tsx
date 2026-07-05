@@ -411,6 +411,97 @@ const AdminEquipe = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Member Dialog */}
+      <Dialog open={createOpen} onOpenChange={(open) => { if (!open) setCreateOpen(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar membro da equipe</DialogTitle>
+            <DialogDescription>
+              Cria um login com senha temporária. O membro deverá trocar a senha no primeiro acesso.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="staff-name">Nome completo *</Label>
+              <Input
+                id="staff-name"
+                value={createForm.full_name}
+                onChange={(e) => setCreateForm((f) => ({ ...f, full_name: e.target.value }))}
+                placeholder="Ex: Maria Silva"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="staff-email">Email *</Label>
+              <Input
+                id="staff-email"
+                type="email"
+                value={createForm.email}
+                onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                placeholder="maria@exemplo.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Função *</Label>
+              <Select
+                value={createForm.role}
+                onValueChange={(v) => setCreateForm((f) => ({ ...f, role: v as 'consultant' | 'manager' | 'admin' }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="consultant">Consultor</SelectItem>
+                  <SelectItem value="manager">Gestor</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => createStaffMutation.mutate(createForm)}
+              disabled={createStaffMutation.isPending || !createForm.full_name.trim() || !createForm.email.trim()}
+            >
+              {createStaffMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Criar membro
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credentials Result Dialog */}
+      <Dialog open={!!credResult} onOpenChange={(open) => { if (!open) setCredResult(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{credResult?.title}</DialogTitle>
+            <DialogDescription>
+              Copie e envie estas credenciais ao membro. A senha temporária não será exibida novamente.
+            </DialogDescription>
+          </DialogHeader>
+          {credResult && (
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-mono text-sm">{credResult.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Senha temporária</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 rounded bg-muted px-3 py-2 font-mono text-sm">{credResult.temporary_password}</code>
+                  <Button variant="outline" size="icon" onClick={copyPassword}>
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setCredResult(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
