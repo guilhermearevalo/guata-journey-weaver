@@ -938,6 +938,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_staff_access: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: Json
+      }
       get_public_itinerary: { Args: { _token: string }; Returns: Json }
       get_public_proposal: { Args: { _token: string }; Returns: Json }
       get_public_travel_documents: {
@@ -981,6 +989,7 @@ export type Database = {
         Returns: string
       }
       proposal_is_shared: { Args: { _proposal_id: string }; Returns: boolean }
+      reset_staff_password: { Args: { p_user_id: string }; Returns: Json }
       update_commission_note: {
         Args: { _notes: string; _payment_id: string }
         Returns: undefined
