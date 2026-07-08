@@ -1,18 +1,19 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, Users, MapPin, DollarSign, Route } from 'lucide-react';
+import { Calendar, Users, MapPin, DollarSign, Route, ListChecks } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { getServiceType, SERVICE_TYPE_SHORT, isConsultancy } from '@/lib/serviceType';
 
 interface KanbanCardProps {
   request: Tables<'travel_requests'>;
   hasProposal?: boolean;
+  checklist?: { done: number; total: number };
   onDragStart: (e: React.DragEvent, requestId: string) => void;
   onClick: () => void;
 }
 
-export function KanbanCard({ request, hasProposal, onDragStart, onClick }: KanbanCardProps) {
+export function KanbanCard({ request, hasProposal, checklist, onDragStart, onClick }: KanbanCardProps) {
   const travelDates = request.travel_dates as { start?: string; end?: string } | null;
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return null;
