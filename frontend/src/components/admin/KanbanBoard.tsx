@@ -314,6 +314,7 @@ export function KanbanBoard() {
                   key={request.id}
                   request={request}
                   hasProposal={proposalRequestIds?.has(request.id) ?? false}
+                  checklist={checklistMap?.get(request.id)}
                   onDragStart={handleDragStart}
                   onClick={() => handleSelectRequest(request)}
                 />
