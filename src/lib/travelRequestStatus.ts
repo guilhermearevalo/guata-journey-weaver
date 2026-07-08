@@ -1,5 +1,5 @@
 import type { Tables } from '@/integrations/supabase/types';
-import { getServiceType } from '@/lib/serviceType';
+import { getServiceType, isSimpleWorkflow } from '@/lib/serviceType';
 import { updateTravelRequestStatus } from '@/lib/fetchTravelRequests';
 
 type TravelRequest = Tables<'travel_requests'>;
@@ -34,8 +34,5 @@ export async function completeConsultancy(requestId: string): Promise<void> {
 export function canCompleteConsultancy(
   request: Pick<TravelRequest, 'status' | 'service_type'>,
 ): boolean {
-  return (
-    getServiceType(request) === 'consultancy' &&
-    request.status === 'proposal_sent'
-  );
+  return isSimpleWorkflow(request) && request.status === 'proposal_sent';
 }

@@ -27,6 +27,7 @@ import ActivityFormDialog from './ActivityFormDialog';
 import TemplateDialog from './TemplateDialog';
 import TravelDocumentsVault, { TravelDocument } from './TravelDocumentsVault';
 import DossierEditor from './DossierEditor';
+import PlanningChecklist from './PlanningChecklist';
 import { parseDossier, type Dossier } from '@/lib/dossier';
 import { type Activity, type ItineraryDay, getActivityImages } from '@/lib/itinerary';
 import {
@@ -140,10 +141,18 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     setDossierDirty(false);
   }, [proposal?.id, (proposal as any)?.dossier, dossierDirty]);
 
+  const [documentsEnabled, setDocumentsEnabled] = useState(false);
+
+  useEffect(() => {
+    if (!proposal?.id || isLoading) return;
+    const timer = window.setTimeout(() => setDocumentsEnabled(true), 300);
+    return () => window.clearTimeout(timer);
+  }, [proposal?.id, isLoading]);
+
   const { data: travelDocuments = [] } = useQuery({
     queryKey: ['travel-documents', proposal?.id],
     queryFn: () => fetchTravelDocumentsByProposal(proposal!.id),
-    enabled: !!proposal?.id,
+    enabled: !!proposal?.id && documentsEnabled,
     staleTime: 30_000,
     retry: 1,
   });
@@ -689,6 +698,9 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
           }}
         />
       </div>
+
+      {/* Planning Checklist (internal) */}
+      <PlanningChecklist proposalId={proposal.id} />
 
       {/* Travel Documents */}
       <TravelDocumentsVault

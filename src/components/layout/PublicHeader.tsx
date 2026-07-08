@@ -37,12 +37,19 @@ export function PublicHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <nav className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex shrink-0 items-center">
           {agencyLogo ? (
-            <StorageImage src={agencyLogo} alt="Guatá Travel Experience" className="h-12 w-auto" />
+            <StorageImage
+              src={agencyLogo}
+              alt="Guatá Travel Experience"
+              className="h-9 w-auto max-w-[140px] object-contain object-left"
+            />
           ) : (
-            <img src={logo} alt="Guatá Travel Experience" className="h-12 w-auto" />
+            <img
+              src={logo}
+              alt="Guatá Travel Experience"
+              className="h-9 w-auto object-contain"
+            />
           )}
         </Link>
 

@@ -29,45 +29,25 @@ async function rpcRows<T>(name: string, args?: Record<string, unknown>): Promise
 
 
 export async function fetchProposalByRequest(requestId: string): Promise<Proposal | null> {
-
   try {
-
     const rows = await rpcRows<Proposal>('staff_get_proposal_by_request', {
-
       p_request_id: requestId,
-
     });
-
     if (rows[0]) return rows[0];
-
   } catch {
-
     // fallback REST
-
   }
 
-
-
   const { data, error } = await supabase
-
     .from('proposals')
-
     .select('*')
-
     .eq('request_id', requestId)
-
     .order('created_at', { ascending: false })
-
     .limit(1)
-
     .maybeSingle();
 
-
-
   if (error) throw error;
-
   return data;
-
 }
 
 
@@ -166,25 +146,16 @@ async function fetchTravelRequestFields(
 
 
 export async function fetchProposalForItinerary(
-
   requestId: string,
-
 ): Promise<ProposalWithRequest | null> {
+  const [proposal, travel_requests] = await Promise.all([
+    fetchProposalByRequest(requestId),
+    fetchTravelRequestFields(requestId),
+  ]);
 
-  const proposal = await fetchProposalByRequest(requestId);
-
-  if (!proposal) return null;
-
-
-
-  const travel_requests = await fetchTravelRequestFields(requestId);
-
-  if (!travel_requests) return null;
-
-
+  if (!proposal || !travel_requests) return null;
 
   return { ...proposal, travel_requests };
-
 }
 
 

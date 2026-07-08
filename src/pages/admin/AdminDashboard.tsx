@@ -126,7 +126,7 @@ const AdminDashboard = () => {
               </p>
             </Link>
             <Link 
-              to="/admin/experiencias/nova" 
+              to="/admin/experiencias?nova=1" 
               className="block rounded-lg border p-4 hover:bg-accent transition-colors"
             >
               <p className="font-medium">Criar nova experiência</p>

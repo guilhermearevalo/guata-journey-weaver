@@ -180,6 +180,7 @@ const AdminRelatorioAgencias = () => {
               <SelectItem value="all">Todos os serviços</SelectItem>
               <SelectItem value="consultancy">{SERVICE_TYPE_LABELS.consultancy}</SelectItem>
               <SelectItem value="full_package">{SERVICE_TYPE_LABELS.full_package}</SelectItem>
+              <SelectItem value="other">{SERVICE_TYPE_LABELS.other}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={revenueMode} onValueChange={(v) => setRevenueMode(v as RevenueMode)}>

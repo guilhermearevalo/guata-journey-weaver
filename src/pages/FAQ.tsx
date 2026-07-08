@@ -9,6 +9,7 @@ import { MessageCircle } from 'lucide-react';
 import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
 import { Seo } from '@/components/seo/Seo';
+import { normalizeCmsText } from '@/lib/normalizeCmsText';
 
 // Conteúdo padrão caso o CMS esteja vazio
 const defaultContent = {
@@ -56,10 +57,10 @@ const FAQ = () => {
       <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-display text-4xl font-bold md:text-5xl">
-            {hero?.title || 'Perguntas Frequentes'}
+            {normalizeCmsText(hero?.title) || 'Perguntas Frequentes'}
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            {hero?.subtitle || 'Tire suas dúvidas sobre nossos serviços'}
+            {normalizeCmsText(hero?.subtitle) || 'Tire suas dúvidas sobre nossos serviços'}
           </p>
         </div>
       </section>
@@ -75,10 +76,10 @@ const FAQ = () => {
                 className="rounded-lg border bg-card px-6"
               >
                 <AccordionTrigger className="text-left font-medium hover:no-underline">
-                  {faq.question}
+                  {normalizeCmsText(faq.question)}
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  {faq.answer}
+                  {normalizeCmsText(faq.answer)}
                 </AccordionContent>
               </AccordionItem>
             ))}

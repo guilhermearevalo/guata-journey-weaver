@@ -5,37 +5,22 @@ export const ONER_STORE_URL =
 export const ONER_WIDGET_SCRIPT =
   'https://static.onertravel.com/widget/search/production/widget-befly.js';
 
-const ONER_TRAVEL_KEYWORDS = [
-  'passagem',
-  'passagens',
-  'voo',
-  'voos',
-  'aereo',
-  'aéreo',
-  'aerea',
-  'aérea',
-  'aviao',
-  'avião',
-  'hotel',
-  'hoteis',
-  'hotéis',
-  'hospedagem',
-  'seguro',
-  'pacote',
-  'pacotes',
-  'carro',
-  'aluguel',
-  'cruzeiro',
-];
+export const ROTEIRO_SOB_MEDIDA_LABEL = 'Roteiro sob medida';
 
+import { interpretSearchQuery } from './interpretSearchQuery';
 export function isOnerTravelQuery(query: string): boolean {
-  const normalized = query
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-
-  return ONER_TRAVEL_KEYWORDS.some((keyword) => normalized.includes(keyword));
+  // Kept for compatibility — use interpretSearchQuery for UI flows.
+  const { primary, confidence } = interpretSearchQuery(query);
+  return primary.intent === 'passagens' && confidence !== 'low';
 }
+
+export { interpretSearchQuery, getPathForSearchIntent } from './interpretSearchQuery';
+export type {
+  SearchIntent,
+  SearchConfidence,
+  SearchInterpretation,
+  SearchIntentOption,
+} from './interpretSearchQuery';
 
 export function buildExperienciasSearchUrl(query: string): string {
   const params = new URLSearchParams();

@@ -27,6 +27,7 @@ interface PartnerAgency {
   commission_rate: number | null;
   is_active: boolean | null;
   is_external: boolean | null;
+  admin_reviewed_at: string | null;
   created_at: string;
   responsible_name: string | null;
   website: string | null;
@@ -104,6 +105,20 @@ const AdminParceiros = () => {
         description: 'Não foi possível atualizar o status.',
         variant: 'destructive',
       });
+    },
+  });
+
+  const markReviewedMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('partner_agencies')
+        .update({ admin_reviewed_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partner-agencies'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-new-partners-count'] });
     },
   });
 
@@ -339,11 +354,20 @@ const AdminParceiros = () => {
       agency.contact_email.toLowerCase().includes(search.toLowerCase())
   );
 
+  const unreviewedPending = pendingAgencies.filter((a) => !a.admin_reviewed_at);
+
+  const openAgencyDetail = (agency: PartnerAgency) => {
+    setSelectedAgency(agency);
+    if (!agency.is_active && !agency.admin_reviewed_at) {
+      markReviewedMutation.mutate(agency.id);
+    }
+  };
+
   const AgencyRow = ({ agency }: { agency: PartnerAgency }) => {
     const hasLogin = agencyLoginIds.has(agency.id);
 
     return (
-    <TableRow>
+    <TableRow className={!agency.is_active && !agency.admin_reviewed_at ? 'bg-amber-50/60 hover:bg-amber-50' : undefined}>
       <TableCell>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
@@ -393,7 +417,7 @@ const AdminParceiros = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setSelectedAgency(agency)}>
+            <DropdownMenuItem onClick={() => openAgencyDetail(agency)}>
               <Eye className="mr-2 h-4 w-4" />
               Ver detalhes
             </DropdownMenuItem>
@@ -501,13 +525,18 @@ const AdminParceiros = () => {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="active" className="space-y-4">
+      <Tabs defaultValue={unreviewedPending.length > 0 ? 'pending' : 'active'} className="space-y-4">
         <TabsList>
           <TabsTrigger value="active">
             Ativos ({activeAgencies.length})
           </TabsTrigger>
-          <TabsTrigger value="pending">
+          <TabsTrigger value="pending" className="relative">
             Pendentes ({pendingAgencies.length})
+            {unreviewedPending.length > 0 && (
+              <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                {unreviewedPending.length}
+              </span>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -596,7 +625,7 @@ const AdminParceiros = () => {
 
       {/* Agency Detail Dialog */}
       <Dialog open={!!selectedAgency} onOpenChange={(open) => !open && setSelectedAgency(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <Building2 className="h-6 w-6 text-primary" />

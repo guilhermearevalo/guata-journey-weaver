@@ -9,8 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SERVICE_TYPE_LABELS, type ServiceType } from '@/lib/serviceType';
+import { ServiceTypeSelector } from '@/components/admin/ServiceTypeSelector';
+import { type ServiceType } from '@/lib/serviceType';
 
 export function NewRequestDialog() {
   const [open, setOpen] = useState(false);
@@ -26,11 +26,13 @@ export function NewRequestDialog() {
   const [budget, setBudget] = useState('');
   const [notes, setNotes] = useState('');
   const [serviceType, setServiceType] = useState<ServiceType>('full_package');
+  const [serviceTypeNote, setServiceTypeNote] = useState('');
 
   const resetForm = () => {
     setName(''); setEmail(''); setPhone(''); setDestination('');
     setTravelers('1'); setBudget(''); setNotes('');
     setServiceType('full_package');
+    setServiceTypeNote('');
   };
 
   const createMutation = useMutation({
@@ -45,12 +47,15 @@ export function NewRequestDialog() {
         special_requests: notes || null,
         status: 'pending',
         service_type: serviceType,
+        service_type_note: serviceType === 'other' ? serviceTypeNote.trim() || null : null,
+        admin_reviewed_at: new Date().toISOString(),
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['travel_requests'] });
       queryClient.invalidateQueries({ queryKey: ['recent-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-new-requests-count'] });
       if (user?.id) {
         queryClient.invalidateQueries({ queryKey: ['travel_requests', user.id] });
       }
@@ -113,13 +118,12 @@ export function NewRequestDialog() {
           </div>
           <div className="space-y-2">
             <Label>Tipo de serviço</Label>
-            <Select value={serviceType} onValueChange={(v) => setServiceType(v as ServiceType)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="full_package">{SERVICE_TYPE_LABELS.full_package}</SelectItem>
-                <SelectItem value="consultancy">{SERVICE_TYPE_LABELS.consultancy}</SelectItem>
-              </SelectContent>
-            </Select>
+            <ServiceTypeSelector
+              value={serviceType}
+              note={serviceTypeNote}
+              onTypeChange={setServiceType}
+              onNoteChange={setServiceTypeNote}
+            />
           </div>
           <div className="space-y-2">
             <Label>Observações</Label>

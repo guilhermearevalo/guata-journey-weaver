@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { FileArchive, FileCheck, Upload, Download, Trash2, Loader2, ShieldCheck } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { insertTravelDocument, updateTravelDocument, deleteTravelDocument } from '@/lib/fetchTravelDocuments';
+import { openTravelDocument } from '@/lib/openTravelDocument';
 
 export interface TravelDocument {
   id: string;
@@ -150,17 +151,10 @@ export default function TravelDocumentsVault({ proposalId, requestId, documents,
   });
 
   const openDocument = async (doc: TravelDocument) => {
-    if (!doc.file_path && doc.file_url) {
-      window.open(doc.file_url, '_blank');
-      return;
-    }
-    if (!doc.file_path) return;
-    const { data, error } = await supabase.storage.from('travel-documents').createSignedUrl(doc.file_path, 60 * 10);
-    if (error || !data?.signedUrl) {
+    const url = await openTravelDocument(doc);
+    if (!url) {
       toast({ title: 'Não foi possível abrir o arquivo', variant: 'destructive' });
-      return;
     }
-    window.open(data.signedUrl, '_blank');
   };
 
   if (summaryOnly) {

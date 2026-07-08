@@ -12,6 +12,8 @@ import { type ItineraryDay } from '@/lib/itinerary';
 import Seo from '@/components/seo/Seo';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { parseDossier } from '@/lib/dossier';
+import { openTravelDocument } from '@/lib/openTravelDocument';
 
 export default function RoteiroPublico() {
   const { token } = useParams<{ token: string }>();
@@ -19,16 +21,21 @@ export default function RoteiroPublico() {
   const [codeInput, setCodeInput] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [codeError, setCodeError] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const { data: proposal, isLoading, error } = useQuery({
-    queryKey: ['public-itinerary', token],
+    queryKey: ['public-itinerary', token, isUnlocked, codeInput],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_public_itinerary', { _token: token! });
+      const { data, error } = await supabase.rpc('get_public_itinerary', {
+        _token: token!,
+        _code: isUnlocked ? codeInput.trim() || null : null,
+      });
       if (error) throw error;
       if (!data) return null;
       const result = data as Record<string, unknown>;
       result._has_access_code = !!result.has_access_code;
-      if (result.agency_id) {
+      result._locked = !!result.locked;
+      if (result.agency_id && !result._locked) {
         const { data: branding } = await supabase
           .from('partner_agency_branding' as never)
           .select('name, logo_url, cover_image_url, contact_phone')
@@ -41,7 +48,7 @@ export default function RoteiroPublico() {
     enabled: !!token,
   });
 
-  const needsCode = !!(proposal as Record<string, unknown> | undefined)?._has_access_code && !isUnlocked;
+  const needsCode = !!(proposal as Record<string, unknown> | undefined)?._locked;
 
   const { data: travelDocuments = [] } = useQuery({
     queryKey: ['public-travel-documents', token, isUnlocked],
@@ -70,19 +77,13 @@ export default function RoteiroPublico() {
   };
 
   const openDocument = async (doc: TravelDocument) => {
-    if (!doc.file_path && doc.file_url) {
-      window.open(doc.file_url, '_blank');
-      return;
-    }
-    if (!doc.file_path) return;
-    const { data, error: urlError } = await supabase.storage
-      .from('travel-documents')
-      .createSignedUrl(doc.file_path, 60 * 10);
-    if (urlError || !data?.signedUrl) {
+    const url = await openTravelDocument(doc, {
+      shareToken: token,
+      accessCode: codeInput.trim() || undefined,
+    });
+    if (!url) {
       toast({ title: 'Não foi possível abrir o arquivo', variant: 'destructive' });
-      return;
     }
-    window.open(data.signedUrl, '_blank');
   };
 
   if (isLoading) {
@@ -175,6 +176,33 @@ export default function RoteiroPublico() {
     ? `Roteiro — ${request.client_name}`
     : `Roteiro — ${request?.destination || proposal.title}`;
 
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const parsedDossier = parseDossier(dossier);
+      const brandName = agency?.name || 'Guatá Viagens';
+      const { generateItineraryPdf } = await import('@/lib/generate-itinerary-pdf');
+      await generateItineraryPdf({
+        title: (proposal.title as string) || 'Roteiro',
+        clientName: request?.client_name,
+        destination: request?.destination,
+        travelDates: request?.travel_dates,
+        travelersCount: request?.travelers_count,
+        brandName,
+        logoUrl: agency?.logo_url,
+        coverImage: parsedDossier.cover_image || agency?.cover_image_url || agency?.logo_url,
+        itinerary,
+        dossier: parsedDossier,
+      });
+      toast({ title: 'PDF gerado!', description: 'O download deve iniciar automaticamente.' });
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Erro ao gerar PDF', variant: 'destructive' });
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   return (
     <>
       <Seo
@@ -193,6 +221,8 @@ export default function RoteiroPublico() {
         travelDocuments={travelDocuments}
         agency={agency}
         onOpenDocument={openDocument}
+        onDownloadPdf={handleDownloadPdf}
+        downloadingPdf={downloadingPdf}
       />
     </>
   );

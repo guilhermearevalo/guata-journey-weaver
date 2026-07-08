@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -44,10 +45,19 @@ const experienceTypeLabels: Record<string, string> = {
 const AdminExperiencias = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editingExperience, setEditingExperience] = useState<Tables<'experiences'> | null>(null);
   const [deletingExperience, setDeletingExperience] = useState<Tables<'experiences'> | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get('nova') === '1') {
+      setEditingExperience(null);
+      setFormOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const { data: experiences, isLoading } = useQuery({
     queryKey: ['experiences'],

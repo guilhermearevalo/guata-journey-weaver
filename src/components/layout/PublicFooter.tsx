@@ -7,7 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useContactInfo } from '@/hooks/useContactInfo';
 import { useCadasturConfig } from '@/hooks/useCadasturConfig';
-import { StorageImage } from '@/components/ui/StorageImage';
 import logo from '@/assets/logo-guata.png';
 
 function NewsletterForm() {
@@ -69,7 +68,6 @@ function NewsletterForm() {
 
 export function PublicFooter() {
   const { data: cadasturConfig } = useCadasturConfig();
-  const agencyLogo = cadasturConfig?.agency_logo_url;
 
   const { data: contact } = useContactInfo();
   const cadasturNumber = cadasturConfig?.number || '64.677.632/0001-77';
@@ -80,11 +78,11 @@ export function PublicFooter() {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
           <div className="space-y-4">
-            {agencyLogo ? (
-              <StorageImage src={agencyLogo} alt="Guatá Travel Experience" className="h-16 w-auto" />
-            ) : (
-              <img src={logo} alt="Guatá Travel Experience" className="h-16 w-auto brightness-0 invert" />
-            )}
+            <img
+              src={logo}
+              alt="Guatá Travel Experience"
+              className="h-16 w-auto brightness-0 invert"
+            />
             <p className="text-sm text-secondary-foreground/80">
               Experiências de viagem únicas e personalizadas. 
               Descubra o Brasil e o mundo com quem entende de curadoria turística.
@@ -222,7 +220,7 @@ export function PublicFooter() {
             <ShieldCheck className="h-5 w-5 text-primary" />
             <span>Agência regularizada pelo Ministério do Turismo — Cadastur Nº {cadasturNumber}</span>
           </a>
-          <p>© {new Date().getFullYear()} Guatá Travel Experience. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} Guatá Viagens e Turismo. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

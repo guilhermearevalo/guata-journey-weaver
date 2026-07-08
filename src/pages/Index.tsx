@@ -13,9 +13,9 @@ const Index = () => {
     <>
       <Seo
         path="/"
-        title="Guatá Viagens — A melhor agência de turismo de Mato Grosso do Sul"
+        title="Guatá Viagens e Turismo"
         rawTitle
-        description="Agência de turismo jovem e tecnológica de Mato Grosso do Sul. Especialista no Pantanal e Bonito, criamos viagens sob medida pelo Brasil e exterior. Peça seu roteiro personalizado."
+        description="Agência receptiva nascida em Mato Grosso do Sul. Organizamos viagens completas pelo Brasil e exterior com curadoria e parceiros locais credenciados."
       />
       <HeroSection />
       <HowItWorks />

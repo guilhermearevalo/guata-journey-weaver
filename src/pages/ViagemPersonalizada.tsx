@@ -160,7 +160,6 @@ export default function ViagemPersonalizada() {
           </p>
         </div>
 
-        {/* Form */}
         <Card className="mx-auto max-w-2xl">
           <CardHeader>
             <CardTitle>Solicitar Roteiro Personalizado</CardTitle>

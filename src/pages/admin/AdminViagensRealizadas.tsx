@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Calendar, MapPin, Eye, EyeOff, Loader2, Upload, X, Film } from 'lucide-react';
+import { Plus, Pencil, Trash2, Calendar, MapPin, Eye, EyeOff, Loader2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,15 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { uploadStorageFile } from '@/lib/uploadStorageFile';
+import { TripMediaEditor } from '@/components/admin/TripMediaEditor';
+import {
+  getCoverImageUrl,
+  getCoverObjectPosition,
+  getCoverMedia,
+  normalizeTripMedia,
+  tripMediaToLegacyFields,
+  type TripMediaItem,
+} from '@/lib/completedTripMedia';
 
 interface Trip {
   id: string;
@@ -19,6 +28,7 @@ interface Trip {
   cover_image: string | null;
   gallery: string[] | null;
   video_url: string | null;
+  media?: TripMediaItem[] | null;
   trip_month: number | null;
   trip_year: number | null;
   agency_id: string | null;
@@ -32,9 +42,7 @@ interface Trip {
 const emptyForm = {
   title: '',
   destination: '',
-  cover_image: '',
-  gallery: [] as string[],
-  video_url: '',
+  media: [] as TripMediaItem[],
   trip_month: '',
   trip_year: String(new Date().getFullYear()),
   agency_id: '',
@@ -51,6 +59,7 @@ export default function AdminViagensRealizadas() {
   const [editing, setEditing] = useState<Trip | null>(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [uploading, setUploading] = useState(false);
 
   const { data: trips, isLoading } = useQuery({
     queryKey: ['admin-completed-trips'],
@@ -74,7 +83,7 @@ export default function AdminViagensRealizadas() {
   });
 
   const upsertMutation = useMutation({
-    mutationFn: async (payload: any) => {
+    mutationFn: async (payload: Record<string, unknown>) => {
       if (editing) {
         const { error } = await supabase.from('completed_trips' as any).update(payload).eq('id', editing.id);
         if (error) throw error;
@@ -91,7 +100,7 @@ export default function AdminViagensRealizadas() {
       setEditing(null);
       setForm(emptyForm);
     },
-    onError: (e: any) => toast({ title: 'Erro', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: 'Erro', description: e.message, variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
@@ -116,9 +125,13 @@ export default function AdminViagensRealizadas() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-completed-trips'] }),
   });
 
-  const [uploadingField, setUploadingField] = useState<string | null>(null);
-
   const uploadFile = async (file: File, prefix: string): Promise<string | null> => {
+    if (file.type.startsWith('video/') && file.size > 30 * 1024 * 1024) {
+      toast({ title: 'Vídeo muito grande', description: 'Máximo 30MB', variant: 'destructive' });
+      return null;
+    }
+
+    setUploading(true);
     const ext = file.name.split('.').pop();
     const fileName = `${prefix}-${Date.now()}.${ext}`;
     try {
@@ -128,67 +141,26 @@ export default function AdminViagensRealizadas() {
       const message = err instanceof Error ? err.message : 'Erro no upload';
       toast({ title: 'Erro no upload', description: message, variant: 'destructive' });
       return null;
+    } finally {
+      setUploading(false);
     }
-  };
-
-  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingField('cover');
-    const url = await uploadFile(file, 'trip-cover');
-    if (url) setForm(f => ({ ...f, cover_image: url }));
-    setUploadingField(null);
-    e.target.value = '';
-  };
-
-  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    setUploadingField('gallery');
-    const urls: string[] = [];
-    for (const f of files) {
-      const url = await uploadFile(f, 'trip-gallery');
-      if (url) urls.push(url);
-    }
-    setForm(f => ({ ...f, gallery: [...(f.gallery || []), ...urls] }));
-    setUploadingField(null);
-    e.target.value = '';
-  };
-
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 30 * 1024 * 1024) {
-      toast({ title: 'Vídeo muito grande', description: 'Máximo 30MB', variant: 'destructive' });
-      return;
-    }
-    setUploadingField('video');
-    const url = await uploadFile(file, 'trip-video');
-    if (url) setForm(f => ({ ...f, video_url: url }));
-    setUploadingField(null);
-    e.target.value = '';
-  };
-
-  const removeGalleryImage = (idx: number) => {
-    setForm(f => ({ ...f, gallery: f.gallery.filter((_, i) => i !== idx) }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const legacy = tripMediaToLegacyFields(form.media);
     upsertMutation.mutate({
       title: form.title,
       destination: form.destination,
-      cover_image: form.cover_image || null,
-      gallery: form.gallery,
-      video_url: form.video_url || null,
-      trip_month: form.trip_month ? parseInt(form.trip_month) : null,
-      trip_year: form.trip_year ? parseInt(form.trip_year) : null,
+      ...legacy,
+      trip_month: form.trip_month ? parseInt(form.trip_month, 10) : null,
+      trip_year: form.trip_year ? parseInt(form.trip_year, 10) : null,
       agency_id: form.agency_id || null,
       client_quote: form.client_quote || null,
       client_name: form.client_name || null,
       description: form.description || null,
       is_published: form.is_published,
-      display_order: parseInt(form.display_order) || 0,
+      display_order: parseInt(form.display_order, 10) || 0,
     });
   };
 
@@ -197,9 +169,7 @@ export default function AdminViagensRealizadas() {
     setForm({
       title: trip.title,
       destination: trip.destination,
-      cover_image: trip.cover_image || '',
-      gallery: trip.gallery || [],
-      video_url: trip.video_url || '',
+      media: normalizeTripMedia(trip),
       trip_month: trip.trip_month ? String(trip.trip_month) : '',
       trip_year: trip.trip_year ? String(trip.trip_year) : String(new Date().getFullYear()),
       agency_id: trip.agency_id || '',
@@ -223,7 +193,7 @@ export default function AdminViagensRealizadas() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-3xl font-bold">Viagens Realizadas</h1>
-          <p className="text-muted-foreground">Portfólio público que aparece em /pacotes na aba "Viagens realizadas".</p>
+          <p className="text-muted-foreground">Portfólio público em /viagens-realizadas</p>
         </div>
         <Button onClick={handleNew}><Plus className="mr-2 h-4 w-4" />Nova viagem</Button>
       </div>
@@ -234,36 +204,50 @@ export default function AdminViagensRealizadas() {
         <Card><CardContent className="py-16 text-center text-muted-foreground">Nenhuma viagem cadastrada ainda.</CardContent></Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {trips.map((trip) => (
-            <Card key={trip.id} className="overflow-hidden">
-              <div
-                className="h-40 bg-cover bg-center"
-                style={{ backgroundImage: `url(${trip.cover_image || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400'})` }}
-              />
-              <CardHeader>
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base">{trip.title}</CardTitle>
-                  <Badge variant={trip.is_published ? 'default' : 'secondary'} className="shrink-0">
-                    {trip.is_published ? 'Publicada' : 'Rascunho'}
-                  </Badge>
+          {trips.map((trip) => {
+            const cover = getCoverMedia(normalizeTripMedia(trip));
+            const hasVideo = normalizeTripMedia(trip).some((item) => item.type === 'video');
+            return (
+              <Card key={trip.id} className="overflow-hidden">
+                <div className="relative">
+                  <div
+                    className="h-40 bg-cover bg-center"
+                    style={{
+                      backgroundImage: `url(${getCoverImageUrl(trip)})`,
+                      backgroundPosition: getCoverObjectPosition(cover),
+                    }}
+                  />
+                  {hasVideo && (
+                    <div className="absolute top-3 right-3 rounded-full bg-black/60 p-2">
+                      <Play className="h-4 w-4 fill-white text-white" />
+                    </div>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  <MapPin className="mr-1 inline h-3 w-3" />{trip.destination}
-                  {trip.trip_year && <> · <Calendar className="mr-1 inline h-3 w-3" />{trip.trip_year}</>}
-                </p>
-              </CardHeader>
-              <CardContent className="flex gap-2 pt-0">
-                <Button size="sm" variant="outline" onClick={() => handleEdit(trip)}><Pencil className="mr-1 h-3 w-3" />Editar</Button>
-                <Button size="sm" variant="outline" onClick={() => togglePublished.mutate(trip)}>
-                  {trip.is_published ? <EyeOff className="mr-1 h-3 w-3" /> : <Eye className="mr-1 h-3 w-3" />}
-                  {trip.is_published ? 'Ocultar' : 'Publicar'}
-                </Button>
-                <Button size="sm" variant="ghost" className="text-destructive" onClick={() => { if (confirm('Remover esta viagem?')) deleteMutation.mutate(trip.id); }}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-base">{trip.title}</CardTitle>
+                    <Badge variant={trip.is_published ? 'default' : 'secondary'} className="shrink-0">
+                      {trip.is_published ? 'Publicada' : 'Rascunho'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    <MapPin className="mr-1 inline h-3 w-3" />{trip.destination}
+                    {trip.trip_year && <> · <Calendar className="mr-1 inline h-3 w-3" />{trip.trip_year}</>}
+                  </p>
+                </CardHeader>
+                <CardContent className="flex gap-2 pt-0">
+                  <Button size="sm" variant="outline" onClick={() => handleEdit(trip)}><Pencil className="mr-1 h-3 w-3" />Editar</Button>
+                  <Button size="sm" variant="outline" onClick={() => togglePublished.mutate(trip)}>
+                    {trip.is_published ? <EyeOff className="mr-1 h-3 w-3" /> : <Eye className="mr-1 h-3 w-3" />}
+                    {trip.is_published ? 'Ocultar' : 'Publicar'}
+                  </Button>
+                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => { if (confirm('Remover esta viagem?')) deleteMutation.mutate(trip.id); }}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -276,90 +260,39 @@ export default function AdminViagensRealizadas() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label>Título *</Label>
-                <Input required value={form.title} onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Lua de mel em Bonito" />
+                <Input required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Lua de mel em Bonito" />
               </div>
               <div>
                 <Label>Destino *</Label>
-                <Input required value={form.destination} onChange={(e) => setForm(f => ({ ...f, destination: e.target.value }))} placeholder="Bonito, MS" />
+                <Input required value={form.destination} onChange={(e) => setForm((f) => ({ ...f, destination: e.target.value }))} placeholder="Bonito, MS" />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Imagem de capa</Label>
-              {form.cover_image && (
-                <div className="relative inline-block">
-                  <img src={form.cover_image} alt="Capa" className="h-24 w-40 rounded border object-cover" />
-                  <button type="button" onClick={() => setForm(f => ({ ...f, cover_image: '' }))} className="absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-destructive-foreground">
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              )}
-              <div className="flex flex-wrap gap-2">
-                <Label htmlFor="cover-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90">
-                  {uploadingField === 'cover' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                  Enviar imagem
-                </Label>
-                <Input id="cover-upload" type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} disabled={uploadingField === 'cover'} />
-                <Input value={form.cover_image} onChange={(e) => setForm(f => ({ ...f, cover_image: e.target.value }))} placeholder="ou cole uma URL" className="flex-1 min-w-[200px]" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Galeria de fotos</Label>
-              {form.gallery.length > 0 && (
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {form.gallery.map((url, i) => (
-                    <div key={i} className="relative">
-                      <img src={url} alt={`Foto ${i + 1}`} className="h-20 w-full rounded border object-cover" />
-                      <button type="button" onClick={() => removeGalleryImage(i)} className="absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-destructive-foreground">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <Label htmlFor="gallery-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted">
-                {uploadingField === 'gallery' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                Adicionar fotos
-              </Label>
-              <Input id="gallery-upload" type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} disabled={uploadingField === 'gallery'} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Vídeo (opcional, máx. 30MB)</Label>
-              {form.video_url && (
-                <div className="flex items-center gap-2">
-                  <video src={form.video_url} className="h-24 w-40 rounded border object-cover" muted />
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setForm(f => ({ ...f, video_url: '' }))}>
-                    <X className="h-4 w-4 mr-1" />Remover
-                  </Button>
-                </div>
-              )}
-              <Label htmlFor="video-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted">
-                {uploadingField === 'video' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Film className="h-4 w-4" />}
-                {form.video_url ? 'Trocar vídeo' : 'Enviar vídeo'}
-              </Label>
-              <Input id="video-upload" type="file" accept="video/mp4,video/webm" className="hidden" onChange={handleVideoUpload} disabled={uploadingField === 'video'} />
-            </div>
+            <TripMediaEditor
+              items={form.media}
+              onChange={(media) => setForm((f) => ({ ...f, media }))}
+              onUpload={uploadFile}
+              uploading={uploading}
+            />
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
                 <Label>Mês</Label>
-                <Input type="number" min="1" max="12" value={form.trip_month} onChange={(e) => setForm(f => ({ ...f, trip_month: e.target.value }))} />
+                <Input type="number" min="1" max="12" value={form.trip_month} onChange={(e) => setForm((f) => ({ ...f, trip_month: e.target.value }))} />
               </div>
               <div>
                 <Label>Ano</Label>
-                <Input type="number" value={form.trip_year} onChange={(e) => setForm(f => ({ ...f, trip_year: e.target.value }))} />
+                <Input type="number" value={form.trip_year} onChange={(e) => setForm((f) => ({ ...f, trip_year: e.target.value }))} />
               </div>
               <div>
                 <Label>Ordem (maior aparece antes)</Label>
-                <Input type="number" value={form.display_order} onChange={(e) => setForm(f => ({ ...f, display_order: e.target.value }))} />
+                <Input type="number" value={form.display_order} onChange={(e) => setForm((f) => ({ ...f, display_order: e.target.value }))} />
               </div>
             </div>
 
             <div>
               <Label>Agência responsável</Label>
-              <select className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.agency_id} onChange={(e) => setForm(f => ({ ...f, agency_id: e.target.value }))}>
+              <select className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.agency_id} onChange={(e) => setForm((f) => ({ ...f, agency_id: e.target.value }))}>
                 <option value="">Guatá (operação própria)</option>
                 {agencies?.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
               </select>
@@ -367,22 +300,22 @@ export default function AdminViagensRealizadas() {
 
             <div>
               <Label>Descrição curta</Label>
-              <Textarea rows={2} value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} />
+              <Textarea rows={2} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label>Nome do cliente</Label>
-                <Input value={form.client_name} onChange={(e) => setForm(f => ({ ...f, client_name: e.target.value }))} placeholder="Mariana e João" />
+                <Input value={form.client_name} onChange={(e) => setForm((f) => ({ ...f, client_name: e.target.value }))} placeholder="Mariana e João" />
               </div>
               <div>
                 <Label>Depoimento curto</Label>
-                <Input value={form.client_quote} onChange={(e) => setForm(f => ({ ...f, client_quote: e.target.value }))} placeholder="Foi inesquecível!" />
+                <Input value={form.client_quote} onChange={(e) => setForm((f) => ({ ...f, client_quote: e.target.value }))} placeholder="Foi inesquecível!" />
               </div>
             </div>
 
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.is_published} onChange={(e) => setForm(f => ({ ...f, is_published: e.target.checked }))} />
+              <input type="checkbox" checked={form.is_published} onChange={(e) => setForm((f) => ({ ...f, is_published: e.target.checked }))} />
               Publicar imediatamente (aparece no site)
             </label>
 

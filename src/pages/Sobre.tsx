@@ -1,14 +1,29 @@
-import { MapPin, Heart, Users, Award, ShieldCheck, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import {
+  MapPin,
+  Heart,
+  Users,
+  Award,
+  ShieldCheck,
+  ExternalLink,
+  BookOpen,
+  Target,
+  Compass,
+  type LucideIcon,
+} from 'lucide-react';
 import { Seo } from '@/components/seo/Seo';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import cadasturCertificate from '@/assets/cadastur-certificate.png';
+import defaultLogo from '@/assets/logo-guata.png';
 import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { StorageImage } from '@/components/ui/StorageImage';
+import { normalizeCmsText } from '@/lib/normalizeCmsText';
 
-// Conteúdo padrão caso o CMS esteja vazio
 const defaultContent = {
   hero: {
     title: 'Sobre a Guatá',
@@ -17,14 +32,26 @@ const defaultContent = {
   sections: [
     {
       title: 'Nossa História',
-      content: 'A Guatá nasceu do amor por viagens e da vontade de proporcionar experiências únicas e autênticas. Nosso nome vem do tupi-guarani e significa "andar", "caminhar" - e é exatamente isso que fazemos: caminhamos ao lado dos nossos viajantes em cada etapa de sua jornada.\n\nDesde nossa fundação, já ajudamos centenas de pessoas a descobrir destinos incríveis, criando memórias que duram para sempre.',
+      content:
+        'A Guatá nasceu do amor por viagens e da vontade de proporcionar experiências únicas e autênticas. Nosso nome vem do tupi-guarani e significa "andar", "caminhar" - e é exatamente isso que fazemos: caminhamos ao lado dos nossos viajantes em cada etapa de sua jornada.\n\nDesde nossa fundação, já ajudamos centenas de pessoas a descobrir destinos incríveis, criando memórias que duram para sempre.',
     },
     {
       title: 'Nossa Missão',
-      content: 'Transformar sonhos de viagem em experiências reais e inesquecíveis. Acreditamos que viajar é mais do que conhecer lugares - é expandir horizontes, conectar culturas e criar histórias que serão contadas por gerações.',
+      content:
+        'Transformar sonhos de viagem em experiências reais e inesquecíveis. Acreditamos que viajar é mais do que conhecer lugares - é expandir horizontes, conectar culturas e criar histórias que serão contadas por gerações.',
     },
   ],
 };
+
+function isValoresSection(title: string) {
+  return /valores/i.test(title);
+}
+
+function getSectionIcon(title: string): LucideIcon {
+  if (/hist[oó]ria/i.test(title)) return BookOpen;
+  if (/miss[aã]o/i.test(title)) return Target;
+  return Compass;
+}
 
 const Sobre = () => {
   const { data: page, isLoading } = useCmsPage('sobre');
@@ -50,13 +77,15 @@ const Sobre = () => {
 
   const cadasturNumber = cadasturConfig?.number || '64.677.632/0001-77';
   const cadasturValidity = cadasturConfig?.validity || '27/01/2026 a 27/01/2028';
-  const cadasturDescription = cadasturConfig?.description || 'O Cadastur é o sistema de cadastro de pessoas físicas e jurídicas que atuam no setor de turismo. É administrado pelo Ministério do Turismo e garante que a empresa atende às exigências legais para operar como agência de turismo.';
+  const cadasturDescription =
+    cadasturConfig?.description ||
+    'O Cadastur é o sistema de cadastro de pessoas físicas e jurídicas que atuam no setor de turismo. É administrado pelo Ministério do Turismo e garante que a empresa atende às exigências legais para operar como agência de turismo.';
   const certImage = cadasturConfig?.certificate_image_url || cadasturCertificate;
   const agencyLogo = cadasturConfig?.agency_logo_url;
 
-  // Usa dados do CMS ou fallback para conteúdo padrão
   const content = page?.content || defaultContent;
   const { hero, sections } = content;
+  const contentSections = sections?.filter((section) => !isValoresSection(section.title)) ?? [];
 
   const valores = [
     {
@@ -92,45 +121,78 @@ const Sobre = () => {
         title="Sobre a Guatá — Agência de turismo jovem e tecnológica de MS"
         description="Conheça a Guatá: agência de turismo inovadora de Mato Grosso do Sul, registrada no Cadastur. Curadoria, tecnologia e parceiros locais para viagens no Pantanal, Bonito e no mundo."
       />
-      {/* Hero Section */}
-      <section className="relative py-24 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-display text-4xl font-bold md:text-5xl lg:text-6xl">
-            {hero?.title || 'Sobre a Guatá'}
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            {hero?.subtitle || 'Conheça nossa história e missão'}
-          </p>
-          {agencyLogo && (
-            <StorageImage
-              src={agencyLogo}
-              alt="Logo da Agência"
-              className="mx-auto mt-8 max-w-[220px] rounded-lg"
-            />
-          )}
+
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-secondary/20 py-16 lg:py-20">
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background to-transparent"
+          aria-hidden="true"
+        />
+        <div className="container relative mx-auto px-4 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <Badge variant="secondary" className="mb-6">
+              Sobre nós
+            </Badge>
+
+            <div className="mx-auto mb-8 inline-flex rounded-2xl border border-border/60 bg-card/90 p-5 shadow-sm backdrop-blur-sm">
+              {agencyLogo ? (
+                <StorageImage
+                  src={agencyLogo}
+                  alt="Guatá Viagens e Turismo"
+                  className="h-24 w-auto max-w-[min(100%,280px)] object-contain sm:h-28"
+                />
+              ) : (
+                <img
+                  src={defaultLogo}
+                  alt="Guatá Viagens e Turismo"
+                  className="h-24 w-auto max-w-[min(100%,220px)] object-contain sm:h-28"
+                />
+              )}
+            </div>
+
+            <h1 className="font-display text-4xl font-bold tracking-tight md:text-5xl">
+              {normalizeCmsText(hero?.title) || 'Sobre a Guatá'}
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground lg:text-xl">
+              {normalizeCmsText(hero?.subtitle) || 'Conheça nossa história e missão'}
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* Dynamic Sections from CMS */}
-      {sections && sections.length > 0 && (
-        <section className="py-16">
-          <div className="container mx-auto px-4">
-            <div className="mx-auto max-w-3xl prose prose-lg dark:prose-invert">
-              {sections.map((section, index) => (
-                <div key={index} className="mb-8">
-                  <h2 className="font-display text-2xl font-bold">{section.title}</h2>
-                  <p className="whitespace-pre-line text-muted-foreground">{section.content}</p>
-                </div>
-              ))}
+      {/* História + Missão (CMS) */}
+      {contentSections.length > 0 && (
+        <section className="py-16 lg:py-20">
+          <div className="container mx-auto px-4 lg:px-8">
+            <div className="grid gap-6 md:grid-cols-2">
+              {contentSections.map((section, index) => {
+                const Icon = getSectionIcon(section.title);
+                return (
+                  <Card
+                    key={index}
+                    className="h-full border-2 transition-colors hover:border-primary/50 hover:shadow-md"
+                  >
+                    <CardHeader>
+                      <Icon className="mb-2 h-10 w-10 text-primary" />
+                      <CardTitle className="font-display text-xl">{normalizeCmsText(section.title)}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                        {normalizeCmsText(section.content)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </section>
       )}
 
       {/* Nossos Valores */}
-      <section className="py-16 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
+      <section className="bg-muted/50 py-16 lg:py-20">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="mb-12 text-center">
             <h2 className="font-display text-3xl font-bold md:text-4xl">Nossos Valores</h2>
             <p className="mt-4 text-muted-foreground">
               O que nos move e define cada experiência que criamos
@@ -138,7 +200,10 @@ const Sobre = () => {
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {valores.map((valor) => (
-              <Card key={valor.title} className="text-center hover:shadow-lg transition-shadow">
+              <Card
+                key={valor.title}
+                className="border-2 text-center transition-colors hover:border-primary/50 hover:shadow-md"
+              >
                 <CardContent className="pt-6">
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                     <valor.icon className="h-8 w-8 text-primary" />
@@ -152,16 +217,17 @@ const Sobre = () => {
         </div>
       </section>
 
-      {/* Cadastur Certificate */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
+      {/* Cadastur */}
+      <section className="py-16 lg:py-20">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="mb-10 text-center">
             <h2 className="font-display text-3xl font-bold md:text-4xl">Credenciais e Segurança</h2>
-            <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-              Somos uma agência regularizada junto ao Ministério do Turismo, garantindo segurança e confiabilidade para nossos clientes.
+            <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
+              Somos uma agência regularizada junto ao Ministério do Turismo, garantindo segurança e
+              confiabilidade para nossos clientes.
             </p>
           </div>
-          <div className="mx-auto max-w-5xl flex flex-col md:flex-row items-center gap-8 rounded-2xl border-2 border-primary/20 bg-primary/5 p-8">
+          <div className="mx-auto flex max-w-5xl flex-col items-center gap-8 rounded-2xl border-2 border-primary/20 bg-primary/5 p-8 md:flex-row">
             <div className="flex-shrink-0 md:w-1/2">
               <StorageImage
                 src={certImage}
@@ -174,9 +240,7 @@ const Sobre = () => {
                 <ShieldCheck className="h-6 w-6 text-primary" />
                 <h3 className="font-display text-xl font-semibold">Cadastur Nº {cadasturNumber}</h3>
               </div>
-              <p className="text-muted-foreground">
-                {cadasturDescription}
-              </p>
+              <p className="text-muted-foreground">{cadasturDescription}</p>
               <p className="text-sm text-muted-foreground">
                 <strong>Validade:</strong> {cadasturValidity}
               </p>
@@ -195,8 +259,8 @@ const Sobre = () => {
       </section>
 
       {/* CTA */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 text-center">
+      <section className="bg-muted/50 py-16 lg:py-20">
+        <div className="container mx-auto px-4 text-center lg:px-8">
           <h2 className="font-display text-3xl font-bold md:text-4xl">
             Pronto para sua próxima aventura?
           </h2>
@@ -204,18 +268,12 @@ const Sobre = () => {
             Entre em contato e deixe-nos criar a viagem dos seus sonhos.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <a 
-              href="/viagem-personalizada" 
-              className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-3 text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
-            >
-              Solicitar Orçamento
-            </a>
-            <a 
-              href="/contato" 
-              className="inline-flex items-center justify-center rounded-md border border-primary px-8 py-3 text-primary font-medium hover:bg-primary/10 transition-colors"
-            >
-              Fale Conosco
-            </a>
+            <Button asChild size="lg">
+              <Link to="/viagem-personalizada">Solicitar Orçamento</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link to="/contato">Fale Conosco</Link>
+            </Button>
           </div>
         </div>
       </section>

@@ -30,7 +30,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Tables, Enums } from '@/integrations/supabase/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, X } from 'lucide-react';
+import { uploadStorageFile } from '@/lib/uploadStorageFile';
+import { useToast } from '@/hooks/use-toast';
 
 const experienceSchema = z.object({
   title: z.string().min(3, 'Título deve ter pelo menos 3 caracteres'),
@@ -41,7 +43,11 @@ const experienceSchema = z.object({
   price: z.coerce.number().min(0, 'Preço deve ser positivo').optional(),
   duration_days: z.coerce.number().min(1, 'Duração mínima de 1 dia').optional(),
   max_participants: z.coerce.number().min(1, 'Mínimo 1 participante').optional(),
-  cover_image: z.string().url('URL inválida').optional().or(z.literal('')),
+  cover_image: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine((val) => !val || val.startsWith('http'), { message: 'Informe uma URL válida ou envie um arquivo' }),
   is_published: z.boolean(),
   is_featured: z.boolean(),
   inclusions: z.string().optional(),
@@ -69,6 +75,8 @@ const experienceTypeLabels: Record<Enums<'experience_type'>, string> = {
 };
 
 export function ExperienceForm({ experience, open, onOpenChange, onSubmit, isSubmitting }: ExperienceFormProps) {
+  const { toast } = useToast();
+  const [uploadingCover, setUploadingCover] = useState(false);
   const form = useForm<ExperienceFormData>({
     resolver: zodResolver(experienceSchema),
     defaultValues: {
@@ -141,8 +149,39 @@ export function ExperienceForm({ experience, open, onOpenChange, onSubmit, isSub
       transport_type: data.transport_type || null,
       departure_city: data.departure_city || null,
       stops: data.stops?.split('\n').filter(Boolean) || [],
-    } as any);
+    } as Partial<Tables<'experiences'>>);
   };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Selecione uma imagem', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'Imagem muito grande', description: 'Máximo 5 MB.', variant: 'destructive' });
+      return;
+    }
+
+    setUploadingCover(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const fileName = `experience-cover-${Date.now()}.${ext}`;
+      const { publicUrl } = await uploadStorageFile('site-assets', fileName, file, { upsert: true });
+      form.setValue('cover_image', publicUrl, { shouldValidate: true, shouldDirty: true });
+      toast({ title: 'Imagem enviada!' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro no upload';
+      toast({ title: 'Erro no upload', description: message, variant: 'destructive' });
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  const coverImage = form.watch('cover_image');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -285,21 +324,60 @@ export function ExperienceForm({ experience, open, onOpenChange, onSubmit, isSub
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="cover_image"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL da Imagem de Capa</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
+
+            <FormField
+              control={form.control}
+              name="cover_image"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Imagem de Capa</FormLabel>
+                  <div className="flex flex-wrap gap-2">
+                    <FormLabel
+                      htmlFor="experience-cover-upload"
+                      className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80"
+                    >
+                      {uploadingCover ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      {uploadingCover ? 'Enviando…' : 'Enviar imagem'}
+                    </FormLabel>
+                    <Input
+                      id="experience-cover-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleCoverUpload}
+                      disabled={uploadingCover}
+                    />
+                    {coverImage && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => field.onChange('')}
+                        className="shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <FormControl>
+                    <Input placeholder="ou cole uma URL: https://..." {...field} />
+                  </FormControl>
+                  <FormDescription>Envie um arquivo (máx. 5 MB) ou cole a URL de uma imagem.</FormDescription>
+                  {coverImage && (
+                    <div className="relative mt-2 h-36 overflow-hidden rounded-lg border bg-muted">
+                      <img
+                        src={coverImage}
+                        alt="Prévia da capa"
+                        className="h-full w-full object-cover"
+                        onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
@@ -398,7 +476,7 @@ export function ExperienceForm({ experience, open, onOpenChange, onSubmit, isSub
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || uploadingCover}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {experience ? 'Salvar Alterações' : 'Criar Experiência'}
               </Button>

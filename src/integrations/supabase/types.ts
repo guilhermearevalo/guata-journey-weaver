@@ -14,6 +14,121 @@ export type Database = {
   }
   public: {
     Tables: {
+      checklist_templates: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      checklist_template_items: {
+        Row: {
+          id: string
+          template_id: string
+          title: string
+          position: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          template_id: string
+          title: string
+          position?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          template_id?: string
+          title?: string
+          position?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_templates"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      planning_tasks: {
+        Row: {
+          id: string
+          proposal_id: string
+          title: string
+          note: string | null
+          due_date: string | null
+          assignee_id: string | null
+          is_done: boolean
+          done_at: string | null
+          position: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          proposal_id: string
+          title: string
+          note?: string | null
+          due_date?: string | null
+          assignee_id?: string | null
+          is_done?: boolean
+          done_at?: string | null
+          position?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          proposal_id?: string
+          title?: string
+          note?: string | null
+          due_date?: string | null
+          assignee_id?: string | null
+          is_done?: boolean
+          done_at?: string | null
+          position?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planning_tasks_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       bookings: {
         Row: {
           client_id: string | null
@@ -515,9 +630,46 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_read: boolean
+          message: string
+          name: string
+          phone: string | null
+          read_at: string | null
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_read?: boolean
+          message: string
+          name: string
+          phone?: string | null
+          read_at?: string | null
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          name?: string
+          phone?: string | null
+          read_at?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
       partner_agencies: {
         Row: {
           address: string | null
+          admin_reviewed_at: string | null
           cnpj: string | null
           commission_rate: number | null
           contact_email: string
@@ -538,6 +690,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          admin_reviewed_at?: string | null
           cnpj?: string | null
           commission_rate?: number | null
           contact_email: string
@@ -558,6 +711,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          admin_reviewed_at?: string | null
           cnpj?: string | null
           commission_rate?: number | null
           contact_email?: string
@@ -846,6 +1000,7 @@ export type Database = {
       }
       travel_requests: {
         Row: {
+          admin_reviewed_at: string | null
           assigned_agency_id: string | null
           assigned_consultant_id: string | null
           budget_range: string | null
@@ -861,12 +1016,14 @@ export type Database = {
           preferences: Json | null
           special_requests: string | null
           service_type: Database["public"]["Enums"]["service_type"]
+          service_type_note: string | null
           status: Database["public"]["Enums"]["request_status"]
           travel_dates: Json | null
           travelers_count: number | null
           updated_at: string
         }
         Insert: {
+          admin_reviewed_at?: string | null
           assigned_agency_id?: string | null
           assigned_consultant_id?: string | null
           budget_range?: string | null
@@ -882,12 +1039,14 @@ export type Database = {
           preferences?: Json | null
           special_requests?: string | null
           service_type?: Database["public"]["Enums"]["service_type"]
+          service_type_note?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           travel_dates?: Json | null
           travelers_count?: number | null
           updated_at?: string
         }
         Update: {
+          admin_reviewed_at?: string | null
           assigned_agency_id?: string | null
           assigned_consultant_id?: string | null
           budget_range?: string | null
@@ -903,6 +1062,7 @@ export type Database = {
           preferences?: Json | null
           special_requests?: string | null
           service_type?: Database["public"]["Enums"]["service_type"]
+          service_type_note?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           travel_dates?: Json | null
           travelers_count?: number | null
@@ -944,13 +1104,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_public_itinerary: { Args: { _token: string }; Returns: Json }
+      get_public_itinerary: { Args: { _code?: string; _token: string }; Returns: Json }
       get_public_proposal: { Args: { _token: string }; Returns: Json }
       get_public_travel_documents: {
         Args: { _code?: string; _token: string }
         Returns: {
           category: string
           created_at: string
+          file_path: string
           file_url: string
           id: string
           notes: string
@@ -981,6 +1142,11 @@ export type Database = {
         Args: { p_agency_id: string; p_email: string; p_full_name: string }
         Returns: Json
       }
+      create_staff_access: {
+        Args: { p_email: string; p_full_name: string; p_role: Database["public"]["Enums"]["app_role"] }
+        Returns: Json
+      }
+      reset_staff_password: { Args: { p_user_id: string }; Returns: Json }
       reset_partner_password: { Args: { p_agency_id: string }; Returns: Json }
       partner_insert_external_sale: {
         Args: {
@@ -1015,7 +1181,7 @@ export type Database = {
         | "in_operation"
         | "completed"
         | "cancelled"
-      service_type: "consultancy" | "full_package"
+      service_type: "consultancy" | "full_package" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1155,7 +1321,7 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
-      service_type: ["consultancy", "full_package"],
+      service_type: ["consultancy", "full_package", "other"],
     },
   },
 } as const

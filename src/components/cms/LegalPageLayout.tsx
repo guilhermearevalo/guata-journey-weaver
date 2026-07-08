@@ -1,5 +1,10 @@
-import { useMemo, useEffect } from 'react';
-import { ShieldCheck, FileText, Download, ExternalLink } from 'lucide-react';
+import { useMemo, useEffect, lazy, Suspense } from 'react';
+import { ShieldCheck, FileText, Download, ExternalLink, Loader2 } from 'lucide-react';
+import { normalizeCmsText } from '@/lib/normalizeCmsText';
+
+const PdfViewer = lazy(() =>
+  import('@/components/cms/PdfViewer').then((module) => ({ default: module.PdfViewer })),
+);
 
 interface LegalSection {
   title: string;
@@ -60,16 +65,16 @@ export default function LegalPageLayout({
               </span>
             )}
             <h1 className="font-display text-3xl font-bold text-primary-foreground hero-text-shadow md:text-4xl">
-              {title}
+              {normalizeCmsText(title)}
             </h1>
             {subtitle && (
-              <p className="mx-auto mt-4 max-w-2xl text-primary-foreground/90">{subtitle}</p>
+              <p className="mx-auto mt-4 max-w-2xl text-primary-foreground/90">{normalizeCmsText(subtitle)}</p>
             )}
           </div>
         </section>
 
-        <section className="container mx-auto px-4 py-12">
-          <div className="mx-auto max-w-3xl">
+        <section className="container mx-auto px-4 py-12 lg:px-8">
+          <div className="mx-auto max-w-5xl">
             {/* Card de acesso ao documento — funciona em qualquer dispositivo */}
             <div className="rounded-2xl border bg-card p-6 shadow-sm md:p-8">
               <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
@@ -102,11 +107,17 @@ export default function LegalPageLayout({
               </div>
             </div>
 
-            {/* Visualizador embutido (complemento para desktop) */}
-            <div className="mt-6 hidden overflow-hidden rounded-2xl border bg-card shadow-sm md:block">
-              <object data={pdfUrl} type="application/pdf" className="h-[80vh] w-full">
-                <iframe src={pdfUrl} title={title} className="h-[80vh] w-full" />
-              </object>
+            {/* Visualizador PDF.js — páginas empilhadas, sem barra lateral do navegador */}
+            <div className="mt-6 overflow-hidden rounded-2xl border bg-card p-4 shadow-sm md:p-6">
+              <Suspense
+                fallback={
+                  <div className="flex justify-center py-16">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Carregando PDF" />
+                  </div>
+                }
+              >
+                <PdfViewer url={pdfUrl} title={title} />
+              </Suspense>
             </div>
           </div>
         </section>
@@ -127,11 +138,11 @@ export default function LegalPageLayout({
             </span>
           )}
           <h1 className="font-display text-4xl font-bold text-primary-foreground hero-text-shadow md:text-5xl">
-            {title}
+            {normalizeCmsText(title)}
           </h1>
           {subtitle && (
             <p className="mx-auto mt-4 max-w-2xl text-lg text-primary-foreground/90">
-              {subtitle}
+              {normalizeCmsText(subtitle)}
             </p>
           )}
           {updatedAt && (
@@ -159,7 +170,7 @@ export default function LegalPageLayout({
                       href={`#${s.id}`}
                       className="block rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
-                      {i + 1}. {s.title.replace(/^\d+\.\s*/, '')}
+                      {i + 1}. {normalizeCmsText(s.title.replace(/^\d+\.\s*/, ''))}
                     </a>
                   ))}
                 </nav>
@@ -181,10 +192,10 @@ export default function LegalPageLayout({
                   </span>
                   <div className="flex-1">
                     <h2 className="font-display text-xl font-semibold text-foreground md:text-2xl">
-                      {section.title.replace(/^\d+\.\s*/, '')}
+                      {normalizeCmsText(section.title.replace(/^\d+\.\s*/, ''))}
                     </h2>
                     <p className="mt-3 whitespace-pre-line leading-relaxed text-muted-foreground">
-                      {section.content}
+                      {normalizeCmsText(section.content)}
                     </p>
                   </div>
                 </div>

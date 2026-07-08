@@ -17,6 +17,11 @@ import { useAuth } from '@/lib/auth';
 import { fetchTravelRequests, updateTravelRequestStatus } from '@/lib/fetchTravelRequests';
 import { fetchProposalRequestIds } from '@/lib/fetchProposals';
 import { getVisibleKanbanStatuses, getServiceType, type ServiceType } from '@/lib/serviceType';
+import {
+  invalidateRequestNotificationQueries,
+  isUnreviewedPendingRequest,
+  markTravelRequestReviewed,
+} from '@/lib/travelRequestReview';
 
 type RequestStatus = Enums<'request_status'>;
 
@@ -75,6 +80,7 @@ export function KanbanBoard() {
         { event: '*', schema: 'public', table: 'travel_requests' },
         () => {
           queryClient.invalidateQueries({ queryKey: ['travel_requests', user.id] });
+          invalidateRequestNotificationQueries(queryClient, user.id);
         }
       )
       .subscribe();
@@ -83,6 +89,13 @@ export function KanbanBoard() {
       supabase.removeChannel(channel);
     };
   }, [user, queryClient]);
+
+  const markReviewedMutation = useMutation({
+    mutationFn: markTravelRequestReviewed,
+    onSuccess: () => {
+      invalidateRequestNotificationQueries(queryClient, user?.id);
+    },
+  });
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: RequestStatus }) => {
@@ -173,16 +186,33 @@ export function KanbanBoard() {
     if (!requestedDemandId || !requests?.length) return;
 
     const match = requests.find((request) => request.id === requestedDemandId);
-    if (match) {
+    if (!match) return;
+
+    if (isUnreviewedPendingRequest(match)) {
+      setSelectedRequest({ ...match, admin_reviewed_at: new Date().toISOString() });
+      markReviewedMutation.mutate(match.id);
+    } else {
       setSelectedRequest(match);
     }
   }, [requestedDemandId, requests]);
+
+  const unreviewedCount = useMemo(
+    () => requests?.filter(isUnreviewedPendingRequest).length ?? 0,
+    [requests],
+  );
 
   const handleSelectRequest = (request: Tables<'travel_requests'>) => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set('demanda', request.id);
     setSearchParams(nextParams, { replace: true });
-    setSelectedRequest(request);
+
+    if (isUnreviewedPendingRequest(request)) {
+      const reviewedAt = new Date().toISOString();
+      setSelectedRequest({ ...request, admin_reviewed_at: reviewedAt });
+      markReviewedMutation.mutate(request.id);
+    } else {
+      setSelectedRequest(request);
+    }
   };
 
   const handleDialogChange = (open: boolean) => {
@@ -235,6 +265,14 @@ export function KanbanBoard() {
 
   return (
     <>
+      {unreviewedCount > 0 && !requestedStatus && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <Badge variant="outline" className="border-amber-300 bg-white">
+            {unreviewedCount} {unreviewedCount === 1 ? 'nova demanda' : 'novas demandas'}
+          </Badge>
+          <span>Aguardando triagem na coluna <strong>Pendente</strong></span>
+        </div>
+      )}
       {requestedStatus && columns.some((column) => column.id === requestedStatus) && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           <Badge variant="outline" className="border-amber-300 bg-white">

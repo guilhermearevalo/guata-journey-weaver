@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCmsPage } from '@/hooks/useCmsPage';
 import { useContactInfo, useAgencyLocation, buildMapEmbedUrl } from '@/hooks/useContactInfo';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
+import { supabase } from '@/integrations/supabase/client';
 
 const defaultContent = {
   hero: {
@@ -40,22 +41,38 @@ const Contato = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const { error } = await supabase.from('contact_messages').insert({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || null,
+        subject: formData.subject.trim(),
+        message: formData.message.trim(),
+      } as any);
 
-    toast({
-      title: 'Mensagem enviada!',
-      description: 'Retornaremos seu contato em breve.',
-    });
+      if (error) throw error;
 
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: '',
-    });
-    setIsSubmitting(false);
+      toast({
+        title: 'Mensagem enviada!',
+        description: 'Retornaremos seu contato em breve.',
+      });
+
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: '',
+      });
+    } catch (err: unknown) {
+      toast({
+        title: 'Não foi possível enviar',
+        description: err instanceof Error ? err.message : 'Tente novamente em instantes.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const content = page?.content || defaultContent;

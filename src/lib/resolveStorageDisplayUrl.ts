@@ -1,6 +1,6 @@
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-const PROJECT_REF = import.meta.env.VITE_SUPABASE_PROJECT_ID as string;
+const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL ?? '').trim();
+const SUPABASE_KEY = String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '').trim();
+const PROJECT_REF = String(import.meta.env.VITE_SUPABASE_PROJECT_ID ?? '').trim();
 
 const PUBLIC_BUCKETS = new Set(['site-assets', 'testimonials']);
 
@@ -33,12 +33,18 @@ export async function resolveStorageDisplayUrl(url: string | null | undefined): 
   if (cached && cached.expires > Date.now()) return cached.url;
 
   try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_KEY,
+    };
+    if (sessionData.session?.access_token) {
+      headers.Authorization = `Bearer ${sessionData.session.access_token}`;
+    }
+
     const res = await fetch(`${SUPABASE_URL}/functions/v1/storage-sign-url`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: SUPABASE_KEY,
-      },
+      headers,
       body: JSON.stringify({ bucket: object.bucket, path: object.path }),
     });
 

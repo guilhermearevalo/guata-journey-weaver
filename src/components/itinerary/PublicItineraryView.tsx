@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   MapPin, Calendar, Users, Clock, Sparkles, Plane, Hotel,
-  ExternalLink, FileText, Download, Phone,
+  ExternalLink, FileText, Download, Phone, FileDown, Loader2,
 } from 'lucide-react';
 import ImageGalleryCarousel from './ImageGalleryCarousel';
 import type { TravelDocument } from './TravelDocumentsVault';
@@ -39,6 +39,8 @@ interface PublicItineraryViewProps {
   travelDocuments: TravelDocument[];
   agency: AgencyBranding | null;
   onOpenDocument?: (doc: TravelDocument) => void;
+  onDownloadPdf?: () => void | Promise<void>;
+  downloadingPdf?: boolean;
 }
 
 function formatDate(d?: string) {
@@ -64,6 +66,8 @@ export default function PublicItineraryView({
   travelDocuments,
   agency,
   onOpenDocument,
+  onDownloadPdf,
+  downloadingPdf = false,
 }: PublicItineraryViewProps) {
   const [activeTab, setActiveTab] = useState('resumo');
   const dossier: Dossier = parseDossier(dossierRaw);
@@ -130,6 +134,23 @@ export default function PublicItineraryView({
             <h1 className="mt-3 font-display text-4xl font-bold leading-tight text-primary-foreground drop-shadow-lg sm:text-5xl">
               {request?.destination || title}
             </h1>
+            {onDownloadPdf && itinerary.length > 0 && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="mt-4 bg-white/95 text-guata-brown shadow-md hover:bg-white"
+                onClick={() => void onDownloadPdf()}
+                disabled={downloadingPdf}
+              >
+                {downloadingPdf ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileDown className="mr-2 h-4 w-4" />
+                )}
+                Baixar PDF do Roteiro
+              </Button>
+            )}
           </div>
         </div>
       </header>

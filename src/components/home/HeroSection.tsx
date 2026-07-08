@@ -2,21 +2,22 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, MessageCircle, ArrowRight, Star, ShieldCheck, Sparkles } from 'lucide-react';
+import { Search, ArrowRight, ShieldCheck, Sparkles, Plane } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import useEmblaCarousel from 'embla-carousel-react';
-import { buildExperienciasSearchUrl, isOnerTravelQuery } from '@/lib/onerTravel';
+import {
+  ROTEIRO_SOB_MEDIDA_LABEL,
+  interpretSearchQuery,
+  getPathForSearchIntent,
+  type SearchInterpretation,
+  type SearchIntent,
+} from '@/lib/onerTravel';
+import { SearchIntentPanel } from '@/components/home/SearchIntentPanel';
 
 interface Slide {
   type: 'image' | 'video';
   url: string;
-}
-
-interface WhatsAppConfig {
-  enabled: boolean;
-  number: string;
-  message: string;
 }
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop';
@@ -30,6 +31,7 @@ const ONER_CHIPS = [
 
 export function HeroSection() {
   const [destination, setDestination] = useState('');
+  const [pendingInterpretation, setPendingInterpretation] = useState<SearchInterpretation | null>(null);
   const navigate = useNavigate();
 
   const { data: heroSetting } = useQuery({
@@ -42,21 +44,6 @@ export function HeroSection() {
         .maybeSingle();
       if (error) throw error;
       return data?.value;
-    },
-    staleTime: 1000 * 60 * 5,
-  });
-
-  const { data: whatsappConfig } = useQuery({
-    queryKey: ['site-setting', 'whatsapp_config'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'whatsapp_config')
-        .maybeSingle();
-      if (error) throw error;
-      if (!data?.value) return null;
-      return data.value as unknown as WhatsAppConfig;
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -81,6 +68,11 @@ export function HeroSection() {
     return () => clearInterval(interval);
   }, [emblaApi, hasMultipleSlides]);
 
+  const goToIntent = (intent: SearchIntent, query: string) => {
+    setPendingInterpretation(null);
+    navigate(getPathForSearchIntent(intent, query));
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const query = destination.trim();
@@ -88,20 +80,23 @@ export function HeroSection() {
       navigate('/experiencias');
       return;
     }
-    if (isOnerTravelQuery(query)) {
-      navigate('/passagens');
+
+    const interpretation = interpretSearchQuery(query);
+    if (!interpretation.requiresConfirmation) {
+      goToIntent(interpretation.primary.intent, query);
       return;
     }
-    navigate(buildExperienciasSearchUrl(query));
+
+    setPendingInterpretation(interpretation);
   };
 
-  const whatsappUrl = whatsappConfig?.enabled && whatsappConfig.number
-    ? `https://wa.me/${whatsappConfig.number.replace(/\D/g, '')}${whatsappConfig.message ? `?text=${encodeURIComponent(whatsappConfig.message)}` : ''}`
-    : null;
+  const handleInputChange = (value: string) => {
+    setDestination(value);
+    if (pendingInterpretation) setPendingInterpretation(null);
+  };
 
   return (
     <section className="relative min-h-[94vh] overflow-hidden">
-      {/* Background carousel */}
       {hasMultipleSlides ? (
         <div className="absolute inset-0" ref={emblaRef}>
           <div className="flex h-full">
@@ -126,20 +121,16 @@ export function HeroSection() {
         </div>
       )}
 
-      {/* Editorial gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-black/20" />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" style={{ height: '40%', top: 'auto', bottom: 0 }} />
 
-      {/* Content */}
       <div className="container relative mx-auto flex min-h-[94vh] flex-col items-center justify-center px-4 py-24 text-center lg:px-8">
-        {/* Trust badge above title */}
         <div className="mb-6 inline-flex animate-fade-in items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-medium text-white backdrop-blur-md">
           <ShieldCheck className="h-3.5 w-3.5 text-amber-300" />
           <span>Cadastur · Receptivo MS · Atendimento humano</span>
         </div>
 
         <div className="animate-fade-in">
-          {/* Main title */}
           <h1 className="font-display text-5xl font-extrabold leading-[1.15] tracking-tight text-white pb-3 md:text-7xl lg:text-8xl">
             Do <span className="italic text-amber-300 hero-text-shadow">Pantanal</span>
             <br className="hidden md:block" />
@@ -150,54 +141,61 @@ export function HeroSection() {
           </h1>
         </div>
 
-        {/* Search bar */}
         <form
           onSubmit={handleSearch}
-          className="mt-10 w-full max-w-2xl animate-slide-up rounded-2xl border border-white/20 bg-card/95 p-3 shadow-2xl backdrop-blur-sm md:p-4"
+          className="mt-10 w-full max-w-2xl animate-slide-up"
           style={{ animationDelay: '0.2s' }}
         >
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Destino, passagem, hotel, seguro... Ex: Bonito, passagem SP"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-                className="h-12 border-0 pl-10 text-base shadow-none focus-visible:ring-0 md:text-lg"
-              />
+          <div className="rounded-2xl border border-white/20 bg-card/95 p-3 shadow-2xl backdrop-blur-sm md:p-4">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Destino, passagem, hotel, seguro... Ex: Bonito, passagem SP"
+                  value={destination}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  className="h-12 border-0 pl-10 text-base shadow-none focus-visible:ring-0 md:text-lg"
+                />
+              </div>
+              <Button type="submit" size="lg" className="h-12 px-6 text-base font-semibold">
+                Buscar
+              </Button>
             </div>
-            <Button type="submit" size="lg" className="h-12 px-6 text-base font-semibold">
-              Buscar
-            </Button>
-          </div>
 
-          {/* Quick filter chips */}
-          <div className="mt-3 flex flex-wrap justify-center gap-2">
-            {ONER_CHIPS.map((chip) => (
-              <button
-                key={chip.label}
-                type="button"
-                onClick={() => navigate(chip.path)}
-                className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-              >
-                {chip.label}
-              </button>
-            ))}
-            {QUICK_FILTERS.map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                onClick={() => navigate(`/experiencias?destino=${encodeURIComponent(filter)}`)}
-                className="rounded-full border border-border bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
-              >
-                {filter}
-              </button>
-            ))}
+            {pendingInterpretation && (
+              <SearchIntentPanel
+                interpretation={pendingInterpretation}
+                onConfirm={(intent) => goToIntent(intent, pendingInterpretation.query)}
+                onDismiss={() => setPendingInterpretation(null)}
+              />
+            )}
+
+            <div className="mt-3 flex flex-wrap justify-center gap-2 border-t border-border/40 pt-3">
+              {ONER_CHIPS.map((chip) => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => navigate(chip.path)}
+                  className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                >
+                  {chip.label}
+                </button>
+              ))}
+              {QUICK_FILTERS.map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => navigate(`/experiencias?destino=${encodeURIComponent(filter)}`)}
+                  className="rounded-full border border-border bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
           </div>
         </form>
 
-        {/* CTA buttons */}
         <div
           className="mt-7 flex flex-wrap items-center justify-center gap-3 animate-slide-up"
           style={{ animationDelay: '0.35s' }}
@@ -205,27 +203,23 @@ export function HeroSection() {
           <Button
             size="lg"
             className="h-12 rounded-full px-8 text-base font-semibold shadow-xl"
+            onClick={() => navigate('/passagens')}
+          >
+            <Plane className="mr-2 h-4 w-4" />
+            Passagens
+          </Button>
+
+          <Button
+            size="lg"
+            variant="secondary"
+            className="h-12 rounded-full border-0 bg-white px-8 text-base font-semibold text-foreground shadow-xl hover:bg-white/90"
             onClick={() => navigate('/viagem-personalizada')}
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            Quero um roteiro personalizado
+            {ROTEIRO_SOB_MEDIDA_LABEL}
             <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
-
-          {whatsappUrl && (
-            <Button
-              size="lg"
-              className="h-12 rounded-full bg-[#25D366] px-8 text-base font-semibold text-white shadow-xl hover:bg-[#20BA56]"
-              asChild
-            >
-              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="mr-2 h-5 w-5" />
-                Falar no WhatsApp
-              </a>
-            </Button>
-          )}
         </div>
-
       </div>
     </section>
   );

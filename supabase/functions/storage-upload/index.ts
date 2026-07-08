@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") ?? "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -27,7 +27,28 @@ async function canUpload(
   if (bucket === "travel-documents") {
     const { data: staff } = await admin.rpc("is_staff", { _user_id: userId });
     if (staff === true) return true;
-    return path.startsWith(`${userId}/`);
+
+    if (!path.startsWith(`${userId}/`)) return false;
+
+    const parts = path.split("/");
+    const proposalId = parts[1];
+    if (!proposalId) return false;
+
+    const { data: proposal } = await admin
+      .from("proposals")
+      .select("request_id")
+      .eq("id", proposalId)
+      .maybeSingle();
+
+    if (!proposal?.request_id) return false;
+
+    const { data: request } = await admin
+      .from("travel_requests")
+      .select("client_id")
+      .eq("id", proposal.request_id)
+      .maybeSingle();
+
+    return request?.client_id === userId;
   }
   return false;
 }

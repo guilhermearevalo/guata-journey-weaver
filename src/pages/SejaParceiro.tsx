@@ -213,35 +213,35 @@ const SejaParceiro = () => {
       {/* How it Works Section */}
       <section className="bg-secondary/30 py-16 lg:py-24">
         <div className="container mx-auto px-4 lg:px-8">
-          <h2 className="mb-12 text-center font-display text-3xl font-bold">
-            Como funciona?
-          </h2>
-          <div className="mx-auto max-w-4xl">
-            <div className="relative">
-              {/* Timeline line */}
-              <div className="absolute left-8 top-0 h-full w-0.5 bg-primary/20 lg:left-1/2 lg:-translate-x-1/2" />
-              
-              {/* Steps */}
-              <div className="space-y-8">
-                {[
-                  { icon: Building2, title: 'Você se cadastra', desc: 'Preencha o formulário com os dados da sua agência' },
-                  { icon: CheckCircle, title: 'Validamos sua agência', desc: 'Nossa equipe analisa e aprova seu cadastro' },
-                  { icon: MapPin, title: 'Recebe demandas', desc: 'Clientes compatíveis com seu nicho são direcionados' },
-                  { icon: Compass, title: 'Envia propostas', desc: 'Elabore propostas personalizadas pelo painel' },
-                  { icon: Globe, title: 'Opera e recebe', desc: 'Execute a viagem e receba sua comissão' },
-                ].map((step, index) => (
-                  <div key={index} className="relative flex items-start gap-6 lg:gap-12">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
-                      <step.icon className="h-7 w-7" />
-                    </div>
-                    <div className="pt-3">
-                      <h3 className="font-display text-xl font-semibold">{step.title}</h3>
-                      <p className="mt-1 text-muted-foreground">{step.desc}</p>
-                    </div>
-                  </div>
-                ))}
+          <div className="mx-auto mb-12 max-w-2xl text-center">
+            <h2 className="font-display text-3xl font-bold md:text-4xl">Como funciona?</h2>
+            <p className="mt-4 text-muted-foreground">
+              Do cadastro à comissão — tudo pelo painel parceiro Guatá
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {[
+              { icon: Building2, number: '01', title: 'Você se cadastra', desc: 'Preencha o formulário com os dados da sua agência' },
+              { icon: CheckCircle, number: '02', title: 'Validamos sua agência', desc: 'Nossa equipe analisa e aprova seu cadastro' },
+              { icon: MapPin, number: '03', title: 'Recebe demandas', desc: 'Clientes compatíveis com seu nicho são direcionados' },
+              { icon: Compass, number: '04', title: 'Envia propostas', desc: 'Elabore propostas personalizadas pelo painel' },
+              { icon: Globe, number: '05', title: 'Opera e recebe', desc: 'Execute a viagem e receba sua comissão' },
+            ].map((step) => (
+              <div
+                key={step.number}
+                className="group relative flex flex-col rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
+              >
+                <div className="absolute -top-3 left-6 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold tracking-widest text-primary-foreground shadow-sm">
+                  PASSO {step.number}
+                </div>
+                <div className="mt-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary transition-transform group-hover:scale-105">
+                  <step.icon className="h-7 w-7" />
+                </div>
+                <h3 className="mt-5 font-display text-lg font-semibold">{step.title}</h3>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>

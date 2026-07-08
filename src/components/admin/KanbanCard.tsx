@@ -3,7 +3,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar, Users, MapPin, DollarSign, Route } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
-import { getServiceType, SERVICE_TYPE_SHORT, isConsultancy } from '@/lib/serviceType';
+import { getServiceTypeBadgeLabel, isSimpleWorkflow } from '@/lib/serviceType';
+import { isUnreviewedPendingRequest } from '@/lib/travelRequestReview';
+import { cn } from '@/lib/utils';
 
 interface KanbanCardProps {
   request: Tables<'travel_requests'>;
@@ -34,7 +36,10 @@ export function KanbanCard({ request, hasProposal, onDragStart, onClick }: Kanba
 
   return (
     <Card 
-      className="cursor-grab bg-card hover:shadow-md transition-shadow active:cursor-grabbing"
+      className={cn(
+        'cursor-grab bg-card hover:shadow-md transition-shadow active:cursor-grabbing',
+        isUnreviewedPendingRequest(request) && 'border-amber-200 bg-amber-50/60 hover:bg-amber-50',
+      )}
       draggable
       onDragStart={(e) => onDragStart(e, request.id)}
       onClick={onClick}
@@ -79,10 +84,10 @@ export function KanbanCard({ request, hasProposal, onDragStart, onClick }: Kanba
 
         <div className="flex items-center gap-1.5 flex-wrap">
           <Badge
-            variant={isConsultancy(request) ? 'secondary' : 'outline'}
+            variant={isSimpleWorkflow(request) ? 'secondary' : 'outline'}
             className="text-xs font-normal"
           >
-            {SERVICE_TYPE_SHORT[getServiceType(request)]}
+            {getServiceTypeBadgeLabel(request)}
           </Badge>
           {request.budget_range && (
             <Badge variant="secondary" className="text-xs font-normal">

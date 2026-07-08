@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,11 +40,11 @@ import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminRelatorioAgencias from "./pages/admin/AdminRelatorioAgencias";
 import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
-import AdminProposta from "./pages/admin/AdminProposta";
-import AdminRoteiro from "./pages/admin/AdminRoteiro";
+import { AdminPageLoader } from "./components/admin/AdminPageLoader";
 import AdminAjuda from "./pages/admin/AdminAjuda";
 import AdminDepoimentos from "./pages/admin/AdminDepoimentos";
 import AdminNewsletter from "./pages/admin/AdminNewsletter";
+import AdminMensagens from "./pages/admin/AdminMensagens";
 import AdminViagensRealizadas from "./pages/admin/AdminViagensRealizadas";
 
 // Partner imports
@@ -57,6 +58,9 @@ import PartnerAjuda from "./pages/partner/PartnerAjuda";
 import PartnerFinanceiro from "./pages/partner/PartnerFinanceiro";
 import PartnerConta from "./pages/partner/PartnerConta";
 import RedefinirSenha from "./pages/RedefinirSenha";
+
+const AdminProposta = lazy(() => import("./pages/admin/AdminProposta"));
+const AdminRoteiro = lazy(() => import("./pages/admin/AdminRoteiro"));
 
 // Cliente imports
 import { ProtectedClienteRoute } from "./components/cliente/ProtectedClienteRoute";
@@ -105,14 +109,23 @@ const App = () => (
               <Route path="experiencias" element={<AdminExperiencias />} />
               <Route path="clientes" element={<AdminClientes />} />
               <Route path="parceiros" element={<AdminParceiros />} />
+              <Route path="mensagens" element={<AdminMensagens />} />
               <Route path="equipe" element={<AdminEquipe />} />
               <Route path="configuracoes" element={<AdminConfiguracoes />} />
               <Route path="cms" element={<AdminCMS />} />
               <Route path="cms/:slug" element={<AdminCMSEditor />} />
-              <Route path="demandas/:id/roteiro" element={<AdminRoteiro />} />
+              <Route path="demandas/:id/roteiro" element={
+                <Suspense fallback={<AdminPageLoader message="Carregando planejador..." />}>
+                  <AdminRoteiro />
+                </Suspense>
+              } />
               <Route path="relatorio-agencias" element={<AdminRelatorioAgencias />} />
               <Route path="financeiro" element={<AdminFinanceiro />} />
-              <Route path="proposta/:id" element={<AdminProposta />} />
+              <Route path="proposta/:id" element={
+                <Suspense fallback={<AdminPageLoader message="Carregando proposta..." />}>
+                  <AdminProposta />
+                </Suspense>
+              } />
               <Route path="ajuda" element={<AdminAjuda />} />
               <Route path="depoimentos" element={<AdminDepoimentos />} />
               <Route path="newsletter" element={<AdminNewsletter />} />

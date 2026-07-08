@@ -33,7 +33,34 @@ function escapeHtml(text: string) {
     .replace(/"/g, '&quot;');
 }
 
-function buildPdfHtml(data: ItineraryPdfData): string {
+/** Best-effort search URL for an activity when no maps_url is provided. */
+function fallbackMapsSearchUrl(activity: Activity, destination?: string | null): string {
+  const query = [activity.name, destination].filter(Boolean).join(', ');
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+/** Build a Google Maps directions URL chaining all activities in itinerary order. */
+function buildFullRouteUrl(itinerary: ItineraryDay[], destination?: string | null): string | null {
+  const stops: string[] = [];
+  for (const day of itinerary) {
+    const sorted = [...day.activities].sort(
+      (a, b) => timeSlotOrder.indexOf(a.time_slot) - timeSlotOrder.indexOf(b.time_slot),
+    );
+    for (const act of sorted) {
+      const q = [act.name, destination].filter(Boolean).join(', ');
+      stops.push(q);
+    }
+  }
+  if (stops.length < 2) return null;
+  const origin = encodeURIComponent(stops[0]);
+  const dest = encodeURIComponent(stops[stops.length - 1]);
+  const waypoints = stops.slice(1, -1).map((s) => encodeURIComponent(s)).join('|');
+  let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`;
+  if (waypoints) url += `&waypoints=${waypoints}`;
+  return url;
+}
+
+function buildPdfHtml(data: ItineraryPdfData, fullRouteUrl: string | null): string {
   const tripLabel = data.clientName ? `Viagem de ${escapeHtml(data.clientName.split(' ')[0])}` : escapeHtml(data.title);
   const cover = data.coverImage || getAccommodationImages(data.dossier)[0] || '';
 
@@ -66,11 +93,15 @@ function buildPdfHtml(data: ItineraryPdfData): string {
     const dayTitle = data.dossier.day_titles?.[String(day.day)];
     const activitiesHtml = sorted.map(act => {
       const imgs = getActivityImages(act).slice(0, 2);
+      const mapsUrl = act.maps_url?.trim() || fallbackMapsSearchUrl(act, data.destination);
       return `
         <div class="activity">
           <h4>${escapeHtml(act.name)} <span class="tag">${escapeHtml(act.time_slot)}</span></h4>
           ${imgs.map(src => `<img src="${src}" class="photo-sm" crossorigin="anonymous" />`).join('')}
           ${act.description ? `<p>${escapeHtml(act.description)}</p>` : ''}
+          <a class="maps-link" data-pdf-link="${escapeHtml(mapsUrl)}" href="${escapeHtml(mapsUrl)}">
+            <span class="map-pin">📍</span> Abrir no Google Maps
+          </a>
         </div>`;
     }).join('');
     return `
@@ -79,6 +110,15 @@ function buildPdfHtml(data: ItineraryPdfData): string {
         ${activitiesHtml}
       </section>`;
   }).join('');
+
+  const fullRouteSection = fullRouteUrl ? `
+    <section class="section full-route">
+      <h2>Rota completa</h2>
+      <p class="route-hint">Abra todas as atividades como um trajeto contínuo no Google Maps.</p>
+      <a class="route-button" data-pdf-link="${escapeHtml(fullRouteUrl)}" href="${escapeHtml(fullRouteUrl)}">
+        🗺️ Ver rota completa no Google Maps
+      </a>
+    </section>` : '';
 
   return `
     <div id="itinerary-pdf-root" style="width:794px;font-family:Georgia,'Times New Roman',serif;color:#1a1a1a;background:#fff;">
@@ -110,6 +150,11 @@ function buildPdfHtml(data: ItineraryPdfData): string {
         .tag { font-size: 11px; font-weight: normal; color: #888; text-transform: capitalize; }
         .footer { text-align: center; padding: 24px 40px; font-size: 11px; color: #888; border-top: 1px solid #eee; }
         .logo { max-height: 36px; max-width: 120px; margin-bottom: 8px; }
+        .maps-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 12px; background: #eaf3ee; color: #1a6b48; font-size: 12px; font-weight: 600; border-radius: 14px; text-decoration: none; border: 1px solid #1a6b48; }
+        .maps-link .map-pin { font-size: 13px; }
+        .route-button { display: inline-block; margin-top: 6px; padding: 14px 28px; background: #1a6b48; color: #fff; font-size: 15px; font-weight: 700; border-radius: 28px; text-decoration: none; }
+        .route-hint { color: #555; font-size: 13px; margin-bottom: 12px; }
+        .full-route { margin-top: 24px; padding: 20px; background: #f7fbf8; border-radius: 12px; border: 1px solid #d6e8de; }
       </style>
       <div class="cover">
         ${cover ? `<img src="${cover}" crossorigin="anonymous" />` : ''}
@@ -129,6 +174,7 @@ function buildPdfHtml(data: ItineraryPdfData): string {
         ${flights}
         ${accommodation}
         ${data.itinerary.length ? `<section class="section"><h2>Experiências</h2>${daysHtml}</section>` : ''}
+        ${fullRouteSection}
       </div>
       <div class="footer">
         ${data.logoUrl ? `<img src="${data.logoUrl}" class="logo" crossorigin="anonymous" />` : ''}
@@ -137,12 +183,41 @@ function buildPdfHtml(data: ItineraryPdfData): string {
     </div>`;
 }
 
+interface LinkAnnotation {
+  url: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+function collectLinkAnnotations(root: HTMLElement): LinkAnnotation[] {
+  const rootRect = root.getBoundingClientRect();
+  const nodes = root.querySelectorAll<HTMLElement>('[data-pdf-link]');
+  const annotations: LinkAnnotation[] = [];
+  nodes.forEach((el) => {
+    const url = el.getAttribute('data-pdf-link');
+    if (!url) return;
+    const rect = el.getBoundingClientRect();
+    annotations.push({
+      url,
+      x: rect.left - rootRect.left,
+      y: rect.top - rootRect.top,
+      w: rect.width,
+      h: rect.height,
+    });
+  });
+  return annotations;
+}
+
 export async function generateItineraryPdf(data: ItineraryPdfData): Promise<void> {
+  const fullRouteUrl = buildFullRouteUrl(data.itinerary, data.destination);
+
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.left = '-9999px';
   container.style.top = '0';
-  container.innerHTML = buildPdfHtml(data);
+  container.innerHTML = buildPdfHtml(data, fullRouteUrl);
   document.body.appendChild(container);
 
   const root = container.querySelector('#itinerary-pdf-root') as HTMLElement;
@@ -151,10 +226,12 @@ export async function generateItineraryPdf(data: ItineraryPdfData): Promise<void
     throw new Error('Falha ao montar o PDF');
   }
 
-  // Allow images to load
-  await new Promise(r => setTimeout(r, 800));
+  await new Promise((r) => setTimeout(r, 800));
 
   try {
+    const annotations = collectLinkAnnotations(root);
+    const rootCssWidth = root.getBoundingClientRect().width;
+
     const canvas = await html2canvas(root, {
       scale: 2,
       useCORS: true,
@@ -168,17 +245,35 @@ export async function generateItineraryPdf(data: ItineraryPdfData): Promise<void
     const pageHeight = pdf.internal.pageSize.getHeight();
     const imgWidth = pageWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const pxToMm = imgWidth / rootCssWidth;
 
     let heightLeft = imgHeight;
     let position = 0;
 
+    const addLinksForPage = (pageOffsetMm: number) => {
+      annotations.forEach((a) => {
+        const xMm = a.x * pxToMm;
+        const yMm = a.y * pxToMm + pageOffsetMm;
+        const wMm = a.w * pxToMm;
+        const hMm = a.h * pxToMm;
+        if (yMm + hMm < 0 || yMm > pageHeight) return;
+        const yStart = Math.max(0, yMm);
+        const yEnd = Math.min(pageHeight, yMm + hMm);
+        const clippedH = yEnd - yStart;
+        if (clippedH <= 0) return;
+        pdf.link(xMm, yStart, wMm, clippedH, { url: a.url });
+      });
+    };
+
     pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+    addLinksForPage(position);
     heightLeft -= pageHeight;
 
     while (heightLeft > 0) {
       position = heightLeft - imgHeight;
       pdf.addPage();
       pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      addLinksForPage(position);
       heightLeft -= pageHeight;
     }
 

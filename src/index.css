@@ -59,7 +59,7 @@
     /* Radius */
     --radius: 0.75rem;
     
-    /* Sidebar - deep teal brand with light, legible text */
+    /* Admin panel sidebar — light theme (scoped via .admin-sidebar-theme) */
     --sidebar-background: 174 78% 13%;
     --sidebar-foreground: 45 35% 92%;
     --sidebar-primary: 38 92% 60%;
@@ -125,6 +125,17 @@
     --guata-sand: 35 15% 20%;
     --guata-gold: 42 60% 58%;
   }
+}
+
+.admin-sidebar-theme {
+  --sidebar-background: 4 28% 20%;
+  --sidebar-foreground: 40 30% 96%;
+  --sidebar-primary: 42 55% 58%;
+  --sidebar-primary-foreground: 4 28% 12%;
+  --sidebar-accent: 4 22% 28%;
+  --sidebar-accent-foreground: 40 30% 96%;
+  --sidebar-border: 4 20% 30%;
+  --sidebar-ring: 42 55% 58%;
 }
 
 @layer base {

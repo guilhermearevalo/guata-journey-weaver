@@ -8,3 +8,9 @@ verify_jwt = true
 
 [functions.storage-sign-url]
 verify_jwt = false
+
+[functions.travel-document-sign]
+verify_jwt = false
+
+[functions.travel-document-open]
+verify_jwt = true
