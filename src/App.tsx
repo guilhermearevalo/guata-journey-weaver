@@ -40,6 +40,7 @@ import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminRelatorioAgencias from "./pages/admin/AdminRelatorioAgencias";
 import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
+import AdminProposta from "./pages/admin/AdminProposta";
 import { AdminPageLoader } from "./components/admin/AdminPageLoader";
 import AdminAjuda from "./pages/admin/AdminAjuda";
 import AdminDepoimentos from "./pages/admin/AdminDepoimentos";
@@ -59,7 +60,6 @@ import PartnerFinanceiro from "./pages/partner/PartnerFinanceiro";
 import PartnerConta from "./pages/partner/PartnerConta";
 import RedefinirSenha from "./pages/RedefinirSenha";
 
-const AdminProposta = lazy(() => import("./pages/admin/AdminProposta"));
 const AdminRoteiro = lazy(() => import("./pages/admin/AdminRoteiro"));
 
 // Cliente imports
@@ -121,11 +121,7 @@ const App = () => (
               } />
               <Route path="relatorio-agencias" element={<AdminRelatorioAgencias />} />
               <Route path="financeiro" element={<AdminFinanceiro />} />
-              <Route path="proposta/:id" element={
-                <Suspense fallback={<AdminPageLoader message="Carregando proposta..." />}>
-                  <AdminProposta />
-                </Suspense>
-              } />
+              <Route path="proposta/:id" element={<AdminProposta />} />
               <Route path="ajuda" element={<AdminAjuda />} />
               <Route path="depoimentos" element={<AdminDepoimentos />} />
               <Route path="newsletter" element={<AdminNewsletter />} />

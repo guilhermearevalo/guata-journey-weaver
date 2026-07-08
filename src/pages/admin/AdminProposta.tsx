@@ -59,6 +59,7 @@ export default function AdminProposta() {
       return data;
     },
     enabled: !!requestId,
+    staleTime: 30_000,
   });
 
   const { data: agencies } = useQuery({
@@ -68,12 +69,14 @@ export default function AdminProposta() {
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60_000,
   });
 
   const { data: existingProposal, isLoading: proposalLoading } = useQuery({
     queryKey: ['admin-proposal', requestId],
     queryFn: () => fetchProposalByRequest(requestId!),
     enabled: !!requestId,
+    staleTime: 30_000,
   });
 
   useEffect(() => {
@@ -321,7 +324,7 @@ export default function AdminProposta() {
             {request?.budget_range && (
               <p className="mt-3 text-sm text-muted-foreground">Orçamento informado: {request.budget_range}</p>
             )}
-            {request?.preferences && (
+            {typeof request?.preferences === 'string' && request.preferences.trim() && (
               <p className="mt-2 text-sm text-muted-foreground">{request.preferences}</p>
             )}
             {request?.special_requests && (

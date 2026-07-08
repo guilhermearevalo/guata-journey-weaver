@@ -469,6 +469,10 @@ export function RequestDetailDialog({ request, open, onOpenChange }: RequestDeta
             <Button
               className="flex-1"
               onClick={() => {
+                queryClient.setQueryData(['travel-request', request.id], request);
+                if (existingProposal !== undefined) {
+                  queryClient.setQueryData(['admin-proposal', request.id], existingProposal);
+                }
                 onOpenChange(false);
                 navigate(`/admin/proposta/${request.id}`);
               }}
