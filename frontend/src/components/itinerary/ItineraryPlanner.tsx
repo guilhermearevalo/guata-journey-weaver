@@ -27,6 +27,7 @@ import ActivityFormDialog from './ActivityFormDialog';
 import TemplateDialog from './TemplateDialog';
 import TravelDocumentsVault, { TravelDocument } from './TravelDocumentsVault';
 import DossierEditor from './DossierEditor';
+import PlanningChecklist from './PlanningChecklist';
 import { parseDossier, type Dossier } from '@/lib/dossier';
 import { type Activity, type ItineraryDay, getActivityImages } from '@/lib/itinerary';
 import {
