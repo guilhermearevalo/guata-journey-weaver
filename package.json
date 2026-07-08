@@ -5,8 +5,8 @@
     "install:app": "cd frontend && npm install --legacy-peer-deps",
     "postinstall": "cd frontend && npm install --legacy-peer-deps",
     "dev": "cd frontend && npm run dev",
-    "build": "cd frontend && npm run build",
-    "build:dev": "cd frontend && npm run build:dev",
+    "build": "cd frontend && npm run build && rm -rf ../dist && cp -r dist ../dist",
+    "build:dev": "cd frontend && npm run build:dev && rm -rf ../dist && cp -r dist ../dist",
     "preview": "cd frontend && npm run preview",
     "lint": "cd frontend && npm run lint",
     "test": "cd frontend && npm run test"
