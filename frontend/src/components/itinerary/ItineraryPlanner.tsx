@@ -713,6 +713,9 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
         />
       </div>
 
+      {/* Planning Checklist (internal) */}
+      <PlanningChecklist proposalId={proposal.id} />
+
       {/* Travel Documents */}
       <TravelDocumentsVault
         proposalId={proposal.id}
