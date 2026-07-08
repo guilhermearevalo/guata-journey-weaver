@@ -141,6 +141,33 @@ export function KanbanBoard() {
     enabled: filterPayment !== 'all',
   });
 
+  const { data: checklistMap } = useQuery({
+    queryKey: ['planning-tasks-progress'],
+    queryFn: async () => {
+      const [{ data: props, error: pErr }, { data: tasks, error: tErr }] = await Promise.all([
+        supabase.from('proposals').select('id, request_id'),
+        supabase.from('planning_tasks').select('proposal_id, is_done'),
+      ]);
+      if (pErr) throw pErr;
+      if (tErr) throw tErr;
+      const propToReq = new Map<string, string>();
+      props?.forEach((p) => propToReq.set(p.id, p.request_id));
+      const map = new Map<string, { done: number; total: number }>();
+      tasks?.forEach((t) => {
+        const reqId = propToReq.get(t.proposal_id);
+        if (!reqId) return;
+        const cur = map.get(reqId) ?? { done: 0, total: 0 };
+        cur.total += 1;
+        if (t.is_done) cur.done += 1;
+        map.set(reqId, cur);
+      });
+      return map;
+    },
+    enabled: !!user && !authLoading,
+    staleTime: 30_000,
+  });
+
+
   const getRequestsByStatus = (status: RequestStatus) => {
     let filtered = requests?.filter((r) => r.status === status) || [];
     if (filterServiceType !== 'all') {
