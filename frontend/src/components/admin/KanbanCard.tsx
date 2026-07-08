@@ -97,6 +97,15 @@ export function KanbanCard({ request, hasProposal, checklist, onDragStart, onCli
               Roteiro
             </Badge>
           )}
+          {checklist && checklist.total > 0 && (
+            <Badge
+              variant="outline"
+              className={`text-xs font-normal ${checklist.done === checklist.total ? 'text-green-600 border-green-600/40' : 'text-muted-foreground'}`}
+            >
+              <ListChecks className="h-3 w-3 mr-1" />
+              {checklist.done}/{checklist.total}
+            </Badge>
+          )}
         </div>
       </CardContent>
     </Card>
