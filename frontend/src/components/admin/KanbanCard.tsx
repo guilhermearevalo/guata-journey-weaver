@@ -1,18 +1,19 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, Users, MapPin, DollarSign, Route } from 'lucide-react';
+import { Calendar, Users, MapPin, DollarSign, Route, ListChecks } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { getServiceType, SERVICE_TYPE_SHORT, isConsultancy } from '@/lib/serviceType';
 
 interface KanbanCardProps {
   request: Tables<'travel_requests'>;
   hasProposal?: boolean;
+  checklist?: { done: number; total: number };
   onDragStart: (e: React.DragEvent, requestId: string) => void;
   onClick: () => void;
 }
 
-export function KanbanCard({ request, hasProposal, onDragStart, onClick }: KanbanCardProps) {
+export function KanbanCard({ request, hasProposal, checklist, onDragStart, onClick }: KanbanCardProps) {
   const travelDates = request.travel_dates as { start?: string; end?: string } | null;
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return null;
@@ -94,6 +95,15 @@ export function KanbanCard({ request, hasProposal, onDragStart, onClick }: Kanba
             <Badge variant="outline" className="text-xs font-normal text-primary">
               <Route className="h-3 w-3 mr-1" />
               Roteiro
+            </Badge>
+          )}
+          {checklist && checklist.total > 0 && (
+            <Badge
+              variant="outline"
+              className={`text-xs font-normal ${checklist.done === checklist.total ? 'text-green-600 border-green-600/40' : 'text-muted-foreground'}`}
+            >
+              <ListChecks className="h-3 w-3 mr-1" />
+              {checklist.done}/{checklist.total}
             </Badge>
           )}
         </div>
