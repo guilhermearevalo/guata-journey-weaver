@@ -23,6 +23,8 @@ import PrivacidadeRedirect from "./pages/PrivacidadeRedirect";
 import Contato from "./pages/Contato";
 import SejaParceiro from "./pages/SejaParceiro";
 import Passagens from "./pages/Passagens";
+import Destinos from "./pages/Destinos";
+import DestinoDetalhe from "./pages/DestinoDetalhe";
 import NotFound from "./pages/NotFound";
 import RoteiroPublico from "./pages/RoteiroPublico";
 import PropostaPublica from "./pages/PropostaPublica";
@@ -99,6 +101,8 @@ const App = () => (
               <Route path="/politica-servicos" element={<PoliticaServicos />} />
               <Route path="/contato" element={<Contato />} />
               <Route path="/seja-parceiro" element={<SejaParceiro />} />
+              <Route path="/destinos" element={<Destinos />} />
+              <Route path="/destinos/:slug" element={<DestinoDetalhe />} />
             </Route>
             
             {/* Admin routes */}
