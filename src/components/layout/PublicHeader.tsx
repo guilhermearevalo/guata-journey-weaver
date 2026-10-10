@@ -17,6 +17,7 @@ import logo from '@/assets/logo-guata.png';
 
 export function PublicHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [remoteLoaded, setRemoteLoaded] = useState(false);
   const { user, signOut, isStaff, hasRole } = useAuth();
   const { data: sections } = useHomepageSections();
   const { data: cadasturConfig } = useCadasturConfig();
@@ -37,24 +38,36 @@ export function PublicHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <nav className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
-        <Link to="/" className="flex shrink-0 items-center">
-          {agencyLogo ? (
+        <Link to="/" className="relative flex h-9 w-[140px] shrink-0 items-center">
+          <img
+            src={logo}
+            alt="Guatá Travel Experience"
+            width={140}
+            height={36}
+            decoding="sync"
+            fetchPriority="high"
+            className={`h-9 w-auto max-w-[140px] object-contain object-left transition-opacity duration-300 ${remoteLoaded ? 'opacity-0' : 'opacity-100'}`}
+          />
+          {agencyLogo && (
             <StorageImage
               src={agencyLogo}
-              alt="Guatá Travel Experience"
-              className="h-9 w-auto max-w-[140px] object-contain object-left"
-            />
-          ) : (
-            <img
-              src={logo}
-              alt="Guatá Travel Experience"
-              className="h-9 w-auto object-contain"
+              alt=""
+              aria-hidden="true"
+              onLoad={() => setRemoteLoaded(true)}
+              onError={() => setRemoteLoaded(false)}
+              className={`absolute inset-0 h-9 w-auto max-w-[140px] object-contain object-left transition-opacity duration-300 ${remoteLoaded ? 'opacity-100' : 'opacity-0'}`}
             />
           )}
         </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-8 md:flex">
+          <Link
+            to="/destinos"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Destinos
+          </Link>
           <Link
             to="/viagens-realizadas"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"

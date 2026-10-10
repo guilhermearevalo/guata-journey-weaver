@@ -8,6 +8,10 @@ const BASE_URL = "https://www.agenciaguata.com";
 const entries = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
   { path: "/experiencias", changefreq: "weekly", priority: "0.9" },
+  { path: "/destinos", changefreq: "monthly", priority: "0.9" },
+  { path: "/destinos/bonito-ms", changefreq: "monthly", priority: "0.9" },
+  { path: "/destinos/pantanal", changefreq: "monthly", priority: "0.9" },
+  { path: "/destinos/chapada-dos-guimaraes", changefreq: "monthly", priority: "0.9" },
   { path: "/excursoes", changefreq: "weekly", priority: "0.8" },
   { path: "/viagens-realizadas", changefreq: "weekly", priority: "0.8" },
   { path: "/viagem-personalizada", changefreq: "monthly", priority: "0.9" },
