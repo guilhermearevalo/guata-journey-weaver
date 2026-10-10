@@ -10,125 +10,10 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
-      checklist_templates: {
-        Row: {
-          id: string
-          name: string
-          description: string | null
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      checklist_template_items: {
-        Row: {
-          id: string
-          template_id: string
-          title: string
-          position: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          template_id: string
-          title: string
-          position?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          template_id?: string
-          title?: string
-          position?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "checklist_template_items_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "checklist_templates"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      planning_tasks: {
-        Row: {
-          id: string
-          proposal_id: string
-          title: string
-          note: string | null
-          due_date: string | null
-          assignee_id: string | null
-          is_done: boolean
-          done_at: string | null
-          position: number
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          proposal_id: string
-          title: string
-          note?: string | null
-          due_date?: string | null
-          assignee_id?: string | null
-          is_done?: boolean
-          done_at?: string | null
-          position?: number
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          proposal_id?: string
-          title?: string
-          note?: string | null
-          due_date?: string | null
-          assignee_id?: string | null
-          is_done?: boolean
-          done_at?: string | null
-          position?: number
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "planning_tasks_proposal_id_fkey"
-            columns: ["proposal_id"]
-            isOneToOne: false
-            referencedRelation: "proposals"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       bookings: {
         Row: {
           client_id: string | null
@@ -198,6 +83,68 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      checklist_template_items: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          template_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position?: number
+          template_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          template_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       cms_pages: {
         Row: {
@@ -630,46 +577,9 @@ export type Database = {
         }
         Relationships: []
       }
-      contact_messages: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          is_read: boolean
-          message: string
-          name: string
-          phone: string | null
-          read_at: string | null
-          subject: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: string
-          is_read?: boolean
-          message: string
-          name: string
-          phone?: string | null
-          read_at?: string | null
-          subject: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          is_read?: boolean
-          message?: string
-          name?: string
-          phone?: string | null
-          read_at?: string | null
-          subject?: string
-        }
-        Relationships: []
-      }
       partner_agencies: {
         Row: {
           address: string | null
-          admin_reviewed_at: string | null
           cnpj: string | null
           commission_rate: number | null
           contact_email: string
@@ -690,7 +600,6 @@ export type Database = {
         }
         Insert: {
           address?: string | null
-          admin_reviewed_at?: string | null
           cnpj?: string | null
           commission_rate?: number | null
           contact_email: string
@@ -711,7 +620,6 @@ export type Database = {
         }
         Update: {
           address?: string | null
-          admin_reviewed_at?: string | null
           cnpj?: string | null
           commission_rate?: number | null
           contact_email?: string
@@ -761,6 +669,59 @@ export type Database = {
           },
         ]
       }
+      planning_tasks: {
+        Row: {
+          assignee_id: string | null
+          created_at: string
+          created_by: string | null
+          done_at: string | null
+          due_date: string | null
+          id: string
+          is_done: boolean
+          note: string | null
+          position: number
+          proposal_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          done_at?: string | null
+          due_date?: string | null
+          id?: string
+          is_done?: boolean
+          note?: string | null
+          position?: number
+          proposal_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          done_at?: string | null
+          due_date?: string | null
+          id?: string
+          is_done?: boolean
+          note?: string | null
+          position?: number
+          proposal_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planning_tasks_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -768,7 +729,6 @@ export type Database = {
           email: string
           full_name: string
           id: string
-          must_change_password: boolean
           phone: string | null
           preferences: Json | null
           updated_at: string
@@ -780,7 +740,6 @@ export type Database = {
           email: string
           full_name: string
           id?: string
-          must_change_password?: boolean
           phone?: string | null
           preferences?: Json | null
           updated_at?: string
@@ -792,7 +751,6 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
-          must_change_password?: boolean
           phone?: string | null
           preferences?: Json | null
           updated_at?: string
@@ -1000,7 +958,6 @@ export type Database = {
       }
       travel_requests: {
         Row: {
-          admin_reviewed_at: string | null
           assigned_agency_id: string | null
           assigned_consultant_id: string | null
           budget_range: string | null
@@ -1015,15 +972,12 @@ export type Database = {
           internal_notes: string | null
           preferences: Json | null
           special_requests: string | null
-          service_type: Database["public"]["Enums"]["service_type"]
-          service_type_note: string | null
           status: Database["public"]["Enums"]["request_status"]
           travel_dates: Json | null
           travelers_count: number | null
           updated_at: string
         }
         Insert: {
-          admin_reviewed_at?: string | null
           assigned_agency_id?: string | null
           assigned_consultant_id?: string | null
           budget_range?: string | null
@@ -1038,15 +992,12 @@ export type Database = {
           internal_notes?: string | null
           preferences?: Json | null
           special_requests?: string | null
-          service_type?: Database["public"]["Enums"]["service_type"]
-          service_type_note?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           travel_dates?: Json | null
           travelers_count?: number | null
           updated_at?: string
         }
         Update: {
-          admin_reviewed_at?: string | null
           assigned_agency_id?: string | null
           assigned_consultant_id?: string | null
           budget_range?: string | null
@@ -1061,8 +1012,6 @@ export type Database = {
           internal_notes?: string | null
           preferences?: Json | null
           special_requests?: string | null
-          service_type?: Database["public"]["Enums"]["service_type"]
-          service_type_note?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           travel_dates?: Json | null
           travelers_count?: number | null
@@ -1104,14 +1053,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_public_itinerary: { Args: { _code?: string; _token: string }; Returns: Json }
+      create_staff_access: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: Json
+      }
+      get_public_itinerary: { Args: { _token: string }; Returns: Json }
       get_public_proposal: { Args: { _token: string }; Returns: Json }
       get_public_travel_documents: {
         Args: { _code?: string; _token: string }
         Returns: {
           category: string
           created_at: string
-          file_path: string
           file_url: string
           id: string
           notes: string
@@ -1137,17 +1093,6 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
-      client_approve_proposal: { Args: { p_proposal_id: string }; Returns: undefined }
-      create_partner_access: {
-        Args: { p_agency_id: string; p_email: string; p_full_name: string }
-        Returns: Json
-      }
-      create_staff_access: {
-        Args: { p_email: string; p_full_name: string; p_role: Database["public"]["Enums"]["app_role"] }
-        Returns: Json
-      }
-      reset_staff_password: { Args: { p_user_id: string }; Returns: Json }
-      reset_partner_password: { Args: { p_agency_id: string }; Returns: Json }
       partner_insert_external_sale: {
         Args: {
           _client_name?: string
@@ -1159,6 +1104,7 @@ export type Database = {
         Returns: string
       }
       proposal_is_shared: { Args: { _proposal_id: string }; Returns: boolean }
+      reset_staff_password: { Args: { p_user_id: string }; Returns: Json }
       update_commission_note: {
         Args: { _notes: string; _payment_id: string }
         Returns: undefined
@@ -1181,7 +1127,6 @@ export type Database = {
         | "in_operation"
         | "completed"
         | "cancelled"
-      service_type: "consultancy" | "full_package" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1197,12 +1142,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1226,11 +1171,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1251,11 +1196,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1276,11 +1221,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1293,11 +1238,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1321,7 +1266,6 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
-      service_type: ["consultancy", "full_package", "other"],
     },
   },
 } as const
