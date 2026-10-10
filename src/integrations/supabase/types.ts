@@ -275,6 +275,7 @@ export type Database = {
           gallery: string[] | null
           id: string
           is_published: boolean
+          media: Json
           title: string
           trip_month: number | null
           trip_year: number | null
@@ -295,6 +296,7 @@ export type Database = {
           gallery?: string[] | null
           id?: string
           is_published?: boolean
+          media?: Json
           title: string
           trip_month?: number | null
           trip_year?: number | null
@@ -315,6 +317,7 @@ export type Database = {
           gallery?: string[] | null
           id?: string
           is_published?: boolean
+          media?: Json
           title?: string
           trip_month?: number | null
           trip_year?: number | null
@@ -580,6 +583,7 @@ export type Database = {
       partner_agencies: {
         Row: {
           address: string | null
+          admin_reviewed_at: string | null
           cnpj: string | null
           commission_rate: number | null
           contact_email: string
@@ -600,6 +604,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          admin_reviewed_at?: string | null
           cnpj?: string | null
           commission_rate?: number | null
           contact_email: string
@@ -620,6 +625,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          admin_reviewed_at?: string | null
           cnpj?: string | null
           commission_rate?: number | null
           contact_email?: string
@@ -729,6 +735,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          must_change_password: boolean
           phone: string | null
           preferences: Json | null
           updated_at: string
@@ -740,6 +747,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          must_change_password?: boolean
           phone?: string | null
           preferences?: Json | null
           updated_at?: string
@@ -751,6 +759,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          must_change_password?: boolean
           phone?: string | null
           preferences?: Json | null
           updated_at?: string
@@ -958,6 +967,7 @@ export type Database = {
       }
       travel_requests: {
         Row: {
+          admin_reviewed_at: string | null
           assigned_agency_id: string | null
           assigned_consultant_id: string | null
           budget_range: string | null
@@ -971,6 +981,8 @@ export type Database = {
           id: string
           internal_notes: string | null
           preferences: Json | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          service_type_note: string | null
           special_requests: string | null
           status: Database["public"]["Enums"]["request_status"]
           travel_dates: Json | null
@@ -978,6 +990,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_reviewed_at?: string | null
           assigned_agency_id?: string | null
           assigned_consultant_id?: string | null
           budget_range?: string | null
@@ -991,6 +1004,8 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           preferences?: Json | null
+          service_type?: Database["public"]["Enums"]["service_type"]
+          service_type_note?: string | null
           special_requests?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           travel_dates?: Json | null
@@ -998,6 +1013,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_reviewed_at?: string | null
           assigned_agency_id?: string | null
           assigned_consultant_id?: string | null
           budget_range?: string | null
@@ -1011,6 +1027,8 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           preferences?: Json | null
+          service_type?: Database["public"]["Enums"]["service_type"]
+          service_type_note?: string | null
           special_requests?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           travel_dates?: Json | null
@@ -1105,6 +1123,14 @@ export type Database = {
       }
       proposal_is_shared: { Args: { _proposal_id: string }; Returns: boolean }
       reset_staff_password: { Args: { p_user_id: string }; Returns: Json }
+      staff_update_travel_request_service_type: {
+        Args: {
+          p_id: string
+          p_service_type: Database["public"]["Enums"]["service_type"]
+          p_service_type_note?: string
+        }
+        Returns: undefined
+      }
       update_commission_note: {
         Args: { _notes: string; _payment_id: string }
         Returns: undefined
@@ -1127,6 +1153,7 @@ export type Database = {
         | "in_operation"
         | "completed"
         | "cancelled"
+      service_type: "consultancy" | "full_package" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1266,6 +1293,7 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      service_type: ["consultancy", "full_package", "other"],
     },
   },
 } as const
