@@ -63,6 +63,12 @@ export function PublicHeader() {
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-8 md:flex">
           <Link
+            to="/destinos"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Destinos
+          </Link>
+          <Link
             to="/viagens-realizadas"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
