@@ -4,7 +4,7 @@ import { LANGS, useI18n } from '@/lib/i18n';
 export function TopBar() {
   const { lang, setLang, t } = useI18n();
   return (
-    <div className="bg-secondary text-secondary-foreground">
+    <div className="bg-primary text-primary-foreground">
       <div className="container mx-auto flex h-10 items-center justify-between gap-4 px-4 text-xs lg:px-8">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-3.5 w-3.5 text-accent" />
@@ -15,7 +15,7 @@ export function TopBar() {
             <MapPin className="h-3.5 w-3.5" />
             {t('topLocation')}
           </span>
-          <div className="flex items-center gap-1.5 border-l border-secondary-foreground/20 pl-5">
+          <div className="flex items-center gap-1.5 border-l border-primary-foreground/20 pl-5">
             <Globe className="h-3.5 w-3.5" />
             {LANGS.map((l, i) => (
               <span key={l} className="flex items-center gap-1.5">
