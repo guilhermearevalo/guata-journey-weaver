@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, ArrowRight, ShieldCheck, Sparkles, Plane } from 'lucide-react';
+import { Search, ArrowRight, ArrowUpRight, ShieldCheck } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import useEmblaCarousel from 'embla-carousel-react';
 import {
-  ROTEIRO_SOB_MEDIDA_LABEL,
   interpretSearchQuery,
   getPathForSearchIntent,
   type SearchInterpretation,
@@ -25,14 +25,15 @@ const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8
 const QUICK_FILTERS = ['Pantanal', 'Bonito', 'Nordeste', 'Europa', 'All Inclusive'];
 
 const ONER_CHIPS = [
-  { label: 'Passagens', path: '/passagens' },
-  { label: 'Hotéis', path: '/passagens' },
+  { label: 'Passagens', key: 'flights', path: '/passagens' },
+  { label: 'Hotéis', key: 'hotels', path: '/passagens' },
 ] as const;
 
 export function HeroSection() {
   const [destination, setDestination] = useState('');
   const [pendingInterpretation, setPendingInterpretation] = useState<SearchInterpretation | null>(null);
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const { data: heroSetting } = useQuery({
     queryKey: ['site-setting', 'hero_image_url'],
@@ -96,7 +97,7 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative min-h-[94vh] overflow-hidden">
+    <section className="relative min-h-[88vh] overflow-hidden">
       {hasMultipleSlides ? (
         <div className="absolute inset-0" ref={emblaRef}>
           <div className="flex h-full">
@@ -121,29 +122,24 @@ export function HeroSection() {
         </div>
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-black/20" />
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" style={{ height: '40%', top: 'auto', bottom: 0 }} />
+      <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/45 to-foreground/10" />
+      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-foreground/60 to-transparent" />
 
-      <div className="container relative mx-auto flex min-h-[94vh] flex-col items-center justify-center px-4 py-24 text-center lg:px-8">
-        <div className="mb-6 inline-flex animate-fade-in items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-medium text-white backdrop-blur-md">
-          <ShieldCheck className="h-3.5 w-3.5 text-amber-300" />
-          <span>Cadastur · Receptivo MS · Atendimento humano</span>
+      <div className="container relative mx-auto flex min-h-[88vh] flex-col justify-center px-4 py-20 lg:px-8">
+        <div className="max-w-3xl">
+        <div className="mb-6 flex animate-fade-in items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground">
+          <span className="h-px w-8 bg-amber-300" />
+          {t('heroEyebrow')}
         </div>
-
-        <div className="animate-fade-in">
-          <h1 className="font-display text-5xl font-extrabold leading-[1.15] tracking-tight text-white pb-3 md:text-7xl lg:text-8xl">
-            Do <span className="italic text-amber-300 hero-text-shadow">Pantanal</span>
-            <br className="hidden md:block" />
-            <span className="block">ao mundo,</span>
-            <span className="block bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 bg-clip-text text-transparent pb-2">
-              do seu jeito.
-            </span>
-          </h1>
-        </div>
+        <h1 className="animate-fade-in font-display text-5xl font-bold leading-[1.05] tracking-tight text-primary-foreground md:text-7xl">
+          {t('heroLine1')}
+          <span className="block font-normal italic text-amber-300">{t('heroLine2')}</span>
+        </h1>
+        <p className="mt-6 max-w-xl text-lg leading-relaxed text-primary-foreground/90">{t('heroSub')}</p>
 
         <form
           onSubmit={handleSearch}
-          className="mt-10 w-full max-w-2xl animate-slide-up"
+          className="mt-8 w-full max-w-2xl animate-slide-up"
           style={{ animationDelay: '0.2s' }}
         >
           <div className="rounded-2xl border border-white/20 bg-card/95 p-3 shadow-2xl backdrop-blur-sm md:p-4">
@@ -152,14 +148,14 @@ export function HeroSection() {
                 <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Destino, passagem, hotel, seguro... Ex: Bonito, passagem SP"
+                  placeholder={t('searchPh')}
                   value={destination}
                   onChange={(e) => handleInputChange(e.target.value)}
                   className="h-12 border-0 pl-10 text-base shadow-none focus-visible:ring-0 md:text-lg"
                 />
               </div>
               <Button type="submit" size="lg" className="h-12 px-6 text-base font-semibold">
-                Buscar
+                {t('search')}
               </Button>
             </div>
 
@@ -171,7 +167,7 @@ export function HeroSection() {
               />
             )}
 
-            <div className="mt-3 flex flex-wrap justify-center gap-2 border-t border-border/40 pt-3">
+            <div className="mt-3 flex flex-wrap gap-2 border-t border-border/40 pt-3">
               {ONER_CHIPS.map((chip) => (
                 <button
                   key={chip.label}
@@ -179,7 +175,7 @@ export function HeroSection() {
                   onClick={() => navigate(chip.path)}
                   className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
                 >
-                  {chip.label}
+                  {t(chip.key)}
                 </button>
               ))}
               {QUICK_FILTERS.map((filter) => (
@@ -196,29 +192,22 @@ export function HeroSection() {
           </div>
         </form>
 
-        <div
-          className="mt-7 flex flex-wrap items-center justify-center gap-3 animate-slide-up"
-          style={{ animationDelay: '0.35s' }}
-        >
-          <Button
-            size="lg"
-            className="h-12 rounded-full px-8 text-base font-semibold shadow-xl"
-            onClick={() => navigate('/passagens')}
-          >
-            <Plane className="mr-2 h-4 w-4" />
-            Passagens
+        <div className="mt-8 flex flex-wrap items-center gap-6 animate-slide-up" style={{ animationDelay: '0.35s' }}>
+          <Button size="lg" className="h-14 rounded-lg bg-amber-400 px-8 text-base font-semibold text-foreground shadow-xl hover:bg-amber-300" onClick={() => navigate('/experiencias')}>
+            {t('ctaExplore')} <ArrowUpRight className="ml-2 h-4 w-4" />
           </Button>
+          <button type="button" onClick={() => navigate('/viagem-personalizada')} className="inline-flex items-center gap-2 border-b border-primary-foreground/60 pb-1 font-medium text-primary-foreground hover:border-primary-foreground">
+            {t('ctaExpert')} <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
 
-          <Button
-            size="lg"
-            variant="secondary"
-            className="h-12 rounded-full border-0 bg-white px-8 text-base font-semibold text-foreground shadow-xl hover:bg-white/90"
-            onClick={() => navigate('/viagem-personalizada')}
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            {ROTEIRO_SOB_MEDIDA_LABEL}
-            <ArrowRight className="ml-1 h-4 w-4" />
-          </Button>
+        <div className="mt-12 flex flex-wrap items-center gap-6 text-sm text-primary-foreground/90">
+          <span className="inline-flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-amber-300" /> Cadastur</span>
+          <span className="h-6 w-px bg-primary-foreground/30" />
+          <span>{t('trust1')}</span>
+          <span className="h-6 w-px bg-primary-foreground/30" />
+          <span>{t('trust2')}</span>
+        </div>
         </div>
       </div>
     </section>
