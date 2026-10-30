@@ -39,6 +39,13 @@ const E = {
   infoStripTitle: tri('Informações oficiais de turismo', 'Official tourism information', 'Información oficial de turismo'),
   infoStripToggleExpand: tri('Expandir avisos', 'Expand notices', 'Expandir avisos'),
   infoStripToggleCollapse: tri('Recolher avisos', 'Collapse notices', 'Recolher avisos'),
+  official1Title: tri('Descubra MS', 'Descubra MS', 'Descubra MS'),
+  official1Body: tri(
+    'Portal oficial do turismo em Mato Grosso do Sul.',
+    'Official tourism portal for Mato Grosso do Sul.',
+    'Portal oficial del turismo en Mato Grosso do Sul.',
+  ),
+  official1Link: tri('Acessar descubrams.com', 'Visit descubrams.com', 'Acceder a descubrams.com'),
   official2Title: tri('Turismo MS', 'Tourism MS', 'Turismo MS'),
   official2Body: tri(
     'Fundtur — Governo de Mato Grosso do Sul.',
@@ -46,6 +53,16 @@ const E = {
     'Fundtur — Gobierno de Mato Grosso do Sul.',
   ),
   official2Link: tri('Portal turismo.ms.gov.br', 'Visit turismo.ms.gov.br', 'Portal turismo.ms.gov.br'),
+  official3Title: tri('Visit Brasil', 'Visit Brasil', 'Visit Brasil'),
+  official3Body: tri('Turismo nacional — Embratur.', 'National tourism — Embratur.', 'Turismo nacional — Embratur.'),
+  official3Link: tri('Acessar visitbrasil.com', 'Visit visitbrasil.com', 'Acceder a visitbrasil.com'),
+  official4Title: tri('Cadastur', 'Cadastur', 'Cadastur'),
+  official4Body: tri(
+    'Cadastro oficial de prestadores turísticos (Ministério do Turismo).',
+    'Official registry of tourism providers (Ministry of Tourism).',
+    'Registro oficial de prestadores turísticos (Ministerio de Turismo).',
+  ),
+  official4Link: tri('Consultar Cadastur', 'Check Cadastur', 'Consultar Cadastur'),
   heroEyebrow: tri(
     'Sua conexão direta com o Pantanal & Bonito',
     'Your local connection to the Pantanal & Bonito',

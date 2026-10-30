@@ -2,13 +2,30 @@ import { useState } from 'react';
 import { ChevronDown, ExternalLink, Info } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
-/** Fontes oficiais enxutas — Cadastur fica só no rodapé */
 const OFFICIAL_SOURCES = [
+  {
+    titleKey: 'official1Title' as const,
+    bodyKey: 'official1Body' as const,
+    linkKey: 'official1Link' as const,
+    href: 'https://www.descubrams.com',
+  },
   {
     titleKey: 'official2Title' as const,
     bodyKey: 'official2Body' as const,
     linkKey: 'official2Link' as const,
     href: 'https://www.turismo.ms.gov.br',
+  },
+  {
+    titleKey: 'official3Title' as const,
+    bodyKey: 'official3Body' as const,
+    linkKey: 'official3Link' as const,
+    href: 'https://www.visitbrasil.com',
+  },
+  {
+    titleKey: 'official4Title' as const,
+    bodyKey: 'official4Body' as const,
+    linkKey: 'official4Link' as const,
+    href: 'https://cadastur.turismo.gov.br',
   },
 ];
 
@@ -34,10 +51,10 @@ export function InfoStrip() {
       </button>
 
       {open && (
-        <div className="container mx-auto border-t border-sky-100/80 px-4 pb-4 pt-3 lg:px-8">
+        <div className="container mx-auto grid gap-6 border-t border-sky-100/80 px-4 pb-5 pt-4 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
           {OFFICIAL_SOURCES.map((item) => (
-            <div key={item.href} className="max-w-xl space-y-1">
-              <h2 className="text-sm font-semibold text-foreground">{t(item.titleKey)}</h2>
+            <div key={item.href} className="space-y-1.5">
+              <h2 className="font-display text-sm font-semibold text-foreground">{t(item.titleKey)}</h2>
               <p className="text-sm leading-snug text-muted-foreground">{t(item.bodyKey)}</p>
               <a
                 href={item.href}
