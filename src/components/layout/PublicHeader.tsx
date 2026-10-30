@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, User, LogOut, ChevronDown } from 'lucide-react';
+import { Menu, X, User, LogOut, ChevronDown, ArrowUpRight } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
+import { TopBar } from './TopBar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -23,6 +25,7 @@ export function PublicHeader() {
   const { data: cadasturConfig } = useCadasturConfig();
   const agencyLogo = cadasturConfig?.agency_logo_url;
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const handleSignOut = async () => {
     await signOut();
@@ -36,9 +39,10 @@ export function PublicHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <nav className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
-        <Link to="/" className="relative flex h-9 w-[140px] shrink-0 items-center">
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <TopBar />
+      <nav className="container mx-auto flex h-20 items-center justify-between px-4 lg:px-8">
+        <Link to="/" className="relative flex h-12 w-[160px] shrink-0 items-center">
           <img
             src={logo}
             alt="Guatá Travel Experience"
@@ -46,7 +50,7 @@ export function PublicHeader() {
             height={36}
             decoding="sync"
             fetchPriority="high"
-            className={`h-9 w-auto max-w-[140px] object-contain object-left transition-opacity duration-300 ${remoteLoaded ? 'opacity-0' : 'opacity-100'}`}
+            className={`h-12 w-auto max-w-[160px] object-contain object-left transition-opacity duration-300 ${remoteLoaded ? 'opacity-0' : 'opacity-100'}`}
           />
           {agencyLogo && (
             <StorageImage
@@ -63,42 +67,36 @@ export function PublicHeader() {
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-8 md:flex">
           <Link
-            to="/destinos"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            Destinos
-          </Link>
-          <Link
             to="/viagens-realizadas"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            Viagens Realizadas
+            {t('navTrips')}
           </Link>
           <Link
             to="/excursoes"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            Excursões
+            {t('navTours')}
           </Link>
           {sections?.custom_travel_cta !== false && (
             <Link
               to="/viagem-personalizada"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
             >
-              Viagem Personalizada
+              {t('navCustom')}
             </Link>
           )}
           <Link
             to="/passagens"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            Passagens e hotéis
+            {t('navFlights')}
           </Link>
           <Link
             to="/sobre"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            Sobre Nós
+            {t('navAbout')}
           </Link>
         </div>
 
@@ -129,10 +127,10 @@ export function PublicHeader() {
           ) : (
             <>
               <Button variant="ghost" onClick={() => navigate('/login')}>
-                Entrar
+                {t('login')}
               </Button>
-              <Button onClick={() => navigate('/cadastro')}>
-                Criar Conta
+              <Button onClick={() => navigate('/viagem-personalizada')} className="gap-1.5">
+                {t('planTrip')} <ArrowUpRight className="h-4 w-4" />
               </Button>
             </>
           )}
@@ -158,14 +156,14 @@ export function PublicHeader() {
               className="block text-sm font-medium text-muted-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Viagens Realizadas
+              {t('navTrips')}
             </Link>
             <Link
               to="/excursoes"
               className="block text-sm font-medium text-muted-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Excursões
+              {t('navTours')}
             </Link>
             {sections?.custom_travel_cta !== false && (
               <Link
@@ -173,7 +171,7 @@ export function PublicHeader() {
                 className="block text-sm font-medium text-muted-foreground"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Viagem Personalizada
+                {t('navCustom')}
               </Link>
             )}
             <Link
@@ -181,14 +179,14 @@ export function PublicHeader() {
               className="block text-sm font-medium text-muted-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Passagens e hotéis
+              {t('navFlights')}
             </Link>
             <Link
               to="/sobre"
               className="block text-sm font-medium text-muted-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Sobre Nós
+              {t('navAbout')}
             </Link>
             
             <div className="border-t pt-4">

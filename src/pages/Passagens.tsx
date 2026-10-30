@@ -1,10 +1,12 @@
 import { Seo } from '@/components/seo/Seo';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Maximize2, Plane, Sparkles } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Maximize2, Plane, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ONER_STORE_URL, ROTEIRO_SOB_MEDIDA_LABEL } from '@/lib/onerTravel';
+import { useI18n } from '@/lib/i18n';
 
 export default function Passagens() {
+  const { t } = useI18n();
   return (
     <div className="py-10 lg:py-14">
       <Seo
@@ -32,6 +34,20 @@ export default function Passagens() {
             </Link>
             .
           </p>
+        </div>
+        <div className="mx-auto max-w-5xl rounded-2xl bg-primary p-6 text-primary-foreground md:p-8">
+          <h2 className="mb-5 font-display text-2xl font-bold">{t('flTitle')}</h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {[t('fl1'), t('fl2'), t('fl3')].map((x) => (
+              <div key={x} className="flex items-start gap-2 text-sm">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                {x}
+              </div>
+            ))}
+          </div>
+          <Button asChild className="mt-6 bg-amber-400 text-foreground hover:bg-amber-300">
+            <Link to="/viagem-personalizada">{t('flQuote')}</Link>
+          </Button>
         </div>
       </div>
 
