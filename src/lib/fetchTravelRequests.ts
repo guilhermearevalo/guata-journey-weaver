@@ -5,7 +5,7 @@ type TravelRequest = Tables<'travel_requests'>;
 
 /** Lista demandas — tenta RPC staff primeiro (evita 500 de RLS no REST). */
 export async function fetchTravelRequests(): Promise<TravelRequest[]> {
-  const rpcQuery = supabase.rpc('staff_list_travel_requests' as never);
+  const rpcQuery = (supabase as any).rpc('staff_list_travel_requests');
   const restQuery = supabase
     .from('travel_requests')
     .select('*')

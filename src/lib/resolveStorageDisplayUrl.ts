@@ -1,3 +1,4 @@
+import { supabase } from '@/integrations/supabase/client';
 const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL ?? '').trim();
 const SUPABASE_KEY = String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '').trim();
 const PROJECT_REF = String(import.meta.env.VITE_SUPABASE_PROJECT_ID ?? '').trim();

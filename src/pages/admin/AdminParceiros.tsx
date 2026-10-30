@@ -124,7 +124,7 @@ const AdminParceiros = () => {
 
   const inviteMutation = useMutation({
     mutationFn: async ({ agency_id, email, full_name }: { agency_id: string; email: string; full_name: string }) => {
-      const { data, error } = await supabase.rpc('create_partner_access', {
+      const { data, error } = await (supabase as any).rpc('create_partner_access', {
         p_agency_id: agency_id,
         p_email: email,
         p_full_name: full_name,
@@ -173,7 +173,7 @@ const AdminParceiros = () => {
       if (error) throw error;
 
       if (form.createLogin) {
-        const { data, error: rpcError } = await supabase.rpc('create_partner_access', {
+        const { data, error: rpcError } = await (supabase as any).rpc('create_partner_access', {
           p_agency_id: agency.id,
           p_email: form.contact_email.trim(),
           p_full_name: form.responsible_name.trim(),
@@ -218,7 +218,7 @@ const AdminParceiros = () => {
 
   const resetPasswordMutation = useMutation({
     mutationFn: async (agencyId: string) => {
-      const { data, error } = await supabase.rpc('reset_partner_password', { p_agency_id: agencyId });
+      const { data, error } = await (supabase as any).rpc('reset_partner_password', { p_agency_id: agencyId });
       if (error) throw error;
       const result = data as unknown as { email?: string; temporary_password?: string } | null;
       if (!result?.email || !result?.temporary_password) {
