@@ -92,7 +92,7 @@ export default function ClienteViagem() {
 
   const approveProposal = useMutation({
     mutationFn: async (proposalId: string) => {
-      const { error } = await supabase.rpc('client_approve_proposal', {
+      const { error } = await (supabase as any).rpc('client_approve_proposal', {
         p_proposal_id: proposalId,
       });
       if (error) throw error;

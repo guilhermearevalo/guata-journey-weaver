@@ -42,7 +42,7 @@ const Contato = () => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from('contact_messages').insert({
+      const { error } = await (supabase as any).from('contact_messages').insert({
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim() || null,

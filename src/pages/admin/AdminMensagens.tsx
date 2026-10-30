@@ -87,7 +87,7 @@ const AdminMensagens = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('contact_messages').delete().eq('id', id);
+      const { error } = await (supabase as any).from('contact_messages').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
