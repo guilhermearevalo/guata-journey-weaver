@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
+import { useI18n } from '@/lib/i18n';
 
 interface Experience {
   id: string;
@@ -19,14 +20,15 @@ interface Experience {
   experience_type: string;
 }
 
-const typeLabels: Record<string, string> = {
-  package: 'Pacote',
-  excursion: 'Excursão',
-  custom: 'Personalizada',
-  thematic: 'Temática',
+const typeKeys: Record<string, 'typePackage' | 'typeExcursion' | 'typeCustom' | 'typeThematic'> = {
+  package: 'typePackage',
+  excursion: 'typeExcursion',
+  custom: 'typeCustom',
+  thematic: 'typeThematic',
 };
 
 export function FeaturedExperiences() {
+  const { t } = useI18n();
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,16 +61,12 @@ export function FeaturedExperiences() {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="mb-12 flex flex-col items-center justify-between gap-4 md:flex-row">
           <div>
-            <h2 className="font-display text-3xl font-bold md:text-4xl">
-              Experiências em Destaque
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              Viagens selecionadas pela nossa equipe de curadoria
-            </p>
+            <h2 className="font-display text-3xl font-bold md:text-4xl">{t('featTitle')}</h2>
+            <p className="mt-2 text-muted-foreground">{t('featSub')}</p>
           </div>
           <Button variant="outline" asChild>
             <Link to="/experiencias">
-              Ver todas
+              {t('featViewAll')}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
@@ -98,7 +96,7 @@ export function FeaturedExperiences() {
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                       <Badge className="absolute left-3 top-3 bg-primary">
-                        {typeLabels[exp.experience_type] || exp.experience_type}
+                        {typeKeys[exp.experience_type] ? t(typeKeys[exp.experience_type]) : exp.experience_type}
                       </Badge>
                     </div>
                     <CardContent className="p-4">
@@ -115,17 +113,17 @@ export function FeaturedExperiences() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {exp.duration_days} dias
+                          {exp.duration_days} {t('featDays')}
                         </span>
                         {exp.max_participants && (
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
-                            Até {exp.max_participants}
+                            {t('featUpTo')} {exp.max_participants}
                           </span>
                         )}
                       </div>
                       <div className="mt-3 flex items-baseline justify-between border-t pt-3">
-                        <span className="text-xs text-muted-foreground">A partir de</span>
+                        <span className="text-xs text-muted-foreground">{t('featFrom')}</span>
                         <span className="font-display text-xl font-bold text-primary">
                           {exp.price?.toLocaleString('pt-BR', {
                             style: 'currency',

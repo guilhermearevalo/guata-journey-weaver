@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
+import { useI18n } from '@/lib/i18n';
 
 interface Experience {
   id: string;
@@ -23,14 +24,15 @@ interface Experience {
   experience_type: string;
 }
 
-const typeLabels: Record<string, string> = {
-  package: 'Pacote',
-  excursion: 'Excursão',
-  custom: 'Personalizada',
-  thematic: 'Temática',
+const typeKeys: Record<string, 'typePackage' | 'typeExcursion' | 'typeCustom' | 'typeThematic'> = {
+  package: 'typePackage',
+  excursion: 'typeExcursion',
+  custom: 'typeCustom',
+  thematic: 'typeThematic',
 };
 
 export default function Experiencias() {
+  const { t } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [experiences, setExperiences] = useState<Experience[]>([]);
@@ -75,31 +77,31 @@ export default function Experiencias() {
   const FiltersContent = () => (
     <div className="space-y-6">
       <div className="space-y-2">
-        <label className="text-sm font-medium">Tipo de experiência</label>
+        <label className="text-sm font-medium">{t('expTypeLabel')}</label>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger>
-            <SelectValue placeholder="Todos os tipos" />
+            <SelectValue placeholder={t('expTypeAll')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os tipos</SelectItem>
-            <SelectItem value="package">Pacotes</SelectItem>
-            <SelectItem value="excursion">Excursões</SelectItem>
-            <SelectItem value="thematic">Temáticas</SelectItem>
+            <SelectItem value="all">{t('expTypeAll')}</SelectItem>
+            <SelectItem value="package">{t('expTypePackages')}</SelectItem>
+            <SelectItem value="excursion">{t('expTypeExcursions')}</SelectItem>
+            <SelectItem value="thematic">{t('expTypeThematic')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">Ordenar por</label>
+        <label className="text-sm font-medium">{t('expSortLabel')}</label>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger>
-            <SelectValue placeholder="Destaque" />
+            <SelectValue placeholder={t('expSortFeatured')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="featured">Destaque</SelectItem>
-            <SelectItem value="price-asc">Menor preço</SelectItem>
-            <SelectItem value="price-desc">Maior preço</SelectItem>
-            <SelectItem value="duration">Duração</SelectItem>
+            <SelectItem value="featured">{t('expSortFeatured')}</SelectItem>
+            <SelectItem value="price-asc">{t('expSortPriceAsc')}</SelectItem>
+            <SelectItem value="price-desc">{t('expSortPriceDesc')}</SelectItem>
+            <SelectItem value="duration">{t('expSortDuration')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -108,18 +110,11 @@ export default function Experiencias() {
 
   return (
     <div className="py-12">
-      <Seo
-        path="/experiencias"
-        title="Experiências e roteiros de viagem"
-        description="Explore as experiências de viagem da Guatá: ecoturismo no Pantanal, passeios em Bonito e roteiros pelo Brasil e exterior, com curadoria e parceiros locais."
-      />
+      <Seo path="/experiencias" title={t('seoExpTitle')} description={t('seoExpDesc')} />
       <div className="container mx-auto px-4 lg:px-8">
-        {/* Header */}
         <div className="mb-8">
-          <h1 className="font-display text-4xl font-bold">Experiências</h1>
-          <p className="mt-2 text-muted-foreground">
-            Descubra destinos incríveis com roteiros cuidadosamente selecionados
-          </p>
+          <h1 className="font-display text-4xl font-bold">{t('expPageTitle')}</h1>
+          <p className="mt-2 text-muted-foreground">{t('expPageSub')}</p>
         </div>
 
         {/* Search and Filters */}
@@ -127,7 +122,7 @@ export default function Experiencias() {
           <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar por destino ou nome..."
+              placeholder={t('expSearchPh')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -155,12 +150,12 @@ export default function Experiencias() {
               <SheetTrigger asChild>
                 <Button variant="outline" className="lg:hidden">
                   <Filter className="mr-2 h-4 w-4" />
-                  Filtros
+                  {t('expFilters')}
                 </Button>
               </SheetTrigger>
               <SheetContent>
                 <SheetHeader>
-                  <SheetTitle>Filtros</SheetTitle>
+                  <SheetTitle>{t('expFilters')}</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6">
                   <FiltersContent />
@@ -172,7 +167,7 @@ export default function Experiencias() {
 
         {/* Results count */}
         <p className="mb-6 text-sm text-muted-foreground">
-          {filteredExperiences.length} experiência{filteredExperiences.length !== 1 ? 's' : ''} encontrada{filteredExperiences.length !== 1 ? 's' : ''}
+          {t('expResults', { count: filteredExperiences.length })}
         </p>
 
         {/* Grid */}
@@ -200,7 +195,7 @@ export default function Experiencias() {
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                       <Badge className="absolute left-3 top-3 bg-primary">
-                        {typeLabels[exp.experience_type] || exp.experience_type}
+                        {typeKeys[exp.experience_type] ? t(typeKeys[exp.experience_type]) : exp.experience_type}
                       </Badge>
                     </div>
                     <CardContent className="p-4">
@@ -217,7 +212,7 @@ export default function Experiencias() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {exp.duration_days} dias
+                          {exp.duration_days} {t('featDays')}
                         </span>
                         {exp.max_participants && (
                           <span className="flex items-center gap-1">
@@ -227,7 +222,7 @@ export default function Experiencias() {
                         )}
                       </div>
                       <div className="mt-3 flex items-baseline justify-between border-t pt-3">
-                        <span className="text-xs text-muted-foreground">A partir de</span>
+                        <span className="text-xs text-muted-foreground">{t('featFrom')}</span>
                         <span className="font-display text-xl font-bold text-primary">
                           {exp.price?.toLocaleString('pt-BR', {
                             style: 'currency',

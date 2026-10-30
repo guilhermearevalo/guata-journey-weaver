@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, User, LogOut, ChevronDown, ArrowUpRight } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { TopBar } from './TopBar';
+import { InfoStrip } from './InfoStrip';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,11 +16,30 @@ import { useAuth } from '@/lib/auth';
 import { useHomepageSections } from '@/hooks/useHomepageSections';
 import { useCadasturConfig } from '@/hooks/useCadasturConfig';
 import { StorageImage } from '@/components/ui/StorageImage';
-import logo from '@/assets/logo-guata.png';
+
+function BrandMark({ agencyLogo }: { agencyLogo?: string | null }) {
+  const { t } = useI18n();
+  if (agencyLogo) {
+    return (
+      <StorageImage
+        src={agencyLogo}
+        alt={t('brandName')}
+        className="h-10 w-auto max-w-[160px] object-contain object-left"
+      />
+    );
+  }
+  return (
+    <div className="flex flex-col leading-none">
+      <span className="font-display text-xl font-bold tracking-tight text-primary">{t('brandName')}</span>
+      <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+        {t('brandTagline')}
+      </span>
+    </div>
+  );
+}
 
 export function PublicHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [remoteLoaded, setRemoteLoaded] = useState(false);
   const { user, signOut, isStaff, hasRole } = useAuth();
   const { data: sections } = useHomepageSections();
   const { data: cadasturConfig } = useCadasturConfig();
@@ -38,70 +58,48 @@ export function PublicHeader() {
     return '/minha-conta';
   };
 
+  const dashboardLabel = isStaff() ? t('adminPanel') : hasRole('partner') ? t('partnerPanel') : t('myAccount');
+
+  const navLinks = (
+    <>
+      <Link
+        to="/viagens-realizadas"
+        className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+      >
+        {t('navTrips')}
+      </Link>
+      <Link to="/excursoes" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+        {t('navTours')}
+      </Link>
+      {sections?.custom_travel_cta !== false && (
+        <Link
+          to="/viagem-personalizada"
+          className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+        >
+          {t('navCustom')}
+        </Link>
+      )}
+      <Link to="/passagens" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+        {t('navFlights')}
+      </Link>
+      <Link to="/sobre" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+        {t('navAbout')}
+      </Link>
+    </>
+  );
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <TopBar />
-      <nav className="container mx-auto flex h-20 items-center justify-between px-4 lg:px-8">
-        <Link to="/" className="relative flex h-12 w-[160px] shrink-0 items-center">
-          <img
-            src={logo}
-            alt="Guatá Travel Experience"
-            width={140}
-            height={36}
-            decoding="sync"
-            fetchPriority="high"
-            className={`h-12 w-auto max-w-[160px] object-contain object-left transition-opacity duration-300 ${remoteLoaded ? 'opacity-0' : 'opacity-100'}`}
-          />
-          {agencyLogo && (
-            <StorageImage
-              src={agencyLogo}
-              alt=""
-              aria-hidden="true"
-              onLoad={() => setRemoteLoaded(true)}
-              onError={() => setRemoteLoaded(false)}
-              className={`absolute inset-0 h-9 w-auto max-w-[140px] object-contain object-left transition-opacity duration-300 ${remoteLoaded ? 'opacity-100' : 'opacity-0'}`}
-            />
-          )}
+      <InfoStrip />
+      <nav className="container mx-auto flex h-[4.5rem] items-center justify-between gap-4 px-4 lg:px-8">
+        <Link to="/" className="shrink-0">
+          <BrandMark agencyLogo={agencyLogo} />
         </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden items-center gap-8 md:flex">
-          <Link
-            to="/viagens-realizadas"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            {t('navTrips')}
-          </Link>
-          <Link
-            to="/excursoes"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            {t('navTours')}
-          </Link>
-          {sections?.custom_travel_cta !== false && (
-            <Link
-              to="/viagem-personalizada"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              {t('navCustom')}
-            </Link>
-          )}
-          <Link
-            to="/passagens"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            {t('navFlights')}
-          </Link>
-          <Link
-            to="/sobre"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            {t('navAbout')}
-          </Link>
-        </div>
+        <div className="hidden flex-1 items-center justify-center gap-6 lg:flex xl:gap-8">{navLinks}</div>
 
-        {/* Auth Section */}
-        <div className="hidden items-center gap-4 md:flex">
+        <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -114,13 +112,11 @@ export function PublicHeader() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => navigate(getDashboardLink())}>
-                  {isStaff() ? 'Painel Admin' : hasRole('partner') ? 'Painel Parceiro' : 'Minha Conta'}
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate(getDashboardLink())}>{dashboardLabel}</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
-                  Sair
+                  {t('signOut')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -136,18 +132,18 @@ export function PublicHeader() {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
         <Button
           variant="ghost"
           size="icon"
           className="md:hidden"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-expanded={mobileMenuOpen}
+          aria-label="Menu"
         >
           {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </Button>
       </nav>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="border-t bg-background md:hidden">
           <div className="container mx-auto space-y-4 px-4 py-6">
@@ -188,7 +184,7 @@ export function PublicHeader() {
             >
               {t('navAbout')}
             </Link>
-            
+
             <div className="border-t pt-4">
               {user ? (
                 <>
@@ -197,26 +193,25 @@ export function PublicHeader() {
                     className="block text-sm font-medium text-muted-foreground"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    {isStaff() ? 'Painel Admin' : hasRole('partner') ? 'Painel Parceiro' : 'Minha Conta'}
+                    {dashboardLabel}
                   </Link>
                   <button
+                    type="button"
                     onClick={() => {
                       handleSignOut();
                       setMobileMenuOpen(false);
                     }}
                     className="mt-4 block text-sm font-medium text-destructive"
                   >
-                    Sair
+                    {t('signOut')}
                   </button>
                 </>
               ) : (
                 <div className="flex flex-col gap-2">
                   <Button variant="ghost" onClick={() => navigate('/login')} className="justify-start">
-                    Entrar
+                    {t('login')}
                   </Button>
-                  <Button onClick={() => navigate('/cadastro')}>
-                    Criar Conta
-                  </Button>
+                  <Button onClick={() => navigate('/viagem-personalizada')}>{t('planTrip')}</Button>
                 </div>
               )}
             </div>

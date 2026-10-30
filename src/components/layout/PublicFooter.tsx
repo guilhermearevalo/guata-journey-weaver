@@ -7,9 +7,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useContactInfo } from '@/hooks/useContactInfo';
 import { useCadasturConfig } from '@/hooks/useCadasturConfig';
-import logo from '@/assets/logo-guata.png';
+import { useI18n } from '@/lib/i18n';
+
+function FooterHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h4 className="mb-3 font-sans text-xs font-semibold uppercase tracking-widest text-primary-foreground/90">{children}</h4>
+  );
+}
 
 function NewsletterForm() {
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
@@ -19,208 +26,210 @@ function NewsletterForm() {
     if (!email.trim()) return;
 
     setLoading(true);
-    const { error } = await supabase
-      .from('newsletter_subscribers')
-      .insert({ email: email.trim().toLowerCase() });
+    const { error } = await supabase.from('newsletter_subscribers').insert({ email: email.trim().toLowerCase() });
 
     setLoading(false);
 
     if (error) {
       if (error.code === '23505') {
-        toast.info('Este email já está cadastrado!');
+        toast.info(t('footerEmailExists'));
       } else {
-        toast.error('Erro ao cadastrar. Tente novamente.');
+        toast.error(t('footerEmailError'));
       }
       return;
     }
 
     setSubscribed(true);
     setEmail('');
-    toast.success('Cadastrado com sucesso!');
+    toast.success(t('footerEmailOk'));
   };
 
   if (subscribed) {
     return (
-      <div className="flex items-center justify-center gap-2 text-primary">
-        <CheckCircle className="h-5 w-5" />
-        <span className="text-sm font-medium">Obrigado por se inscrever!</span>
+      <div className="flex items-center gap-2 text-amber-300">
+        <CheckCircle className="h-4 w-4 shrink-0" />
+        <span className="text-sm font-medium">{t('footerThanks')}</span>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubscribe} className="flex gap-2">
+    <form onSubmit={handleSubscribe} className="flex w-full max-w-lg flex-col gap-2 sm:flex-row sm:items-center">
       <Input
         type="email"
-        placeholder="Seu melhor email"
+        placeholder={t('footerEmailPh')}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         required
-        className="bg-secondary-foreground/10 border-secondary-foreground/20 text-secondary-foreground placeholder:text-secondary-foreground/50"
+        className="h-9 min-w-0 flex-1 border-primary-foreground/20 bg-primary-foreground/10 text-sm text-primary-foreground placeholder:text-primary-foreground/40"
       />
-      <Button type="submit" size="sm" disabled={loading} className="shrink-0 gap-2">
+      <Button type="submit" size="sm" disabled={loading} variant="secondary" className="shrink-0 gap-1.5 sm:w-auto">
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        Assinar
+        {t('footerSubscribe')}
       </Button>
     </form>
   );
 }
 
 export function PublicFooter() {
+  const { t } = useI18n();
   const { data: cadasturConfig } = useCadasturConfig();
-
   const { data: contact } = useContactInfo();
   const cadasturNumber = cadasturConfig?.number || '64.677.632/0001-77';
 
+  const linkClass = 'text-sm text-primary-foreground/75 transition-colors hover:text-amber-300';
+
+  const contactRowClass = 'grid grid-cols-[1rem_1fr] items-start gap-x-3 text-sm text-primary-foreground/75';
+
   return (
-    <footer className="border-t bg-secondary text-secondary-foreground">
+    <footer className="border-t border-primary-foreground/10 bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 py-12 lg:px-8">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-          {/* Brand Column */}
-          <div className="space-y-4">
-            <img
-              src={logo}
-              alt="Guatá Travel Experience"
-              className="h-16 w-auto brightness-0 invert"
-            />
-            <p className="text-sm text-secondary-foreground/80">
-              Experiências de viagem únicas e personalizadas. 
-              Descubra o Brasil e o mundo com quem entende de curadoria turística.
-            </p>
-            <div className="flex gap-4">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
+          <div className="space-y-4 lg:col-span-4">
+            <div className="flex flex-col leading-none">
+              <span className="font-display text-2xl font-bold tracking-tight text-primary-foreground">{t('brandName')}</span>
+              <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em] text-primary-foreground/60">
+                {t('brandTagline')}
+              </span>
+            </div>
+            <p className="max-w-sm text-sm leading-relaxed text-primary-foreground/75">{t('footerTagline')}</p>
+            <div className="flex gap-3">
               {contact?.instagram && (
-                <a href={contact.instagram} target="_blank" rel="noopener noreferrer" className="text-secondary-foreground/70 transition-colors hover:text-primary">
+                <a
+                  href={contact.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-foreground/70 hover:text-amber-300"
+                  aria-label="Instagram"
+                >
                   <Instagram className="h-5 w-5" />
                 </a>
               )}
               {contact?.facebook && (
-                <a href={contact.facebook} target="_blank" rel="noopener noreferrer" className="text-secondary-foreground/70 transition-colors hover:text-primary">
+                <a
+                  href={contact.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-foreground/70 hover:text-amber-300"
+                  aria-label="Facebook"
+                >
                   <Facebook className="h-5 w-5" />
                 </a>
               )}
               {contact?.youtube && (
-                <a href={contact.youtube} target="_blank" rel="noopener noreferrer" className="text-secondary-foreground/70 transition-colors hover:text-primary">
+                <a
+                  href={contact.youtube}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-foreground/70 hover:text-amber-300"
+                  aria-label="YouTube"
+                >
                   <Youtube className="h-5 w-5" />
                 </a>
               )}
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h4 className="mb-4 font-display text-lg font-semibold">Navegação</h4>
-            <ul className="space-y-2 text-sm">
+          <div className="lg:col-span-2">
+            <FooterHeading>{t('footerNav')}</FooterHeading>
+            <ul className="space-y-2">
               <li>
-                <Link to="/experiencias" className="text-secondary-foreground/80 hover:text-primary">
-                  Experiências
+                <Link to="/experiencias" className={linkClass}>
+                  {t('footerExperiences')}
                 </Link>
               </li>
               <li>
-                <Link to="/excursoes" className="text-secondary-foreground/80 hover:text-primary">
-                  Excursões
+                <Link to="/passagens" className={linkClass}>
+                  {t('navFlights')}
                 </Link>
               </li>
               <li>
-                <Link to="/viagens-realizadas" className="text-secondary-foreground/80 hover:text-primary">
-                  Viagens Realizadas
+                <Link to="/viagem-personalizada" className={linkClass}>
+                  {t('navCustom')}
                 </Link>
               </li>
               <li>
-                <Link to="/passagens" className="text-secondary-foreground/80 hover:text-primary">
-                  Passagens e hotéis
-                </Link>
-              </li>
-              <li>
-                <Link to="/viagem-personalizada" className="text-secondary-foreground/80 hover:text-primary">
-                  Viagem Personalizada
-                </Link>
-              </li>
-              <li>
-                <Link to="/sobre" className="text-secondary-foreground/80 hover:text-primary">
-                  Sobre Nós
+                <Link to="/sobre" className={linkClass}>
+                  {t('navAbout')}
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Support */}
-          <div>
-            <h4 className="mb-4 font-display text-lg font-semibold">Suporte</h4>
-            <ul className="space-y-2 text-sm">
+          <div className="lg:col-span-2">
+            <FooterHeading>{t('footerLegal')}</FooterHeading>
+            <ul className="space-y-2">
               <li>
-                <Link to="/faq" className="text-secondary-foreground/80 hover:text-primary">
-                  Perguntas Frequentes
+                <Link to="/faq" className={linkClass}>
+                  {t('footerFAQ')}
                 </Link>
               </li>
               <li>
-                <Link to="/termos" className="text-secondary-foreground/80 hover:text-primary">
-                  Termos de Uso
+                <Link to="/termos" className={linkClass}>
+                  {t('footerTerms')}
                 </Link>
               </li>
               <li>
-                <Link to="/politica-servicos" className="text-secondary-foreground/80 hover:text-primary">
-                  Política de Serviços
+                <Link to="/politica-servicos" className={linkClass}>
+                  {t('footerPolicy')}
                 </Link>
               </li>
               <li>
-                <Link to="/contato" className="text-secondary-foreground/80 hover:text-primary">
-                  Fale Conosco
-                </Link>
-              </li>
-              <li>
-                <Link to="/seja-parceiro" className="text-secondary-foreground/80 hover:text-primary">
-                  Seja Parceiro
+                <Link to="/seja-parceiro" className={linkClass}>
+                  {t('footerPartner')}
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Contact */}
-          <div>
-            <h4 className="mb-4 font-display text-lg font-semibold">Contato</h4>
-            <ul className="space-y-3 text-sm">
-              <li className="flex items-start gap-2">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <span className="text-secondary-foreground/80">{contact?.address}</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4 shrink-0 text-primary" />
-                <a href={`tel:+${(contact?.whatsapp || '').replace(/\D/g, '')}`} className="text-secondary-foreground/80 hover:text-primary">
-                  {contact?.phone}
-                </a>
-              </li>
-              <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4 shrink-0 text-primary" />
-                <a href={`mailto:${contact?.email}`} className="text-secondary-foreground/80 hover:text-primary">
-                  {contact?.email}
-                </a>
-              </li>
+          <div className="lg:col-span-4">
+            <FooterHeading>{t('footerContact')}</FooterHeading>
+            <ul className="space-y-2.5">
+              {contact?.address && (
+                <li className={contactRowClass}>
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-amber-300/90" aria-hidden />
+                  <span>{contact.address}</span>
+                </li>
+              )}
+              {contact?.phone && (
+                <li className={contactRowClass}>
+                  <Phone className="mt-0.5 h-4 w-4 shrink-0 text-amber-300/90" aria-hidden />
+                  <a href={`tel:+${(contact?.whatsapp || '').replace(/\D/g, '')}`} className="hover:text-amber-300">
+                    {contact.phone}
+                  </a>
+                </li>
+              )}
+              {contact?.email && (
+                <li className={contactRowClass}>
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-amber-300/90" aria-hidden />
+                  <a href={`mailto:${contact.email}`} className="break-all hover:text-amber-300">
+                    {contact.email}
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
         </div>
 
-        {/* Newsletter */}
-        <div className="mt-12 border-t border-secondary-foreground/10 pt-8">
-          <div className="mx-auto max-w-md text-center">
-            <h4 className="font-display text-lg font-semibold mb-2">Receba nossas novidades</h4>
-            <p className="text-sm text-secondary-foreground/70 mb-4">
-              Cadastre-se para receber ofertas exclusivas e inspirações de viagem.
-            </p>
-            <NewsletterForm />
-          </div>
+        <div className="mt-10 border-t border-primary-foreground/15 pt-8">
+          <FooterHeading>{t('footerNewsletter')}</FooterHeading>
+          <p className="mb-4 max-w-lg text-sm text-primary-foreground/70">{t('footerNewsletterSub')}</p>
+          <NewsletterForm />
         </div>
 
-        <div className="mt-8 border-t border-secondary-foreground/10 pt-8 flex flex-col items-center gap-4 text-sm text-secondary-foreground/60">
+        <div className="mt-10 flex flex-col items-center gap-3 border-t border-primary-foreground/15 pt-8 text-center text-xs text-primary-foreground/60">
           <a
             href="https://cadastur.turismo.gov.br"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-secondary-foreground/70 hover:text-primary transition-colors"
+            className="inline-flex items-center gap-2 hover:text-amber-300"
           >
-            <ShieldCheck className="h-5 w-5 text-primary" />
-            <span>Agência regularizada pelo Ministério do Turismo — Cadastur Nº {cadasturNumber}</span>
+            <ShieldCheck className="h-4 w-4 text-amber-300" />
+            {t('footerCadastur')} {cadasturNumber}
           </a>
-          <p>© {new Date().getFullYear()} Guatá Viagens e Turismo. Todos os direitos reservados.</p>
+          <p>
+            © {new Date().getFullYear()} {t('brandName')} — {t('footerRights')}
+          </p>
         </div>
       </div>
     </footer>

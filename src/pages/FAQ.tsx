@@ -10,6 +10,7 @@ import { useCmsPage } from '@/hooks/useCmsPage';
 import CmsPageSkeleton from '@/components/cms/CmsPageSkeleton';
 import { Seo } from '@/components/seo/Seo';
 import { normalizeCmsText } from '@/lib/normalizeCmsText';
+import { useI18n } from '@/lib/i18n';
 
 // Conteúdo padrão caso o CMS esteja vazio
 const defaultContent = {
@@ -25,6 +26,7 @@ const defaultContent = {
 };
 
 const FAQ = () => {
+  const { t } = useI18n();
   const { data: page, isLoading } = useCmsPage('faq');
 
   // Usa dados do CMS ou fallback para conteúdo padrão
@@ -47,26 +49,19 @@ const FAQ = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Seo
-        path="/faq"
-        title="Perguntas Frequentes"
-        description="Tire suas dúvidas sobre reservas, cancelamento, seguro viagem e como a Guatá organiza roteiros personalizados no Pantanal, em Bonito e pelo mundo."
-        jsonLd={faqJsonLd}
-      />
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16">
+      <Seo path="/faq" title={t('seoFaqTitle')} description={t('seoFaqDesc')} jsonLd={faqJsonLd} />
+      <section className="bg-gradient-to-br from-primary/15 via-background to-muted/40 py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-display text-4xl font-bold md:text-5xl">
-            {normalizeCmsText(hero?.title) || 'Perguntas Frequentes'}
+            {normalizeCmsText(hero?.title) || t('faqDefaultTitle')}
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            {normalizeCmsText(hero?.subtitle) || 'Tire suas dúvidas sobre nossos serviços'}
+            {normalizeCmsText(hero?.subtitle) || t('faqDefaultSub')}
           </p>
         </div>
       </section>
 
-      {/* FAQ Accordion */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto bg-muted/20 px-4 py-16">
         <div className="mx-auto max-w-3xl">
           <Accordion type="single" collapsible className="space-y-4">
             {items?.map((faq, index) => (
@@ -87,19 +82,14 @@ const FAQ = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="bg-muted/50 py-16">
+      <section className="bg-primary py-16 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="font-display text-2xl font-bold md:text-3xl">
-            Não encontrou sua resposta?
-          </h2>
-          <p className="mt-4 text-muted-foreground">
-            Nossa equipe está pronta para ajudar você
-          </p>
-          <Button asChild className="mt-6 gap-2" size="lg">
+          <h2 className="font-display text-2xl font-bold md:text-3xl">{t('faqCtaTitle')}</h2>
+          <p className="mt-4 text-primary-foreground/85">{t('faqCtaSub')}</p>
+          <Button asChild className="mt-6 gap-2 bg-amber-400 text-foreground hover:bg-amber-300" size="lg">
             <a href="/contato">
               <MessageCircle className="h-5 w-5" />
-              Fale Conosco
+              {t('faqCtaBtn')}
             </a>
           </Button>
         </div>

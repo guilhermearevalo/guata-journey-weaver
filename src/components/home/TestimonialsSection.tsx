@@ -12,8 +12,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { uploadStorageFile } from '@/lib/uploadStorageFile';
 import { useAuth } from '@/lib/auth';
+import { useI18n } from '@/lib/i18n';
 
 export function TestimonialsSection() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -91,15 +93,11 @@ export function TestimonialsSection() {
   };
 
   return (
-    <section className="py-20">
+    <section className="bg-muted/40 py-20">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="mb-12 text-center">
-          <h2 className="font-display text-3xl font-bold md:text-4xl">
-            O Que Nossos Viajantes Dizem
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            Histórias reais de quem viveu experiências inesquecíveis conosco
-          </p>
+          <h2 className="font-display text-3xl font-bold md:text-4xl">{t('testimTitle')}</h2>
+          <p className="mt-2 text-muted-foreground">{t('testimSub')}</p>
         </div>
 
         {testimonials.length > 0 ? (
@@ -142,9 +140,7 @@ export function TestimonialsSection() {
           ))}
         </div>
         ) : (
-          <p className="text-center text-muted-foreground">
-            Ainda não há depoimentos publicados. Seja o primeiro a compartilhar sua experiência!
-          </p>
+          <p className="text-center text-muted-foreground">{t('testimEmpty')}</p>
         )}
 
         {/* Submit testimonial button */}
@@ -153,7 +149,7 @@ export function TestimonialsSection() {
             <DialogTrigger asChild>
               <Button variant="outline" size="lg" className="gap-2">
                 <Camera className="h-4 w-4" />
-                Compartilhe sua Experiência
+                {t('testimShare')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
