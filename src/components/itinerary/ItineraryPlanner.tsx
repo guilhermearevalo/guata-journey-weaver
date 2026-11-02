@@ -566,6 +566,23 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
                       placeholder={`Título do dia (ex: Chegada em Roma)`}
                       onBlur={(e) => setDayTitle(day.day, e.target.value)}
                     />
+                    <div className="mt-2 grid gap-2 sm:grid-cols-3 print:hidden">
+                      <Input
+                        defaultValue={localDossier.day_tags?.[String(day.day)] || ''}
+                        placeholder="Etiqueta (ex: CARRO, DIA LIVRE)"
+                        onBlur={(e) => setDayField('day_tags', day.day, e.target.value)}
+                      />
+                      <Input
+                        defaultValue={localDossier.day_hotels?.[String(day.day)] || ''}
+                        placeholder="Noite no (hotel)"
+                        onBlur={(e) => setDayField('day_hotels', day.day, e.target.value)}
+                      />
+                      <Input
+                        defaultValue={localDossier.day_maps?.[String(day.day)] || ''}
+                        placeholder="Link My Maps do dia"
+                        onBlur={(e) => setDayField('day_maps', day.day, e.target.value)}
+                      />
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {displayActivities.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma atividade. Clique em "Adicionar" ou "Sugerir mais".</p>}
