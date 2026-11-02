@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardList, FileText, Map, Share2, Users, CheckSquare, DollarSign, Building2, Lock } from 'lucide-react';
+import { ClipboardList, FileText, Map, Share2, Users, CheckSquare, Building2, Lock } from 'lucide-react';
 
 const steps = [
   {
@@ -81,21 +81,8 @@ const steps = [
     ],
   },
   {
-    icon: DollarSign,
-    title: '7. Controle Financeiro',
-    badge: 'Financeiro',
-    items: [
-      'Acesse "Financeiro" no menu lateral.',
-      'Veja os cards: Receita total paga, Comissão Guatá, Repasses pendentes.',
-      'Filtre por agência parceira ou status de repasse.',
-      'Na tabela, veja o breakdown de cada proposta: valor bruto, comissão Guatá e valor líquido do parceiro.',
-      'Clique em "Registrar Repasse" para confirmar que fez o PIX/TED ao parceiro.',
-      'O parceiro verá o status atualizado automaticamente no portal dele.',
-    ],
-  },
-  {
     icon: Building2,
-    title: '8. Gestão de Parceiros',
+    title: '7. Gestão de Parceiros',
     badge: 'Parceiros',
     items: [
       'Acesse "Parceiros" no menu lateral.',

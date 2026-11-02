@@ -11,8 +11,6 @@ import {
   FileText,
   Settings,
   LogOut,
-  BarChart3,
-  DollarSign,
   HelpCircle,
   Mail,
   MessageSquareQuote,
@@ -167,16 +165,6 @@ const AdminSidebar = () => {
       icon: FileText, 
       label: 'CMS', 
       href: '/admin/cms' 
-    },
-    { 
-      icon: BarChart3, 
-      label: 'Relatório Agências', 
-      href: '/admin/relatorio-agencias' 
-    },
-    { 
-      icon: DollarSign, 
-      label: 'Financeiro', 
-      href: '/admin/financeiro' 
     },
     {
       icon: MessageSquareQuote,

@@ -40,8 +40,6 @@ import AdminClientes from "./pages/admin/AdminClientes";
 import AdminParceiros from "./pages/admin/AdminParceiros";
 import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
-import AdminRelatorioAgencias from "./pages/admin/AdminRelatorioAgencias";
-import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
 import AdminProposta from "./pages/admin/AdminProposta";
 import { AdminPageLoader } from "./components/admin/AdminPageLoader";
 import AdminAjuda from "./pages/admin/AdminAjuda";
@@ -124,8 +122,6 @@ const App = () => (
                   <AdminRoteiro />
                 </Suspense>
               } />
-              <Route path="relatorio-agencias" element={<AdminRelatorioAgencias />} />
-              <Route path="financeiro" element={<AdminFinanceiro />} />
               <Route path="proposta/:id" element={<AdminProposta />} />
               <Route path="ajuda" element={<AdminAjuda />} />
               <Route path="depoimentos" element={<AdminDepoimentos />} />
