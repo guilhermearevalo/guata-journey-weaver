@@ -53,7 +53,7 @@ export default function RoteiroPublico() {
   const { data: travelDocuments = [] } = useQuery({
     queryKey: ['public-travel-documents', token, isUnlocked],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_public_travel_documents' as never, {
+      const { data, error } = await (supabase.rpc as any)('get_public_travel_documents', {
         _token: token!,
         _code: codeInput.trim() || null,
       });
