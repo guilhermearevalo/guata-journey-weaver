@@ -7,7 +7,8 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode, command }) => {
   // Fail production builds loudly when the backend connection values are missing,
   // instead of shipping a site that crashes with "supabaseUrl is required".
-  if (command === "build") {
+  // Only enforced on Vercel; Lovable preview builds inject these values separately.
+  if (command === "build" && process.env.VERCEL) {
     const env = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
     const missing = ["VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY"].filter(
       (k) => !String(env[k] ?? "").trim(),
