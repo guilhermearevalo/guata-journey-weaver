@@ -196,13 +196,20 @@ export default function ItineraryPlanner({ backLink, backLabel = 'Voltar' }: Iti
     },
   });
 
-  const setDayTitle = (dayNum: number, title: string) => {
-    const titles = { ...(localDossier.day_titles || {}) };
-    if (title.trim()) titles[String(dayNum)] = title;
-    else delete titles[String(dayNum)];
-    setLocalDossier({ ...localDossier, day_titles: titles });
+  const setDayField = (
+    field: 'day_titles' | 'day_tags' | 'day_hotels' | 'day_maps',
+    dayNum: number,
+    value: string,
+  ) => {
+    setLocalDossier((prev) => {
+      const map = { ...(prev[field] || {}) };
+      if (value.trim()) map[String(dayNum)] = value.trim();
+      else delete map[String(dayNum)];
+      return { ...prev, [field]: map };
+    });
     setDossierDirty(true);
   };
+  const setDayTitle = (dayNum: number, title: string) => setDayField('day_titles', dayNum, title);
 
   const handleSaveDossier = () => {
     saveDossier.mutate(localDossier);
