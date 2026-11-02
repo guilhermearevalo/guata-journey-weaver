@@ -165,11 +165,6 @@ export function PublicFooter() {
                 </Link>
               </li>
               <li>
-                <Link to="/termos" className={linkClass}>
-                  {t('footerTerms')}
-                </Link>
-              </li>
-              <li>
                 <Link to="/politica-servicos" className={linkClass}>
                   {t('footerPolicy')}
                 </Link>
