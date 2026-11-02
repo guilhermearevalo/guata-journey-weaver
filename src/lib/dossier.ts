@@ -28,6 +28,17 @@ export interface Dossier {
   exchange_image?: string;
   // Títulos dos dias, indexados pelo número do dia
   day_titles?: Record<string, string>;
+  // Etiqueta curta do dia (ex: CARRO, DIA LIVRE)
+  day_tags?: Record<string, string>;
+  // Hospedagem da noite (ex: Hotel Zagaia)
+  day_hotels?: Record<string, string>;
+  // Link do Google My Maps de cada dia
+  day_maps?: Record<string, string>;
+  // Link do Google My Maps com a rota geral
+  map_url?: string;
+  // Agência parceira exibida ao lado da Guatá
+  cobrand_name?: string;
+  cobrand_logo?: string;
 }
 
 export const emptyDossier: Dossier = {};
