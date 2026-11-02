@@ -290,7 +290,7 @@ const E = {
     'Itineraries for Bonito, Pantanal and Chapada. Plan with Guatá, Cadastur agency.',
     'Itinerarios para Bonito, Pantanal y Chapada. Planee con Guatá, agencia Cadastur.',
   ),
-  seoExpTitle: tri('Experiências e roteiros de viagem', 'Travel experiences & itineraries', 'Experiencias e itinerarios'),
+  seoExpTitle: tri('Experiências e roteiros de viagem', 'Experiences & travel itineraries', 'Experiencias e itinerarios'),
   seoExpDesc: tri(
     'Ecoturismo no Pantanal, Bonito e roteiros pelo Brasil e exterior com curadoria Guatá.',
     'Pantanal ecotourism, Bonito and curated trips in Brazil and abroad.',
