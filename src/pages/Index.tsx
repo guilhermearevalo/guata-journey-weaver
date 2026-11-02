@@ -21,8 +21,9 @@ const Index = () => {
       logo: 'https://www.agenciaguata.com/favicon-512.png',
       image: DEFAULT_OG_IMAGE,
       description: t('seoHomeDesc'),
-      areaServed: [{ '@type': 'State', name: 'Mato Grosso do Sul' }, { '@type': 'Country', name: 'Brasil' }],
-      knowsAbout: ['Bonito', 'Pantanal', 'Ecoturismo', 'Viagens personalizadas'],
+      areaServed: [{ '@type': 'Country', name: 'Brasil' }, { '@type': 'Continent', name: 'América do Sul' }, { '@type': 'Continent', name: 'Europa' }, { '@type': 'Place', name: 'Mundo' }],
+      knowsAbout: ['Viagens personalizadas', 'Viagens internacionais', 'Viagens nacionais', 'Lua de mel', 'Viagens em família', 'Pantanal', 'Bonito', 'Ecoturismo'],
+      availableLanguage: ['pt-BR', 'en', 'es'],
     },
     {
       '@context': 'https://schema.org',

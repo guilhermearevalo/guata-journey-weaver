@@ -857,6 +857,39 @@ export type Database = {
           },
         ]
       }
+      site_leads: {
+        Row: {
+          created_at: string
+          destination: string | null
+          id: string
+          lang: string | null
+          name: string
+          page: string | null
+          phone: string
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          destination?: string | null
+          id?: string
+          lang?: string | null
+          name: string
+          page?: string | null
+          phone: string
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          destination?: string | null
+          id?: string
+          lang?: string | null
+          name?: string
+          page?: string | null
+          phone?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           key: string
