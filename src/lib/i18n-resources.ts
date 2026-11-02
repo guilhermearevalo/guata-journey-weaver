@@ -196,7 +196,7 @@ const E = {
   ),
   aboutCtaQuote: tri('Solicitar orçamento', 'Request a quote', 'Solicitar presupuesto'),
   aboutCtaContact: tri('Fale conosco', 'Contact us', 'Contáctenos'),
-  seoHomeTitle: tri('Guatá Viagens — Agência de viagens sob medida no Brasil e no mundo', 'Guatá Travel — Tailor-made trips in Brazil and worldwide', 'Guatá Viajes — Viajes a medida en Brasil y el mundo'),
+  seoHomeTitle: tri('Guatá Viagens e Turismo — Agência de viagens sob medida no Brasil e no mundo', 'Guatá Viagens e Turismo — Tailor-made trips in Brazil and worldwide', 'Guatá Viagens e Turismo — Viajes a medida en Brasil y el mundo'),
   seoHomeDesc: tri(
     'Agência Cadastur de viagens personalizadas: Brasil, América do Sul, Europa e mais. Especialistas em Pantanal e Bonito. Atendimento humano em PT, EN e ES.',
     'Cadastur-certified travel agency for tailor-made trips: Brazil, South America, Europe and beyond. Pantanal & Bonito experts. Human support in EN, PT & ES.',
