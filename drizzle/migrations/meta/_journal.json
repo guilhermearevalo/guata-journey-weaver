@@ -8,6 +8,13 @@
       "when": 1793641489414,
       "tag": "0000_create_site_leads",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793641899050,
+      "tag": "0001_rename_brand_guata_viagens_e_turismo",
+      "breakpoints": true
     }
   ]
 }
