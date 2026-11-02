@@ -50,7 +50,7 @@ const ViagensRealizadas = () => {
         .order('trip_year', { ascending: false })
         .order('trip_month', { ascending: false });
       if (error) throw error;
-      return data as CompletedTrip[];
+      return data as unknown as CompletedTrip[];
     },
   });
 

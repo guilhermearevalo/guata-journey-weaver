@@ -48,7 +48,7 @@ const AdminMensagens = () => {
   const { data: messages, isLoading } = useQuery({
     queryKey: ['contact-messages'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('contact_messages')
         .select('*')
         .order('created_at', { ascending: false });
@@ -59,7 +59,7 @@ const AdminMensagens = () => {
 
   const markReadMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('contact_messages')
         .update({ is_read: true, read_at: new Date().toISOString() } as any)
         .eq('id', id);
@@ -73,7 +73,7 @@ const AdminMensagens = () => {
 
   const markUnreadMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('contact_messages')
         .update({ is_read: false, read_at: null } as any)
         .eq('id', id);
