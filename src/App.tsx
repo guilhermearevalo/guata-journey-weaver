@@ -47,6 +47,7 @@ import { AdminPageLoader } from "./components/admin/AdminPageLoader";
 import AdminAjuda from "./pages/admin/AdminAjuda";
 import AdminDepoimentos from "./pages/admin/AdminDepoimentos";
 import AdminNewsletter from "./pages/admin/AdminNewsletter";
+import AdminLeads from "./pages/admin/AdminLeads";
 import AdminMensagens from "./pages/admin/AdminMensagens";
 import AdminViagensRealizadas from "./pages/admin/AdminViagensRealizadas";
 
@@ -129,6 +130,7 @@ const App = () => (
               <Route path="ajuda" element={<AdminAjuda />} />
               <Route path="depoimentos" element={<AdminDepoimentos />} />
               <Route path="newsletter" element={<AdminNewsletter />} />
+              <Route path="leads" element={<AdminLeads />} />
               <Route path="viagens-realizadas" element={<AdminViagensRealizadas />} />
             </Route>
             

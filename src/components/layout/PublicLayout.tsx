@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { PublicHeader } from './PublicHeader';
 import { PublicFooter } from './PublicFooter';
 import { WhatsAppButton } from './WhatsAppButton';
+import { LeadCapturePopup } from './LeadCapturePopup';
 
 export function PublicLayout() {
   return (
@@ -12,6 +13,7 @@ export function PublicLayout() {
       </main>
       <PublicFooter />
       <WhatsAppButton />
+      <LeadCapturePopup />
     </div>
   );
 }

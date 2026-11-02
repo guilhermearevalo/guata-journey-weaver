@@ -189,6 +189,11 @@ const AdminSidebar = () => {
       href: '/admin/newsletter'
     },
     {
+      icon: Newspaper,
+      label: 'Leads do site',
+      href: '/admin/leads'
+    },
+    {
       icon: Camera,
       label: 'Viagens Realizadas',
       href: '/admin/viagens-realizadas'
