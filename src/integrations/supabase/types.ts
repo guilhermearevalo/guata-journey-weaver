@@ -863,6 +863,7 @@ export type Database = {
           destination: string | null
           id: string
           lang: string | null
+          message: string | null
           name: string
           page: string | null
           phone: string
@@ -873,6 +874,7 @@ export type Database = {
           destination?: string | null
           id?: string
           lang?: string | null
+          message?: string | null
           name: string
           page?: string | null
           phone: string
@@ -883,6 +885,7 @@ export type Database = {
           destination?: string | null
           id?: string
           lang?: string | null
+          message?: string | null
           name?: string
           page?: string | null
           phone?: string

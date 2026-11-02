@@ -31,7 +31,7 @@ export default function AdminLeads() {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Data</TableHead><TableHead>Nome</TableHead><TableHead>WhatsApp</TableHead>
-              <TableHead>Destino</TableHead><TableHead>Idioma</TableHead><TableHead>Página</TableHead><TableHead />
+              <TableHead>Destino</TableHead><TableHead>Mensagem</TableHead><TableHead>Idioma</TableHead><TableHead>Página</TableHead><TableHead />
             </TableRow></TableHeader>
             <TableBody>
               {leads.map((l) => (
@@ -40,6 +40,7 @@ export default function AdminLeads() {
                   <TableCell>{l.name}</TableCell>
                   <TableCell>{l.phone}</TableCell>
                   <TableCell>{l.destination || '—'}</TableCell>
+                  <TableCell className="max-w-xs whitespace-pre-wrap text-sm">{(l as any).message || '—'}</TableCell>
                   <TableCell className="uppercase">{l.lang}</TableCell>
                   <TableCell>{l.page}</TableCell>
                   <TableCell className="flex gap-1">
