@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { TripMediaCarousel } from '@/components/trips/TripMediaCarousel';
@@ -186,6 +186,7 @@ const ViagensRealizadas = () => {
             <>
               <DialogHeader>
                 <DialogTitle className="font-display text-2xl">{selectedTrip.title}</DialogTitle>
+                <DialogDescription className="sr-only">Detalhes da viagem realizada</DialogDescription>
                 <p className="text-sm text-muted-foreground">
                   <MapPin className="mr-1 inline h-3.5 w-3.5" />
                   {selectedTrip.destination}

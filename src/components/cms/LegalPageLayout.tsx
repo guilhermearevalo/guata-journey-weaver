@@ -1,10 +1,7 @@
-import { useMemo, useEffect, lazy, Suspense } from 'react';
-import { ShieldCheck, FileText, Download, ExternalLink, Loader2 } from 'lucide-react';
+import { useMemo, useEffect } from 'react';
+import { ShieldCheck, FileText, Download, ExternalLink } from 'lucide-react';
 import { normalizeCmsText } from '@/lib/normalizeCmsText';
-
-const PdfViewer = lazy(() =>
-  import('@/components/cms/PdfViewer').then((module) => ({ default: module.PdfViewer })),
-);
+import { PdfViewer } from '@/components/cms/PdfViewer';
 
 interface LegalSection {
   title: string;
@@ -109,15 +106,7 @@ export default function LegalPageLayout({
 
             {/* Visualizador PDF.js — páginas empilhadas, sem barra lateral do navegador */}
             <div className="mt-6 overflow-hidden rounded-2xl border bg-card p-4 shadow-sm md:p-6">
-              <Suspense
-                fallback={
-                  <div className="flex justify-center py-16">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Carregando PDF" />
-                  </div>
-                }
-              >
-                <PdfViewer url={pdfUrl} title={title} />
-              </Suspense>
+              <PdfViewer url={pdfUrl} title={title} />
             </div>
           </div>
         </section>

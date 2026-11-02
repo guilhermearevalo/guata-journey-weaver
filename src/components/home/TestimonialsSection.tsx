@@ -3,7 +3,7 @@ import { Star, Quote, Camera, Send } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -155,6 +155,7 @@ export function TestimonialsSection() {
             <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Compartilhe sua Experiência</DialogTitle>
+                <DialogDescription className="sr-only">Formulário para enviar depoimento sobre sua viagem</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>

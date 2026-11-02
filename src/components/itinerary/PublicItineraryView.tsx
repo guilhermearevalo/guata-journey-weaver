@@ -7,7 +7,7 @@ import {
   MapPin, Calendar, Users, Clock, Sparkles, Plane, Hotel,
   ExternalLink, FileText, Download, Phone, FileDown, Loader2, Map as MapIcon, BedDouble,
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import guataLogo from '@/assets/logo-guata.png';
 import { toMyMapsEmbedUrl } from '@/lib/mymaps';
 import ImageGalleryCarousel from './ImageGalleryCarousel';
@@ -105,6 +105,7 @@ function DayCard({ day, index, date, title, tag, hotel, mapUrl }: DayCardProps) 
           <DialogContent className="max-w-4xl p-0">
             <DialogHeader className="px-5 pt-5">
               <DialogTitle className="font-display">{title || `Dia ${day.day}`}</DialogTitle>
+              <DialogDescription className="sr-only">Mapa interativo do roteiro do dia</DialogDescription>
             </DialogHeader>
             {mapOpen && <iframe src={mapUrl} title={`Mapa do dia ${day.day}`} className="h-[70vh] w-full" loading="lazy" />}
           </DialogContent>
