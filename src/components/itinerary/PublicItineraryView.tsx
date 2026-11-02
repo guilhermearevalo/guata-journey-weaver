@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   MapPin, Calendar, Users, Clock, Sparkles, Plane, Hotel,
-  ExternalLink, FileText, Download, Phone, FileDown, Loader2,
+  ExternalLink, FileText, Download, Phone, FileDown, Loader2, Map as MapIcon, BedDouble,
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import guataLogo from '@/assets/logo-guata.png';
+import { toMyMapsEmbedUrl } from '@/lib/mymaps';
 import ImageGalleryCarousel from './ImageGalleryCarousel';
 import type { TravelDocument } from './TravelDocumentsVault';
 import {
@@ -16,6 +19,100 @@ import {
 import {
   type Activity, type ItineraryDay, categoryColors, timeSlotOrder, getActivityImages,
 } from '@/lib/itinerary';
+
+function dayDate(start: string | undefined, dayNum: number): Date | null {
+  if (!start) return null;
+  const d = new Date(`${start.slice(0, 10)}T12:00:00`);
+  if (isNaN(d.getTime())) return null;
+  d.setDate(d.getDate() + dayNum - 1);
+  return d;
+}
+
+interface DayCardProps {
+  day: ItineraryDay;
+  index: number;
+  date: Date | null;
+  title?: string;
+  tag?: string;
+  hotel?: string;
+  mapUrl: string | null;
+}
+
+function DayCard({ day, index, date, title, tag, hotel, mapUrl }: DayCardProps) {
+  const [mapOpen, setMapOpen] = useState(false);
+  const sorted = [...day.activities].sort(
+    (a, b) => timeSlotOrder.indexOf(a.time_slot) - timeSlotOrder.indexOf(b.time_slot),
+  );
+  return (
+    <article
+      className="overflow-hidden rounded-2xl border bg-card shadow-sm animate-fade-in"
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
+      <div className="flex gap-5 p-5 sm:p-6">
+        <div className="w-14 shrink-0 text-center">
+          {date ? (
+            <>
+              <p className="font-display text-4xl font-bold leading-none text-primary">
+                {String(date.getDate()).padStart(2, '0')}
+              </p>
+              <p className="mt-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                {date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}
+              </p>
+              <p className="text-[11px] capitalize text-muted-foreground">
+                {date.toLocaleDateString('pt-BR', { weekday: 'long' }).split('-')[0]}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Dia</p>
+              <p className="font-display text-4xl font-bold leading-none text-primary">{String(day.day).padStart(2, '0')}</p>
+            </>
+          )}
+        </div>
+        <div className="min-w-0 flex-1 border-l pl-5">
+          <h3 className="font-display text-2xl font-bold leading-tight">{title || `Dia ${day.day}`}</h3>
+          {(tag || mapUrl) && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {tag && (
+                <span className="rounded-full border border-guata-gold/60 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-guata-brown">
+                  {tag}
+                </span>
+              )}
+              {mapUrl && (
+                <button
+                  type="button"
+                  onClick={() => setMapOpen(true)}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20"
+                >
+                  <MapIcon className="h-3 w-3" /> Ver mapa do dia
+                </button>
+              )}
+            </div>
+          )}
+          <div className="mt-4 space-y-4">
+            {sorted.map((activity, i) => <ActivityCard key={i} activity={activity} />)}
+          </div>
+          {hotel && (
+            <p className="mt-5 flex items-center gap-2 border-t pt-4 text-sm text-muted-foreground">
+              <BedDouble className="h-4 w-4 text-guata-gold" />
+              Noite no <strong className="font-semibold text-foreground">{hotel}</strong>
+            </p>
+          )}
+        </div>
+      </div>
+      {mapUrl && (
+        <Dialog open={mapOpen} onOpenChange={setMapOpen}>
+          <DialogContent className="max-w-4xl p-0">
+            <DialogHeader className="px-5 pt-5">
+              <DialogTitle className="font-display">{title || `Dia ${day.day}`}</DialogTitle>
+            </DialogHeader>
+            {mapOpen && <iframe src={mapUrl} title={`Mapa do dia ${day.day}`} className="h-[70vh] w-full" loading="lazy" />}
+          </DialogContent>
+        </Dialog>
+      )}
+    </article>
+  );
+}
 
 export interface AgencyBranding {
   name?: string;
@@ -78,6 +175,9 @@ export default function PublicItineraryView({
   const nights = nightCount(request?.travel_dates?.start, request?.travel_dates?.end);
   const clientName = request?.client_name?.trim();
   const tripLabel = clientName ? `Viagem de ${clientName.split(' ')[0]}` : title;
+  const mapEmbed = toMyMapsEmbedUrl(dossier.map_url);
+  const cobrandName = dossier.cobrand_name?.trim();
+  const cobrandLogo = dossier.cobrand_logo;
   const publicDocs = travelDocuments.filter(d => d.file_url || d.file_path);
   const ticketDocs = publicDocs.filter(d => d.category === 'ticket' || d.category === 'voucher');
 
@@ -108,23 +208,25 @@ export default function PublicItineraryView({
           <div className="relative h-[45vh] min-h-[320px] w-full gradient-hero" />
         )}
 
-        {(agency?.logo_url || agency?.name || agency?.contact_phone) && (
-          <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
-            <div className="flex max-w-[220px] items-center gap-2 rounded-full bg-white/95 px-3 py-2 shadow-lg backdrop-blur-sm">
-              {agency.logo_url && (
-                <img src={agency.logo_url} alt="" className="h-7 w-7 shrink-0 rounded-full object-contain" />
-              )}
-              <div className="min-w-0 text-left">
-                <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-guata-brown">{brandName}</p>
-                {agency.contact_phone && (
-                  <p className="flex items-center gap-1 truncate text-[10px] text-muted-foreground">
-                    <Phone className="h-3 w-3 shrink-0" />{agency.contact_phone}
-                  </p>
+        <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
+          <div className="flex items-center gap-3 rounded-full bg-background/95 px-4 py-2 shadow-lg backdrop-blur-sm">
+            <img src={agency?.logo_url || guataLogo} alt={brandName} className="h-8 max-w-[96px] object-contain" />
+            {cobrandLogo || cobrandName ? (
+              <>
+                <span className="font-display text-lg text-guata-gold">×</span>
+                {cobrandLogo ? (
+                  <img src={cobrandLogo} alt={cobrandName || 'Agência parceira'} className="h-8 max-w-[96px] object-contain" />
+                ) : (
+                  <span className="text-xs font-semibold uppercase tracking-wide text-guata-brown">{cobrandName}</span>
                 )}
-              </div>
-            </div>
+              </>
+            ) : agency?.contact_phone ? (
+              <span className="hidden items-center gap-1 text-[11px] text-muted-foreground sm:flex">
+                <Phone className="h-3 w-3" />{agency.contact_phone}
+              </span>
+            ) : null}
           </div>
-        )}
+        </div>
 
         <div className="absolute inset-x-0 bottom-0 px-4 pb-8 sm:px-6">
           <div className="mx-auto max-w-2xl">
@@ -173,7 +275,7 @@ export default function PublicItineraryView({
           </div>
         </div>
 
-      <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+      <main className={`mx-auto px-4 py-8 sm:px-6 ${activeTab === 'experiencias' && mapEmbed ? 'max-w-6xl' : 'max-w-2xl'}`}>
           {/* Resumo */}
           <TabsContent value="resumo" className="mt-0 space-y-6 animate-fade-in">
             <div>
@@ -316,38 +418,43 @@ export default function PublicItineraryView({
           </TabsContent>
 
           {/* Experiências */}
-          <TabsContent value="experiencias" className="mt-0 space-y-8 animate-fade-in">
-            <div>
-              <h2 className="font-display text-2xl font-bold">Experiências</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Roteiro dia a dia</p>
+          <TabsContent value="experiencias" className="mt-0 animate-fade-in">
+            <div className="mb-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-guata-gold">Roteiro dia a dia</p>
+              <h2 className="mt-1 font-display text-3xl font-bold">Experiências</h2>
             </div>
-            <div className="relative space-y-10">
-              {itinerary.length > 0 && (
-                <div className="absolute left-[14px] top-2 bottom-2 w-px bg-gradient-to-b from-guata-gold via-border to-transparent" />
+            <div className={mapEmbed ? 'grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]' : ''}>
+              {mapEmbed && (
+                <aside className="lg:sticky lg:top-16 lg:self-start">
+                  <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                    <div className="flex items-center gap-2 border-b px-4 py-2.5">
+                      <MapIcon className="h-4 w-4 text-guata-gold" />
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Mapa da viagem</span>
+                    </div>
+                    <iframe
+                      src={mapEmbed}
+                      title="Mapa do roteiro"
+                      className="h-[340px] w-full lg:h-[calc(100vh-10rem)]"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
+                </aside>
               )}
-              {itinerary.map((day, idx) => {
-                const sorted = [...day.activities].sort(
-                  (a, b) => timeSlotOrder.indexOf(a.time_slot) - timeSlotOrder.indexOf(b.time_slot),
-                );
-                return (
-                  <article key={day.day} className="relative pl-10 animate-fade-in" style={{ animationDelay: `${idx * 50}ms` }}>
-                    <div className="absolute left-0 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-guata-gold bg-background text-xs font-bold text-primary">
-                      {day.day}
-                    </div>
-                    <div className="mb-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-guata-gold">Dia {day.day}</p>
-                      {dossier.day_titles?.[String(day.day)] && (
-                        <h3 className="mt-1 font-display text-xl font-bold">{dossier.day_titles[String(day.day)]}</h3>
-                      )}
-                    </div>
-                    <div className="space-y-4">
-                      {sorted.map((activity, actIdx) => (
-                        <ActivityCard key={actIdx} activity={activity} />
-                      ))}
-                    </div>
-                  </article>
-                );
-              })}
+              <div className="space-y-6">
+                {itinerary.map((day, idx) => (
+                  <DayCard
+                    key={day.day}
+                    day={day}
+                    index={idx}
+                    date={dayDate(request?.travel_dates?.start, day.day)}
+                    title={dossier.day_titles?.[String(day.day)]}
+                    tag={dossier.day_tags?.[String(day.day)]}
+                    hotel={dossier.day_hotels?.[String(day.day)]}
+                    mapUrl={toMyMapsEmbedUrl(dossier.day_maps?.[String(day.day)])}
+                  />
+                ))}
+              </div>
             </div>
           </TabsContent>
 

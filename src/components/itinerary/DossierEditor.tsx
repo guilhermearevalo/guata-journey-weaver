@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Plane, Hotel, Car, FileText, Luggage, ShieldCheck, Banknote, Image as ImageIcon, Upload, Loader2, X } from 'lucide-react';
+import { Plane, Hotel, Car, FileText, Luggage, ShieldCheck, Banknote, Image as ImageIcon, Upload, Loader2, X, Map as MapIcon, Handshake } from 'lucide-react';
+import { toMyMapsEmbedUrl } from '@/lib/mymaps';
 import type { Dossier } from '@/lib/dossier';
 import { getAccommodationImages, setAccommodationImages } from '@/lib/dossier';
 import { MAX_ACCOMMODATION_IMAGES } from '@/lib/itinerary';
@@ -158,6 +159,31 @@ export default function DossierEditor({ dossier, onChange }: DossierEditorProps)
               <img src={dossier.cover_image} alt="Capa" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
           )}
+        </div>
+
+        {/* Mapa geral (Google My Maps) */}
+        <div className="space-y-2 rounded-lg border p-3">
+          <Label className="flex items-center gap-2"><MapIcon className="h-4 w-4" /> Mapa da rota (Google My Maps)</Label>
+          <Input
+            value={dossier.map_url || ''}
+            onChange={(e) => set('map_url', e.target.value)}
+            placeholder="Cole o link de compartilhamento do My Maps"
+          />
+          {dossier.map_url && !toMyMapsEmbedUrl(dossier.map_url) && (
+            <p className="text-xs text-destructive">Link não reconhecido. Use o link do My Maps (google.com/maps/d/...).</p>
+          )}
+          <p className="text-xs text-muted-foreground">No My Maps: Compartilhar → "Qualquer pessoa com o link". Mapas por dia ficam em cada dia do roteiro.</p>
+        </div>
+
+        {/* Agência parceira */}
+        <div className="space-y-2 rounded-lg border p-3">
+          <Label className="flex items-center gap-2"><Handshake className="h-4 w-4" /> Agência parceira (aparece ao lado da Guatá)</Label>
+          <Input
+            value={dossier.cobrand_name || ''}
+            onChange={(e) => set('cobrand_name', e.target.value)}
+            placeholder="Nome da agência parceira"
+          />
+          <SectionImage imageKey="cobrand_logo" prefix="cobrand-logo" label="Logo da agência parceira" />
         </div>
 
         <Accordion type="multiple" className="w-full">

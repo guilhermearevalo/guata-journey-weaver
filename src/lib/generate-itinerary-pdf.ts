@@ -107,10 +107,14 @@ function buildPdfHtml(data: ItineraryPdfData, fullRouteUrl: string | null): stri
     return `
       <section class="day">
         <h3>Dia ${day.day}${dayTitle ? ` — ${escapeHtml(dayTitle)}` : ''}</h3>
+        ${data.dossier.day_tags?.[String(day.day)] ? `<span class="tag">${escapeHtml(data.dossier.day_tags[String(day.day)])}</span>` : ''}
         ${activitiesHtml}
+        ${data.dossier.day_hotels?.[String(day.day)] ? `<p>Noite no <strong>${escapeHtml(data.dossier.day_hotels[String(day.day)])}</strong></p>` : ''}
       </section>`;
   }).join('');
 
+  const myMap = data.dossier.map_url?.trim();
+  if (myMap) fullRouteUrl = myMap;
   const fullRouteSection = fullRouteUrl ? `
     <section class="section full-route">
       <h2>Rota completa</h2>
@@ -162,7 +166,7 @@ function buildPdfHtml(data: ItineraryPdfData, fullRouteUrl: string | null): stri
         <div class="cover-text">
           <span class="cover-badge">Roteiro exclusivo</span>
           <h1>${escapeHtml(data.destination || data.title)}</h1>
-          <p class="brand">${escapeHtml(data.brandName)}</p>
+          <p class="brand">${escapeHtml(data.brandName)}${data.dossier.cobrand_name ? ` × ${escapeHtml(data.dossier.cobrand_name)}` : ''}</p>
         </div>
       </div>
       <div class="body">
@@ -178,6 +182,7 @@ function buildPdfHtml(data: ItineraryPdfData, fullRouteUrl: string | null): stri
       </div>
       <div class="footer">
         ${data.logoUrl ? `<img src="${data.logoUrl}" class="logo" crossorigin="anonymous" />` : ''}
+        ${data.dossier.cobrand_logo ? `<img src="${data.dossier.cobrand_logo}" class="logo" style="margin-left:16px" crossorigin="anonymous" />` : ''}
         <p>Roteiro preparado por <strong>${escapeHtml(data.brandName)}</strong></p>
       </div>
     </div>`;
