@@ -210,7 +210,7 @@ export default function PublicItineraryView({
 
         <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
           <div className="flex items-center gap-3 rounded-full bg-background/95 px-4 py-2 shadow-lg backdrop-blur-sm">
-            <img src={agency?.logo_url || guataLogo} alt={brandName} className="h-8 max-w-[96px] object-contain" />
+            <img src={agency?.logo_url || guataLogo} alt={brandName} className="h-11 w-auto max-w-[200px] object-contain" />
             {cobrandLogo || cobrandName ? (
               <>
                 <span className="font-display text-lg text-guata-gold">×</span>
