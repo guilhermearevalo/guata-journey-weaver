@@ -518,7 +518,7 @@ INSERT INTO public.cms_pages (slug, title, content, meta_description, status) VA
       "content": "â€¢ Curadoria cuidadosa: Selecionamos apenas experiÃªncias que realmente fazem a diferenÃ§a\nâ€¢ Atendimento personalizado: Cada viajante Ã© Ãºnico e merece atenÃ§Ã£o especial\nâ€¢ Sustentabilidade: Promovemos turismo responsÃ¡vel e consciente\nâ€¢ Parcerias locais: Valorizamos operadores e guias locais"
     }
   ]
-}', 'ConheÃ§a a GuatÃ¡ Travel Experience - sua agÃªncia de viagens personalizadas', 'published'),
+}', 'ConheÃ§a a Guatá Viagens e Turismo - sua agÃªncia de viagens personalizadas', 'published'),
 
 ('faq', 'Perguntas Frequentes', '{
   "hero": {
@@ -557,7 +557,7 @@ INSERT INTO public.cms_pages (slug, title, content, meta_description, status) VA
   "sections": [
     {
       "title": "1. AceitaÃ§Ã£o dos Termos",
-      "content": "Ao acessar e utilizar os serviÃ§os da GuatÃ¡ Travel Experience, vocÃª concorda com estes termos de uso. Se nÃ£o concordar com qualquer parte destes termos, nÃ£o utilize nossos serviÃ§os."
+      "content": "Ao acessar e utilizar os serviÃ§os da Guatá Viagens e Turismo, vocÃª concorda com estes termos de uso. Se nÃ£o concordar com qualquer parte destes termos, nÃ£o utilize nossos serviÃ§os."
     },
     {
       "title": "2. ServiÃ§os Oferecidos",
@@ -576,7 +576,7 @@ INSERT INTO public.cms_pages (slug, title, content, meta_description, status) VA
       "content": "Reservamos o direito de modificar estes termos a qualquer momento. AlteraÃ§Ãµes significativas serÃ£o comunicadas por e-mail ou no site."
     }
   ]
-}', 'Termos de uso da plataforma GuatÃ¡ Travel Experience', 'published'),
+}', 'Termos de uso da plataforma Guatá Viagens e Turismo', 'published'),
 
 ('privacidade', 'PolÃ­tica de Privacidade', '{
   "hero": {
@@ -619,7 +619,7 @@ INSERT INTO public.cms_pages (slug, title, content, meta_description, status) VA
     "address": "SÃ£o Paulo, SP - Brasil",
     "hours": "Segunda a Sexta, 9h Ã s 18h"
   }
-}', 'Entre em contato com a GuatÃ¡ Travel Experience', 'published');
+}', 'Entre em contato com a Guatá Viagens e Turismo', 'published');
 
 
 -- ========== 20260128145256_db688151-e486-4026-a40e-e0840f8c3f9c.sql ==========
@@ -1630,7 +1630,7 @@ WHERE slug = 'privacidade';
 UPDATE public.cms_pages
 SET
   title = 'Termos de Uso e PolÃ­tica de Privacidade',
-  meta_description = 'Termos de uso do site e polÃ­tica de privacidade da GuatÃ¡ Travel Experience.',
+  meta_description = 'Termos de uso do site e polÃ­tica de privacidade da Guatá Viagens e Turismo.',
   updated_at = now()
 WHERE slug = 'termos';
 

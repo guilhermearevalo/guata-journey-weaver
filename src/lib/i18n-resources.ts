@@ -196,7 +196,7 @@ const E = {
   ),
   aboutCtaQuote: tri('Solicitar orçamento', 'Request a quote', 'Solicitar presupuesto'),
   aboutCtaContact: tri('Fale conosco', 'Contact us', 'Contáctenos'),
-  seoHomeTitle: tri('Guatá Viagens — Agência de viagens sob medida no Brasil e no mundo', 'Guatá Travel — Tailor-made trips in Brazil and worldwide', 'Guatá Viajes — Viajes a medida en Brasil y el mundo'),
+  seoHomeTitle: tri('Guatá Viagens e Turismo — Agência de viagens sob medida no Brasil e no mundo', 'Guatá Viagens e Turismo — Tailor-made trips in Brazil and worldwide', 'Guatá Viagens e Turismo — Viajes a medida en Brasil y el mundo'),
   seoHomeDesc: tri(
     'Agência Cadastur de viagens personalizadas: Brasil, América do Sul, Europa e mais. Especialistas em Pantanal e Bonito. Atendimento humano em PT, EN e ES.',
     'Cadastur-certified travel agency for tailor-made trips: Brazil, South America, Europe and beyond. Pantanal & Bonito experts. Human support in EN, PT & ES.',
@@ -290,7 +290,7 @@ const E = {
     'Itineraries for Bonito, Pantanal and Chapada. Plan with Guatá, Cadastur agency.',
     'Itinerarios para Bonito, Pantanal y Chapada. Planee con Guatá, agencia Cadastur.',
   ),
-  seoExpTitle: tri('Experiências e roteiros de viagem', 'Travel experiences & itineraries', 'Experiencias e itinerarios'),
+  seoExpTitle: tri('Experiências e roteiros de viagem', 'Experiences & travel itineraries', 'Experiencias e itinerarios'),
   seoExpDesc: tri(
     'Ecoturismo no Pantanal, Bonito e roteiros pelo Brasil e exterior com curadoria Guatá.',
     'Pantanal ecotourism, Bonito and curated trips in Brazil and abroad.',
