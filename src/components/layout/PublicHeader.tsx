@@ -14,20 +14,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/lib/auth';
 import { useHomepageSections } from '@/hooks/useHomepageSections';
-import { useCadasturConfig } from '@/hooks/useCadasturConfig';
-import { StorageImage } from '@/components/ui/StorageImage';
 
-function BrandMark({ agencyLogo }: { agencyLogo?: string | null }) {
+/** Marca tipográfica (Playfair + tagline) — igual ao preview Lovable; não usa PNG do admin no header. */
+function BrandMark() {
   const { t } = useI18n();
-  if (agencyLogo) {
-    return (
-      <StorageImage
-        src={agencyLogo}
-        alt={t('brandName')}
-        className="h-10 w-auto max-w-[160px] object-contain object-left"
-      />
-    );
-  }
   return (
     <div className="flex flex-col leading-none">
       <span className="font-display text-xl font-bold tracking-tight text-primary">{t('brandName')}</span>
@@ -42,8 +32,6 @@ export function PublicHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut, isStaff, hasRole } = useAuth();
   const { data: sections } = useHomepageSections();
-  const { data: cadasturConfig } = useCadasturConfig();
-  const agencyLogo = cadasturConfig?.agency_logo_url;
   const navigate = useNavigate();
   const { t } = useI18n();
 
@@ -94,7 +82,7 @@ export function PublicHeader() {
       <InfoStrip />
       <nav className="container mx-auto flex h-[4.5rem] items-center justify-between gap-4 px-4 lg:px-8">
         <Link to="/" className="shrink-0">
-          <BrandMark agencyLogo={agencyLogo} />
+          <BrandMark />
         </Link>
 
         <div className="hidden flex-1 items-center justify-center gap-6 lg:flex xl:gap-8">{navLinks}</div>
