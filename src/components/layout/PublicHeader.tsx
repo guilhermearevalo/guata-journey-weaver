@@ -16,18 +16,26 @@ import { useAuth } from '@/lib/auth';
 import { useHomepageSections } from '@/hooks/useHomepageSections';
 import { useCadasturConfig } from '@/hooks/useCadasturConfig';
 import { StorageImage } from '@/components/ui/StorageImage';
-import logoGuata from '@/assets/logo-guata.png';
 
 function BrandMark({ agencyLogo }: { agencyLogo?: string | null }) {
   const { t } = useI18n();
-  const alt = `${t('brandName')} — ${t('brandTagline')}`;
-  const className = 'h-11 w-auto max-w-[200px] object-contain object-left';
-
   if (agencyLogo) {
-    return <StorageImage src={agencyLogo} alt={alt} className={className} />;
+    return (
+      <StorageImage
+        src={agencyLogo}
+        alt={t('brandName')}
+        className="h-10 w-auto max-w-[160px] object-contain object-left"
+      />
+    );
   }
-
-  return <img src={logoGuata} alt={alt} className={className} />;
+  return (
+    <div className="flex flex-col leading-none">
+      <span className="font-display text-xl font-bold tracking-tight text-primary">{t('brandName')}</span>
+      <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+        {t('brandTagline')}
+      </span>
+    </div>
+  );
 }
 
 export function PublicHeader() {

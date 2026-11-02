@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { useContactInfo } from '@/hooks/useContactInfo';
 import { useCadasturConfig } from '@/hooks/useCadasturConfig';
 import { useI18n } from '@/lib/i18n';
-import logoGuata from '@/assets/logo-guata.png';
 
 function FooterHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -87,11 +86,12 @@ export function PublicFooter() {
       <div className="container mx-auto px-4 py-12 lg:px-8">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
           <div className="space-y-4 lg:col-span-4">
-            <img
-              src={logoGuata}
-              alt={`${t('brandName')} — ${t('brandTagline')}`}
-              className="h-12 w-auto max-w-[220px] object-contain object-left rounded-sm"
-            />
+            <div className="flex flex-col leading-none">
+              <span className="font-display text-2xl font-bold tracking-tight text-primary-foreground">{t('brandName')}</span>
+              <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em] text-primary-foreground/60">
+                {t('brandTagline')}
+              </span>
+            </div>
             <p className="max-w-sm text-sm leading-relaxed text-primary-foreground/75">{t('footerTagline')}</p>
             <div className="flex gap-3">
               {contact?.instagram && (
