@@ -1107,6 +1107,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_partner_agency: {
+        Args: { _agency_id: string }
+        Returns: undefined
+      }
       create_staff_access: {
         Args: {
           p_email: string
