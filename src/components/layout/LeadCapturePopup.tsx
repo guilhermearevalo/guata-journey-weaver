@@ -29,7 +29,10 @@ export function LeadCapturePopup() {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
+  const hidden = pathname.startsWith('/passagens');
+
   useEffect(() => {
+    if (hidden) { setOpen(false); return; }
     if (sessionStorage.getItem(KEY)) return;
     const show = () => {
       if (sessionStorage.getItem(KEY)) return;
