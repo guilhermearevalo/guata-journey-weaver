@@ -457,6 +457,23 @@ const AdminParceiros = () => {
                 Reativar
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem
+              className="text-red-600"
+              onClick={async () => {
+                if (!window.confirm(`Excluir definitivamente "${agency.name}"? Essa ação não pode ser desfeita.`)) return;
+                const { error } = await (supabase as any).rpc('admin_delete_partner_agency', { _agency_id: agency.id });
+                if (error) {
+                  toast({ title: 'Erro', description: 'Não foi possível excluir o parceiro.', variant: 'destructive' });
+                } else {
+                  queryClient.invalidateQueries({ queryKey: ['partner-agencies'] });
+                  queryClient.invalidateQueries({ queryKey: ['admin-new-partners-count'] });
+                  toast({ title: 'Parceiro excluído', description: `${agency.name} foi removido.` });
+                }
+              }}
+            >
+              <X className="mr-2 h-4 w-4" />
+              Excluir definitivamente
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </TableCell>

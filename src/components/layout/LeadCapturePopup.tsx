@@ -29,7 +29,10 @@ export function LeadCapturePopup() {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
+  const hidden = pathname.startsWith('/passagens');
+
   useEffect(() => {
+    if (hidden) { setOpen(false); return; }
     if (sessionStorage.getItem(KEY)) return;
     const show = () => {
       if (sessionStorage.getItem(KEY)) return;
@@ -40,7 +43,7 @@ export function LeadCapturePopup() {
     const timer = window.setTimeout(show, 40000);
     document.addEventListener('mouseleave', onLeave);
     return () => { clearTimeout(timer); document.removeEventListener('mouseleave', onLeave); };
-  }, []);
+  }, [hidden]);
 
   const openWhatsAppFallback = async () => {
     const { data } = await supabase.from('site_settings').select('value').eq('key', 'whatsapp_config').maybeSingle();
@@ -73,6 +76,8 @@ export function LeadCapturePopup() {
 
   const field = 'relative';
   const icon = 'absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground';
+
+  if (hidden) return null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
