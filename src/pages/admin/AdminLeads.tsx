@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function AdminLeads() {
+  const queryClient = useQueryClient();
   const { data: leads = [], refetch } = useQuery({
     queryKey: ['site-leads'],
     queryFn: async () => {
@@ -17,9 +19,22 @@ export default function AdminLeads() {
     },
   });
 
+  // Opening this page marks all leads as seen (clears the red badge).
+  useEffect(() => {
+    localStorage.setItem('guata-leads-seen', new Date().toISOString());
+    queryClient.invalidateQueries({ queryKey: ['admin-new-leads-count'] });
+  }, [leads.length, queryClient]);
+
   const remove = async (id: string) => {
-    const { error } = await supabase.from('site_leads').delete().eq('id', id);
-    if (error) toast.error('Erro ao remover'); else refetch();
+    if (!window.confirm('Excluir este lead?')) return;
+    const { data, error } = await supabase.from('site_leads').delete().eq('id', id).select('id');
+    if (error || !data?.length) {
+      toast.error('Não foi possível excluir (sem permissão no banco).');
+      return;
+    }
+    queryClient.setQueryData(['site-leads'], (old: any[] = []) => old.filter((l) => l.id !== id));
+    toast.success('Lead excluído');
+    refetch();
   };
 
   return (

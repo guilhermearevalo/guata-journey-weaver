@@ -78,6 +78,40 @@ const AdminSidebar = () => {
     refetchInterval: 30000,
   });
 
+  const { data: newLeadsCount = 0 } = useQuery({
+    queryKey: ['admin-new-leads-count'],
+    queryFn: async () => {
+      const since = localStorage.getItem('guata-leads-seen') ?? '1970-01-01';
+      const { count, error } = await (supabase as any)
+        .from('site_leads')
+        .select('id', { count: 'exact', head: true })
+        .gt('created_at', since);
+      if (error) return 0;
+      return count ?? 0;
+    },
+    refetchInterval: 30000,
+  });
+
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`admin-new-leads-${Math.random().toString(36).slice(2)}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'site_leads' }, (payload) => {
+        const row = payload.new as { name: string; destination: string | null };
+        queryClient.invalidateQueries({ queryKey: ['admin-new-leads-count'] });
+        queryClient.invalidateQueries({ queryKey: ['site-leads'] });
+        toast({
+          title: 'Novo lead do site',
+          description: `${row.name}${row.destination ? ` · ${row.destination}` : ''}`,
+          action: (
+            <ToastAction altText="Ver leads" onClick={() => navigate('/admin/leads')}>Ver</ToastAction>
+          ),
+        });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, queryClient, toast, navigate]);
+
   useEffect(() => {
     if (!user) return;
 
@@ -179,7 +213,8 @@ const AdminSidebar = () => {
     {
       icon: Newspaper,
       label: 'Leads do site',
-      href: '/admin/leads'
+      href: '/admin/leads',
+      badge: newLeadsCount,
     },
     {
       icon: Camera,
