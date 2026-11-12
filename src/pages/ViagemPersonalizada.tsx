@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
+import { useI18n } from '@/lib/i18n';
 import { z } from 'zod';
 
 const travelStyles = [
@@ -37,6 +38,14 @@ function toIsoDate(date: Date) {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
+/** O calendário do navegador pode devolver 12027-01-01. Só aceita ano de 4 dígitos. */
+function acceptTripDateInput(value: string): string | null {
+  if (!value) return '';
+  const year = value.split('-')[0] ?? '';
+  if (!/^\d{4}$/.test(year) || !ISO_DATE.test(value)) return null;
+  return value;
+}
+
 /** Aceita só AAAA-MM-DD com ano de 4 dígitos. Rejeita 12027-01-01. */
 function parseTripDate(value: string): Date | null {
   const match = ISO_DATE.exec(value);
@@ -49,13 +58,14 @@ function parseTripDate(value: string): Date | null {
   return date;
 }
 
-const optionalTripDate = z
-  .string()
-  .optional()
-  .or(z.literal(''))
-  .refine((value) => !value || parseTripDate(value) !== null, 'Informe uma data válida (ano com 4 dígitos).');
+function travelRequestSchema(messages: { invalid: string; range: string; order: string }) {
+  const optionalTripDate = z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine((value) => !value || parseTripDate(value) !== null, messages.invalid);
 
-const travelRequestSchema = z
+  return z
   .object({
     name: z.string().trim().min(2, 'Informe seu nome completo.').max(120, 'Nome muito longo.'),
     email: z.string().trim().email('Informe um e-mail válido.').max(255, 'E-mail muito longo.'),
@@ -83,7 +93,7 @@ const travelRequestSchema = z
         ctx.addIssue({
           code: 'custom',
           path: [field],
-          message: 'A data precisa estar entre hoje e os próximos 3 anos.',
+          message: messages.range,
         });
       }
     }
@@ -92,13 +102,15 @@ const travelRequestSchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['returnDate'],
-        message: 'A data de volta não pode ser anterior à data de ida.',
+        message: messages.order,
       });
     }
   });
+}
 
 export default function ViagemPersonalizada() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -106,9 +118,7 @@ export default function ViagemPersonalizada() {
   const [submitted, setSubmitted] = useState(false);
   
   const todayIso = toIsoDate(startOfDay(new Date()));
-  const maxIso = toIsoDate(
-    new Date(new Date().getFullYear() + 3, new Date().getMonth(), new Date().getDate()),
-  );
+  const maxIso = toIsoDate(new Date(new Date().getFullYear() + 3, new Date().getMonth(), new Date().getDate()));
 
   const [formData, setFormData] = useState({
     name: '',
@@ -137,7 +147,11 @@ export default function ViagemPersonalizada() {
     setLoading(true);
 
     try {
-      const parsed = travelRequestSchema.parse(formData);
+      const parsed = travelRequestSchema({
+        invalid: t('dateInvalid'),
+        range: t('dateRange'),
+        order: t('dateOrder'),
+      }).parse(formData);
       const travelersCount = parsed.travelers === '6+' ? 6 : parseInt(parsed.travelers, 10);
 
       const { error } = await supabase.from('travel_requests').insert({
@@ -296,7 +310,11 @@ export default function ViagemPersonalizada() {
                     min={todayIso}
                     max={maxIso}
                     value={formData.departureDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, departureDate: e.target.value }))}
+                    onChange={(e) => {
+                      const next = acceptTripDateInput(e.target.value);
+                      if (next === null) return;
+                      setFormData((prev) => ({ ...prev, departureDate: next }));
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -307,7 +325,11 @@ export default function ViagemPersonalizada() {
                     min={formData.departureDate || todayIso}
                     max={maxIso}
                     value={formData.returnDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, returnDate: e.target.value }))}
+                    onChange={(e) => {
+                      const next = acceptTripDateInput(e.target.value);
+                      if (next === null) return;
+                      setFormData((prev) => ({ ...prev, returnDate: next }));
+                    }}
                   />
                 </div>
               </div>

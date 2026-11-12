@@ -209,6 +209,11 @@ const E = {
   leadDest: tri('Para onde quer ir?', 'Where do you want to go?', '¿A dónde quiere ir?'),
   leadSend: tri('Quero receber sugestões', 'Send me ideas', 'Quiero recibir ideas'),
   leadThanks: tri('Recebemos! Em breve um consultor fala com você.', 'Got it! A consultant will contact you soon.', '¡Recibido! Pronto un consultor le contactará.'),
+  waChat: tri('Converse com o Guatá', 'Chat with Guatá', 'Hable con Guatá'),
+  waChatAria: tri('Converse com o Guatá pelo WhatsApp', 'Chat with Guatá on WhatsApp', 'Hable con Guatá por WhatsApp'),
+  dateInvalid: tri('Informe uma data válida (ano com 4 dígitos).', 'Enter a valid date (4-digit year).', 'Indique una fecha válida (año de 4 dígitos).'),
+  dateRange: tri('A data precisa estar entre hoje e os próximos 3 anos.', 'The date must be between today and the next 3 years.', 'La fecha debe estar entre hoy y los próximos 3 años.'),
+  dateOrder: tri('A data de volta não pode ser anterior à data de ida.', 'The return date cannot be before the departure date.', 'La fecha de vuelta no puede ser anterior a la de ida.'),
   seoAboutTitle: tri('Sobre o Guatá — Agência de turismo de MS', 'About Guatá — MS travel agency', 'Sobre Guatá — Agencia de turismo de MS'),
   seoAboutDesc: tri(
     'Guatá Viagens: agência Cadastur de Mato Grosso do Sul. Curadoria local para Pantanal, Bonito e viagens no mundo.',
