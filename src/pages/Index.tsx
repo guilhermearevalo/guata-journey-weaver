@@ -31,7 +31,22 @@ const Index = () => {
       name: t('seoHomeTitle'),
       description: t('seoHomeDesc'),
       url: 'https://www.agenciaguata.com/',
-      isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: 'https://www.agenciaguata.com/' },
+      isPartOf: {
+        '@type': 'WebSite',
+        name: SITE_NAME,
+        url: 'https://www.agenciaguata.com/',
+        hasPart: [
+          { '@type': 'WebPage', name: 'Experiências', url: 'https://www.agenciaguata.com/experiencias' },
+          { '@type': 'WebPage', name: 'Destinos', url: 'https://www.agenciaguata.com/destinos' },
+          { '@type': 'WebPage', name: 'Pantanal', url: 'https://www.agenciaguata.com/destinos/pantanal' },
+          { '@type': 'WebPage', name: 'Bonito', url: 'https://www.agenciaguata.com/destinos/bonito-ms' },
+          { '@type': 'WebPage', name: 'Excursões', url: 'https://www.agenciaguata.com/excursoes' },
+          { '@type': 'WebPage', name: 'Viagem personalizada', url: 'https://www.agenciaguata.com/viagem-personalizada' },
+          { '@type': 'WebPage', name: 'Passagens e hotéis', url: 'https://www.agenciaguata.com/passagens' },
+          { '@type': 'WebPage', name: 'Sobre', url: 'https://www.agenciaguata.com/sobre' },
+          { '@type': 'WebPage', name: 'Contato', url: 'https://www.agenciaguata.com/contato' },
+        ],
+      },
     },
   ];
 
