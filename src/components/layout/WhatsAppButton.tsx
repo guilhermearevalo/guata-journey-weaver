@@ -92,16 +92,15 @@ export function WhatsAppButton() {
           rel="noopener noreferrer"
           className="relative max-w-[15rem] rounded-2xl rounded-br-md bg-background px-3.5 py-2 text-sm font-medium text-foreground shadow-lg ring-1 ring-border animate-in fade-in slide-in-from-bottom-2 duration-300"
         >
-          {phase === 'dots' && !reduceMotion ? (
+          <span className={phase === 'dots' && !reduceMotion ? undefined : 'hidden'}>
             <TypingDots />
-          ) : (
-            <span>
-              {reduceMotion ? phrase : phrase.slice(0, typed)}
-              {!reduceMotion && phase === 'type' && typed < phrase.length && (
-                <span className="ml-0.5 inline-block h-4 w-px translate-y-0.5 animate-pulse bg-foreground align-middle" />
-              )}
-            </span>
-          )}
+          </span>
+          <span className={phase === 'dots' && !reduceMotion ? 'hidden' : undefined} translate="no">
+            {reduceMotion ? phrase : phrase.slice(0, typed)}
+            {!reduceMotion && phase === 'type' && typed < phrase.length && (
+              <span className="ml-0.5 inline-block h-4 w-px translate-y-0.5 animate-pulse bg-foreground align-middle" />
+            )}
+          </span>
         </a>
       )}
       <a

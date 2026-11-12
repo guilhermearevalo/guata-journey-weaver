@@ -20,7 +20,7 @@ function BrandMark() {
   const { t } = useI18n();
   return (
     <div className="flex flex-col leading-none">
-      <span className="font-display text-xl font-bold tracking-tight text-primary">{t('brandName')}</span>
+      <span translate="no" className="font-display text-xl font-bold tracking-tight text-primary">{t('brandName')}</span>
       <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
         {t('brandTagline')}
       </span>

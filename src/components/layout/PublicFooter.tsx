@@ -87,7 +87,7 @@ export function PublicFooter() {
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
           <div className="space-y-4 lg:col-span-4">
             <div className="flex flex-col leading-none">
-              <span className="font-display text-2xl font-bold tracking-tight text-primary-foreground">{t('brandName')}</span>
+              <span translate="no" className="font-display text-2xl font-bold tracking-tight text-primary-foreground">{t('brandName')}</span>
               <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em] text-primary-foreground/60">
                 {t('brandTagline')}
               </span>
@@ -230,3 +230,4 @@ export function PublicFooter() {
     </footer>
   );
 }
+
