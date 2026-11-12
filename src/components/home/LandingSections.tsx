@@ -2,11 +2,12 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight, Compass, HeartHandshake, ShieldCheck, Headphones } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { destinations } from '@/lib/destinations';
+import { localizeDestination } from '@/lib/destination-locales';
 import { useI18n } from '@/lib/i18n';
 
 export function DestinationsShowcase() {
-  const { t } = useI18n();
-  const items = destinations.slice(0, 3);
+  const { t, lang } = useI18n();
+  const items = destinations.slice(0, 3).map((d) => localizeDestination(d, lang));
   return (
     <section className="bg-background py-20">
       <div className="container mx-auto px-4 lg:px-8">

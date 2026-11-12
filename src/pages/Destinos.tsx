@@ -2,10 +2,11 @@ import { Link } from 'react-router-dom';
 import { MapPin, ArrowRight } from 'lucide-react';
 import { Seo } from '@/components/seo/Seo';
 import { destinations } from '@/lib/destinations';
+import { localizeDestination } from '@/lib/destination-locales';
 import { useI18n } from '@/lib/i18n';
 
 const Destinos = () => {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   return (
     <div className="bg-muted/30">
       <div className="container mx-auto px-4 py-16 lg:px-8">
@@ -16,7 +17,9 @@ const Destinos = () => {
           <p className="mt-4 text-muted-foreground">{t('destPageSub')}</p>
         </header>
         <div className="grid gap-8 md:grid-cols-3">
-          {destinations.map((d) => (
+          {destinations.map((item) => {
+            const d = localizeDestination(item, lang);
+            return (
             <Link
               key={d.slug}
               to={`/destinos/${d.slug}`}
@@ -42,7 +45,8 @@ const Destinos = () => {
                 </span>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

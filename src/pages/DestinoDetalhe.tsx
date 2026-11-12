@@ -3,16 +3,20 @@ import { Calendar, Clock, CheckCircle2, ShieldCheck, Lightbulb, MessageCircle } 
 import { Button } from '@/components/ui/button';
 import { Seo } from '@/components/seo/Seo';
 import { getDestination } from '@/lib/destinations';
+import { localizeDestination } from '@/lib/destination-locales';
+import { useI18n } from '@/lib/i18n';
 import { useContactInfo } from '@/hooks/useContactInfo';
 
 const DestinoDetalhe = () => {
   const { slug } = useParams();
-  const d = getDestination(slug);
+  const { t, lang } = useI18n();
+  const found = getDestination(slug);
+  const d = found ? localizeDestination(found, lang) : undefined;
   const { data: contact } = useContactInfo();
   if (!d) return <Navigate to="/destinos" replace />;
 
   const phone = (contact as { whatsapp?: string } | null | undefined)?.whatsapp?.replace(/\D/g, '');
-  const waText = encodeURIComponent(`Olá, Guatá! Quero um roteiro para ${d.name}.`);
+  const waText = encodeURIComponent(t('destWaText', { name: d.name }));
   const waLink = phone ? `https://wa.me/${phone}?text=${waText}` : null;
 
   const jsonLd = [
@@ -51,12 +55,12 @@ const DestinoDetalhe = () => {
           <p className="text-lg leading-relaxed text-foreground/90">{d.intro}</p>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border bg-card p-5"><Calendar className="mb-2 h-5 w-5 text-primary" /><h3 className="font-semibold">Melhor época</h3><p className="text-sm text-muted-foreground">{d.bestTime}</p></div>
-            <div className="rounded-xl border bg-card p-5"><Clock className="mb-2 h-5 w-5 text-primary" /><h3 className="font-semibold">Tempo ideal</h3><p className="text-sm text-muted-foreground">{d.idealDays}</p></div>
+            <div className="rounded-xl border bg-card p-5"><Calendar className="mb-2 h-5 w-5 text-primary" /><h3 className="font-semibold">{t('destBestTime')}</h3><p className="text-sm text-muted-foreground">{d.bestTime}</p></div>
+            <div className="rounded-xl border bg-card p-5"><Clock className="mb-2 h-5 w-5 text-primary" /><h3 className="font-semibold">{t('destIdealStay')}</h3><p className="text-sm text-muted-foreground">{d.idealDays}</p></div>
           </div>
 
           <section>
-            <h2 className="mb-4 font-serif text-3xl font-semibold">Imperdíveis</h2>
+            <h2 className="mb-4 font-serif text-3xl font-semibold">{t('destHighlights')}</h2>
             <ul className="grid gap-3 sm:grid-cols-2">
               {d.highlights.map((h) => (
                 <li key={h} className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />{h}</li>
@@ -65,7 +69,7 @@ const DestinoDetalhe = () => {
           </section>
 
           <section>
-            <h2 className="mb-6 font-serif text-3xl font-semibold">Roteiro sugerido</h2>
+            <h2 className="mb-6 font-serif text-3xl font-semibold">{t('destSuggested')}</h2>
             <ol className="relative space-y-8 border-l-2 border-primary/30 pl-8">
               {d.itinerary.map((s) => (
                 <li key={s.day} className="relative">
@@ -79,12 +83,12 @@ const DestinoDetalhe = () => {
           </section>
 
           <section className="rounded-2xl bg-muted p-6">
-            <h2 className="mb-3 flex items-center gap-2 font-serif text-2xl font-semibold"><Lightbulb className="h-5 w-5 text-primary" />Dicas da Guatá</h2>
+            <h2 className="mb-3 flex items-center gap-2 font-serif text-2xl font-semibold"><Lightbulb className="h-5 w-5 text-primary" />{t('destTips')}</h2>
             <ul className="list-disc space-y-1 pl-5 text-foreground/90">{d.tips.map((t) => <li key={t}>{t}</li>)}</ul>
           </section>
 
           <section>
-            <h2 className="mb-4 font-serif text-3xl font-semibold">Perguntas frequentes</h2>
+            <h2 className="mb-4 font-serif text-3xl font-semibold">{t('destFaq')}</h2>
             <div className="space-y-4">
               {d.faq.map((f) => (
                 <div key={f.q} className="rounded-xl border p-5"><h3 className="font-semibold">{f.q}</h3><p className="mt-1 text-muted-foreground">{f.a}</p></div>
@@ -95,15 +99,15 @@ const DestinoDetalhe = () => {
 
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-lg">
-            <h2 className="font-serif text-2xl font-semibold">Quer este roteiro do seu jeito?</h2>
-            <p className="text-sm text-muted-foreground">Ajustamos datas, hospedagem e passeios ao seu orçamento. Resposta rápida.</p>
-            <Button asChild className="w-full" size="lg"><Link to="/viagem-personalizada">Personalizar meu roteiro</Link></Button>
+            <h2 className="font-serif text-2xl font-semibold">{t('destAsideTitle')}</h2>
+            <p className="text-sm text-muted-foreground">{t('destAsideBody')}</p>
+            <Button asChild className="w-full" size="lg"><Link to="/viagem-personalizada">{t('destAsideCta')}</Link></Button>
             {waLink && (
               <Button asChild variant="outline" className="w-full" size="lg">
-                <a href={waLink} target="_blank" rel="noopener noreferrer"><MessageCircle className="mr-2 h-4 w-4" />Falar no WhatsApp</a>
+                <a href={waLink} target="_blank" rel="noopener noreferrer"><MessageCircle className="mr-2 h-4 w-4" />{t('destAsideWa')}</a>
               </Button>
             )}
-            <p className="flex items-center gap-2 pt-2 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4 text-primary" />Agência certificada Cadastur</p>
+            <p className="flex items-center gap-2 pt-2 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4 text-primary" />{t('destAsideCadastur')}</p>
           </div>
         </aside>
       </div>

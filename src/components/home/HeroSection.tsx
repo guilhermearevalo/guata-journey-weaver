@@ -22,7 +22,13 @@ interface Slide {
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop';
 
-const QUICK_FILTERS = ['Pantanal', 'Bonito', 'Nordeste', 'Europa', 'All Inclusive'];
+const QUICK_FILTERS = [
+  { value: 'Pantanal', label: 'Pantanal' },
+  { value: 'Bonito', label: 'Bonito' },
+  { value: 'Nordeste', key: 'chipNortheast' as const },
+  { value: 'Europa', key: 'chipEurope' as const },
+  { value: 'All Inclusive', key: 'chipAllInclusive' as const },
+];
 
 const ONER_CHIPS = [
   { label: 'Passagens', key: 'flights', path: '/passagens' },
@@ -180,12 +186,12 @@ export function HeroSection() {
               ))}
               {QUICK_FILTERS.map((filter) => (
                 <button
-                  key={filter}
+                  key={filter.value}
                   type="button"
-                  onClick={() => navigate(`/experiencias?destino=${encodeURIComponent(filter)}`)}
+                  onClick={() => navigate(`/experiencias?destino=${encodeURIComponent(filter.value)}`)}
                   className="rounded-full border border-border bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                 >
-                  {filter}
+                  {'key' in filter ? t(filter.key) : filter.label}
                 </button>
               ))}
             </div>

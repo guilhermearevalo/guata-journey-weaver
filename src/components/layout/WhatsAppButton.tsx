@@ -11,6 +11,17 @@ interface WhatsAppConfig {
 
 type BubblePhase = 'wait' | 'dots' | 'type' | 'hold' | 'hide';
 
+function renderPhrase(text: string) {
+  const parts = text.split('Guatá');
+  if (parts.length === 1) return text;
+  return parts.map((part, index) => (
+    <span key={index}>
+      {part}
+      {index < parts.length - 1 && <span translate="no">Guatá</span>}
+    </span>
+  ));
+}
+
 function TypingDots() {
   return (
     <span className="flex h-5 items-center gap-1 px-1" aria-hidden>
@@ -95,8 +106,8 @@ export function WhatsAppButton() {
           <span className={phase === 'dots' && !reduceMotion ? undefined : 'hidden'}>
             <TypingDots />
           </span>
-          <span className={phase === 'dots' && !reduceMotion ? 'hidden' : undefined} translate="no">
-            {reduceMotion ? phrase : phrase.slice(0, typed)}
+          <span className={phase === 'dots' && !reduceMotion ? 'hidden' : undefined}>
+            {renderPhrase(reduceMotion ? phrase : phrase.slice(0, typed))}
             {!reduceMotion && phase === 'type' && typed < phrase.length && (
               <span className="ml-0.5 inline-block h-4 w-px translate-y-0.5 animate-pulse bg-foreground align-middle" />
             )}
