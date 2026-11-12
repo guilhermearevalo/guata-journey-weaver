@@ -16,17 +16,25 @@ import { useI18n } from '@/lib/i18n';
 import { z } from 'zod';
 
 const travelStyles = [
-  { id: 'adventure', label: 'Aventura' },
-  { id: 'relax', label: 'Relaxamento' },
-  { id: 'cultural', label: 'Cultural' },
-  { id: 'gastronomy', label: 'Gastronomia' },
-  { id: 'nature', label: 'Natureza' },
-  { id: 'beach', label: 'Praia' },
-  { id: 'romantic', label: 'Romântica' },
-  { id: 'family', label: 'Em Família' },
-];
+  { id: 'adventure', labelKey: 'tripStyleAdventure' },
+  { id: 'relax', labelKey: 'tripStyleRelax' },
+  { id: 'cultural', labelKey: 'tripStyleCultural' },
+  { id: 'gastronomy', labelKey: 'tripStyleGastronomy' },
+  { id: 'nature', labelKey: 'tripStyleNature' },
+  { id: 'beach', labelKey: 'tripStyleBeach' },
+  { id: 'romantic', labelKey: 'tripStyleRomantic' },
+  { id: 'family', labelKey: 'tripStyleFamily' },
+] as const;
 
-const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const BR_DATE = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+
+/** 18092026 vira 18/09/2026. O ano para em 4 dígitos. */
+function maskTripDate(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -38,27 +46,26 @@ function toIsoDate(date: Date) {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-/** O calendário do navegador pode devolver 12027-01-01. Só aceita ano de 4 dígitos. */
-function acceptTripDateInput(value: string): string | null {
-  if (!value) return '';
-  const year = value.split('-')[0] ?? '';
-  if (!/^\d{4}$/.test(year) || !ISO_DATE.test(value)) return null;
-  return value;
-}
-
-/** Aceita só AAAA-MM-DD com ano de 4 dígitos. Rejeita 12027-01-01. */
+/** Aceita só DD/MM/AAAA. O ano tem exatamente 4 dígitos. */
 function parseTripDate(value: string): Date | null {
-  const match = ISO_DATE.exec(value);
+  const match = BR_DATE.exec(value);
   if (!match) return null;
-  const year = Number(match[1]);
+  const day = Number(match[1]);
   const month = Number(match[2]);
-  const day = Number(match[3]);
+  const year = Number(match[3]);
   const date = new Date(year, month - 1, day);
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
   return date;
 }
 
-function travelRequestSchema(messages: { invalid: string; range: string; order: string }) {
+function travelRequestSchema(messages: {
+  invalid: string;
+  range: string;
+  order: string;
+  name: string;
+  email: string;
+  destination: string;
+}) {
   const optionalTripDate = z
     .string()
     .optional()
@@ -67,10 +74,10 @@ function travelRequestSchema(messages: { invalid: string; range: string; order: 
 
   return z
   .object({
-    name: z.string().trim().min(2, 'Informe seu nome completo.').max(120, 'Nome muito longo.'),
-    email: z.string().trim().email('Informe um e-mail válido.').max(255, 'E-mail muito longo.'),
-    phone: z.string().trim().max(30, 'Telefone muito longo.').optional().or(z.literal('')),
-    destination: z.string().trim().min(2, 'Informe o destino desejado.').max(160, 'Destino muito longo.'),
+    name: z.string().trim().min(2, messages.name).max(120, messages.name),
+    email: z.string().trim().email(messages.email).max(255, messages.email),
+    phone: z.string().trim().max(30).optional().or(z.literal('')),
+    destination: z.string().trim().min(2, messages.destination).max(160, messages.destination),
     departureDate: optionalTripDate,
     returnDate: optionalTripDate,
     travelers: z.string().min(1),
@@ -117,9 +124,6 @@ export default function ViagemPersonalizada() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
-  const todayIso = toIsoDate(startOfDay(new Date()));
-  const maxIso = toIsoDate(new Date(new Date().getFullYear() + 3, new Date().getMonth(), new Date().getDate()));
-
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -151,6 +155,9 @@ export default function ViagemPersonalizada() {
         invalid: t('dateInvalid'),
         range: t('dateRange'),
         order: t('dateOrder'),
+        name: t('tripNameError'),
+        email: t('tripEmailError'),
+        destination: t('tripDestError'),
       }).parse(formData);
       const travelersCount = parsed.travelers === '6+' ? 6 : parseInt(parsed.travelers, 10);
 
@@ -161,8 +168,8 @@ export default function ViagemPersonalizada() {
         client_phone: parsed.phone || null,
         destination: parsed.destination,
         travel_dates: {
-          start: parsed.departureDate || null,
-          end: parsed.returnDate || null,
+          start: parsed.departureDate ? toIsoDate(parseTripDate(parsed.departureDate)!) : null,
+          end: parsed.returnDate ? toIsoDate(parseTripDate(parsed.returnDate)!) : null,
         },
         travelers_count: Number.isFinite(travelersCount) ? travelersCount : 1,
         budget_range: parsed.budget || null,
@@ -177,18 +184,18 @@ export default function ViagemPersonalizada() {
 
       setSubmitted(true);
       toast({
-        title: 'Solicitação enviada!',
-        description: 'Em breve nossa equipe entrará em contato.',
+        title: t('tripToastTitle'),
+        description: t('tripToastDesc'),
       });
     } catch (error) {
       console.error('Error submitting request:', error);
       const message = error instanceof z.ZodError
-        ? error.issues[0]?.message || 'Revise os dados informados.'
+        ? error.issues[0]?.message || t('tripErrorFallback')
         : error instanceof Error
           ? error.message
-          : 'Ocorreu um erro. Tente novamente.';
+          : t('tripErrorGeneric');
       toast({
-        title: 'Erro ao enviar',
+        title: t('tripErrorTitle'),
         description: message,
         variant: 'destructive',
       });
@@ -205,13 +212,10 @@ export default function ViagemPersonalizada() {
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
               <CheckCircle className="h-8 w-8 text-success" />
             </div>
-            <h2 className="mb-2 font-display text-2xl font-bold">Solicitação Enviada!</h2>
-            <p className="mb-6 text-muted-foreground">
-              Recebemos sua solicitação de viagem personalizada. Nossa equipe de consultores 
-              entrará em contato em até 24 horas para dar início ao planejamento da sua experiência.
-            </p>
+            <h2 className="mb-2 font-display text-2xl font-bold">{t('tripSentTitle')}</h2>
+            <p className="mb-6 text-muted-foreground">{t('tripSentBody')}</p>
             <Button onClick={() => navigate('/')}>
-              Voltar ao Início
+              {t('tripBack')}
             </Button>
           </CardContent>
         </Card>
@@ -223,48 +227,43 @@ export default function ViagemPersonalizada() {
     <div className="py-12">
       <Seo
         path="/viagem-personalizada"
-        title="Monte sua viagem personalizada"
-        description="Conte para a Guatá o que você sonha e receba um roteiro de viagem sob medida, com curadoria e parceiros locais — no Pantanal, em Bonito, no Brasil ou no exterior."
+        title={t('tripSeoTitle')}
+        description={t('tripSeoDesc')}
       />
       <div className="container mx-auto px-4 lg:px-8">
         {/* Header */}
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <h1 className="font-display text-4xl font-bold md:text-5xl">
-            Viagem Personalizada
+            {t('tripTitle')}
           </h1>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Conte para nós sobre a viagem dos seus sonhos. Nossa equipe de consultores 
-            irá criar um roteiro exclusivo para você.
-          </p>
+          <p className="mt-4 text-lg text-muted-foreground">{t('tripLead')}</p>
         </div>
 
         <Card className="mx-auto max-w-2xl">
           <CardHeader>
-            <CardTitle>Solicitar Roteiro Personalizado</CardTitle>
-            <CardDescription>
-              Preencha as informações abaixo para que possamos entender melhor o que você busca.
-            </CardDescription>
+            <CardTitle>{t('tripCardTitle')}</CardTitle>
+            <CardDescription>{t('tripCardDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Personal Info */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome completo *</Label>
+                  <Label htmlFor="name">{t('tripName')}</Label>
                   <Input
                     id="name"
-                    placeholder="Seu nome"
+                    placeholder={t('tripNamePh')}
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email">{t('tripEmail')}</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="seu@email.com"
+                    placeholder={t('tripEmailPh')}
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     required
@@ -273,10 +272,10 @@ export default function ViagemPersonalizada() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">WhatsApp</Label>
+                <Label htmlFor="phone">{t('tripPhone')}</Label>
                 <Input
                   id="phone"
-                  placeholder="(11) 99999-9999"
+                  placeholder={t('tripPhonePh')}
                   value={formData.phone}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 />
@@ -286,11 +285,11 @@ export default function ViagemPersonalizada() {
               <div className="space-y-2">
                 <Label htmlFor="destination" className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  Destino desejado *
+                  {t('tripDest')}
                 </Label>
                 <Input
                   id="destination"
-                  placeholder="Ex: Nordeste do Brasil, Europa, ou 'Ainda não sei'"
+                  placeholder={t('tripDestPh')}
                   value={formData.destination}
                   onChange={(e) => setFormData(prev => ({ ...prev, destination: e.target.value }))}
                   required
@@ -302,34 +301,28 @@ export default function ViagemPersonalizada() {
                 <div className="space-y-2">
                   <Label htmlFor="departureDate" className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    Data de ida
+                    {t('tripDepart')}
                   </Label>
                   <Input
                     id="departureDate"
-                    type="date"
-                    min={todayIso}
-                    max={maxIso}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder={t('tripDatePh')}
+                    maxLength={10}
                     value={formData.departureDate}
-                    onChange={(e) => {
-                      const next = acceptTripDateInput(e.target.value);
-                      if (next === null) return;
-                      setFormData((prev) => ({ ...prev, departureDate: next }));
-                    }}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, departureDate: maskTripDate(e.target.value) }))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="returnDate">Data de volta</Label>
+                  <Label htmlFor="returnDate">{t('tripReturn')}</Label>
                   <Input
                     id="returnDate"
-                    type="date"
-                    min={formData.departureDate || todayIso}
-                    max={maxIso}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder={t('tripDatePh')}
+                    maxLength={10}
                     value={formData.returnDate}
-                    onChange={(e) => {
-                      const next = acceptTripDateInput(e.target.value);
-                      if (next === null) return;
-                      setFormData((prev) => ({ ...prev, returnDate: next }));
-                    }}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, returnDate: maskTripDate(e.target.value) }))}
                   />
                 </div>
               </div>
@@ -339,44 +332,44 @@ export default function ViagemPersonalizada() {
                 <div className="space-y-2">
                   <Label htmlFor="travelers" className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
-                    Número de viajantes
+                    {t('tripTravelers')}
                   </Label>
                   <Select
                     value={formData.travelers}
                     onValueChange={(value) => setFormData(prev => ({ ...prev, travelers: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
+                      <SelectValue placeholder={t('tripSelect')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">1 pessoa</SelectItem>
-                      <SelectItem value="2">2 pessoas</SelectItem>
-                      <SelectItem value="3">3 pessoas</SelectItem>
-                      <SelectItem value="4">4 pessoas</SelectItem>
-                      <SelectItem value="5">5 pessoas</SelectItem>
-                      <SelectItem value="6+">6 ou mais</SelectItem>
+                      <SelectItem value="1">{t('tripPax1')}</SelectItem>
+                      <SelectItem value="2">{t('tripPax2')}</SelectItem>
+                      <SelectItem value="3">{t('tripPax3')}</SelectItem>
+                      <SelectItem value="4">{t('tripPax4')}</SelectItem>
+                      <SelectItem value="5">{t('tripPax5')}</SelectItem>
+                      <SelectItem value="6+">{t('tripPax6')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="budget" className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4" />
-                    Orçamento por pessoa
+                    {t('tripBudget')}
                   </Label>
                   <Select
                     value={formData.budget}
                     onValueChange={(value) => setFormData(prev => ({ ...prev, budget: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
+                      <SelectValue placeholder={t('tripSelect')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="até 3mil">Até R$ 3.000</SelectItem>
-                      <SelectItem value="3-5mil">R$ 3.000 - R$ 5.000</SelectItem>
-                      <SelectItem value="5-10mil">R$ 5.000 - R$ 10.000</SelectItem>
-                      <SelectItem value="10-20mil">R$ 10.000 - R$ 20.000</SelectItem>
-                      <SelectItem value="20mil+">Acima de R$ 20.000</SelectItem>
-                      <SelectItem value="flexivel">Flexível</SelectItem>
+                      <SelectItem value="até 3mil">{t('tripBudget3')}</SelectItem>
+                      <SelectItem value="3-5mil">{t('tripBudget5')}</SelectItem>
+                      <SelectItem value="5-10mil">{t('tripBudget10')}</SelectItem>
+                      <SelectItem value="10-20mil">{t('tripBudget20')}</SelectItem>
+                      <SelectItem value="20mil+">{t('tripBudget20p')}</SelectItem>
+                      <SelectItem value="flexivel">{t('tripBudgetFlex')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -386,7 +379,7 @@ export default function ViagemPersonalizada() {
               <div className="space-y-3">
                 <Label className="flex items-center gap-2">
                   <Heart className="h-4 w-4" />
-                  Estilo de viagem (selecione quantos quiser)
+                  {t('tripStyle')}
                 </Label>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {travelStyles.map((style) => (
@@ -397,7 +390,7 @@ export default function ViagemPersonalizada() {
                         onCheckedChange={(checked) => handleStyleChange(style.id, checked as boolean)}
                       />
                       <Label htmlFor={style.id} className="text-sm font-normal cursor-pointer">
-                        {style.label}
+                        {t(style.labelKey)}
                       </Label>
                     </div>
                   ))}
@@ -407,11 +400,11 @@ export default function ViagemPersonalizada() {
               {/* Special Requests */}
               <div className="space-y-2">
                 <Label htmlFor="specialRequests">
-                  Conte mais sobre sua viagem ideal
+                  {t('tripNotes')}
                 </Label>
                 <Textarea
                   id="specialRequests"
-                  placeholder="Há algo especial que você gostaria de incluir? Alguma experiência específica, restrição alimentar, necessidade especial..."
+                  placeholder={t('tripNotesPh')}
                   rows={4}
                   value={formData.specialRequests}
                   onChange={(e) => setFormData(prev => ({ ...prev, specialRequests: e.target.value }))}
@@ -420,7 +413,7 @@ export default function ViagemPersonalizada() {
 
               <Button type="submit" size="lg" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Enviar Solicitação
+                {t('tripSubmit')}
               </Button>
             </form>
           </CardContent>
