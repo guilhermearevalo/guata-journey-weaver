@@ -25,18 +25,77 @@ const travelStyles = [
   { id: 'family', label: 'Em Família' },
 ];
 
-const travelRequestSchema = z.object({
-  name: z.string().trim().min(2, 'Informe seu nome completo.').max(120, 'Nome muito longo.'),
-  email: z.string().trim().email('Informe um e-mail válido.').max(255, 'E-mail muito longo.'),
-  phone: z.string().trim().max(30, 'Telefone muito longo.').optional().or(z.literal('')),
-  destination: z.string().trim().min(2, 'Informe o destino desejado.').max(160, 'Destino muito longo.'),
-  departureDate: z.string().optional(),
-  returnDate: z.string().optional(),
-  travelers: z.string().min(1),
-  budget: z.string().trim().max(80, 'Orçamento muito longo.').optional().or(z.literal('')),
-  styles: z.array(z.string()).max(8),
-  specialRequests: z.string().trim().max(2000, 'Observações muito longas.').optional().or(z.literal('')),
-});
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function toIsoDate(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+/** Aceita só AAAA-MM-DD com ano de 4 dígitos. Rejeita 12027-01-01. */
+function parseTripDate(value: string): Date | null {
+  const match = ISO_DATE.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return date;
+}
+
+const optionalTripDate = z
+  .string()
+  .optional()
+  .or(z.literal(''))
+  .refine((value) => !value || parseTripDate(value) !== null, 'Informe uma data válida (ano com 4 dígitos).');
+
+const travelRequestSchema = z
+  .object({
+    name: z.string().trim().min(2, 'Informe seu nome completo.').max(120, 'Nome muito longo.'),
+    email: z.string().trim().email('Informe um e-mail válido.').max(255, 'E-mail muito longo.'),
+    phone: z.string().trim().max(30, 'Telefone muito longo.').optional().or(z.literal('')),
+    destination: z.string().trim().min(2, 'Informe o destino desejado.').max(160, 'Destino muito longo.'),
+    departureDate: optionalTripDate,
+    returnDate: optionalTripDate,
+    travelers: z.string().min(1),
+    budget: z.string().trim().max(80, 'Orçamento muito longo.').optional().or(z.literal('')),
+    styles: z.array(z.string()).max(8),
+    specialRequests: z.string().trim().max(2000, 'Observações muito longas.').optional().or(z.literal('')),
+  })
+  .superRefine((data, ctx) => {
+    const today = startOfDay(new Date());
+    const latest = new Date(today.getFullYear() + 3, today.getMonth(), today.getDate());
+    const departure = data.departureDate ? parseTripDate(data.departureDate) : null;
+    const returning = data.returnDate ? parseTripDate(data.returnDate) : null;
+
+    for (const [field, date] of [
+      ['departureDate', departure],
+      ['returnDate', returning],
+    ] as const) {
+      if (!date) continue;
+      if (date < today || date > latest) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [field],
+          message: 'A data precisa estar entre hoje e os próximos 3 anos.',
+        });
+      }
+    }
+
+    if (departure && returning && returning < departure) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['returnDate'],
+        message: 'A data de volta não pode ser anterior à data de ida.',
+      });
+    }
+  });
 
 export default function ViagemPersonalizada() {
   const { user } = useAuth();
@@ -46,6 +105,11 @@ export default function ViagemPersonalizada() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
+  const todayIso = toIsoDate(startOfDay(new Date()));
+  const maxIso = toIsoDate(
+    new Date(new Date().getFullYear() + 3, new Date().getMonth(), new Date().getDate()),
+  );
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -229,6 +293,8 @@ export default function ViagemPersonalizada() {
                   <Input
                     id="departureDate"
                     type="date"
+                    min={todayIso}
+                    max={maxIso}
                     value={formData.departureDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, departureDate: e.target.value }))}
                   />
@@ -238,6 +304,8 @@ export default function ViagemPersonalizada() {
                   <Input
                     id="returnDate"
                     type="date"
+                    min={formData.departureDate || todayIso}
+                    max={maxIso}
                     value={formData.returnDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, returnDate: e.target.value }))}
                   />
